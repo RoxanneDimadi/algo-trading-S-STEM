@@ -1,0 +1,112 @@
+# =============================================================================
+# multisignal-alpha : experiment configuration
+#
+# Single source of truth for the pipeline. Every number that could plausibly
+# be tuned lives here, so the deflated-Sharpe accounting of "configurations
+# tried" has a paper trail.
+# =============================================================================
+
+run:
+  seed: 42
+  output_dir: results
+
+data:
+  # "synthetic" runs the planted-signal simulator (no network / WRDS needed).
+  # "osap" expects Chen-Zimmermann files in data/raw -- see src/data/loaders.py.
+  mode: synthetic
+
+  synthetic:
+    n_tickers: 500
+    start: "2000-01-31"
+    end: "2024-12-31"          # monthly panel, ~300 periods
+    idio_vol_monthly: 0.08     # idiosyncratic monthly return vol
+    market:
+      mean_monthly: 0.006
+      vol_monthly: 0.045
+      beta_dispersion: 0.30    # cross-sectional dispersion of market betas
+
+    # Planted cross-sectional signals. beta = monthly return per 1 unit of
+    # rank-normalized signal, IN-SAMPLE. After sample_end the effect is
+    # multiplied by decay_post_sample; after pub_date by decay_post_pub
+    # (mirrors McLean-Pontiff style decay so the decay module has real
+    # structure to find). sig_dead has beta 0 by design: the placebo.
+    decay_post_sample: 0.70
+    decay_post_pub: 0.45
+    signals:
+      sig_momentum: { beta: 0.0040, ar: 0.90, sample_end: "2012-12-31", pub_date: "2014-12-31" }
+      sig_liquidity: { beta: 0.0025, ar: 0.95, sample_end: "2014-12-31", pub_date: "2016-12-31" }
+      sig_volatility: { beta: 0.0020, ar: 0.90, sample_end: "2013-12-31", pub_date: "2015-12-31" }
+      sig_value: { beta: 0.0015, ar: 0.98, sample_end: "2015-12-31", pub_date: "2017-12-31" }
+      sig_quality: { beta: 0.0012, ar: 0.97, sample_end: "2016-12-31", pub_date: "2018-12-31" }
+      sig_dead: { beta: 0.0000, ar: 0.90, sample_end: "2014-12-31", pub_date: "2016-12-31" }
+
+    # Nonlinear interaction term (the GKX point: trees should recover this,
+    # a linear model cannot). Applied on top of the linear betas above.
+    interaction:
+      enabled: true
+      cols: [sig_momentum, sig_value]
+      beta: 0.0060
+
+  osap:
+    # Real-data path. Files you place in data/raw/:
+    #   signed_predictors_dl_wide.csv  (OSAP, Oct-2025 release or later)
+    #   SignalDoc.csv                  (OSAP signal metadata)
+    #   returns.csv                    (permno, yyyymm, ret) from CRSP/WRDS
+    # NOTE: Price, Size, STreversal are NOT in the OSAP file (CRSP-licensed).
+    signals: [Mom12m, Illiquidity, IdioVol3F, BM, GP, STreversal]
+    signals_csv: data/raw/signed_predictors_dl_wide.csv
+    signal_doc_csv: data/raw/SignalDoc.csv
+    returns_csv: data/raw/returns.csv
+
+evaluation:
+  n_quantiles: 5           # quintile sorts (long Q5, short Q1)
+  nw_lags: 6               # Newey-West lags for monthly series
+  rolling_ic_window: 24    # months, for IC-stability plots
+  cost_bps_per_side: 10    # transaction cost assumption, basis points per side
+
+walkforward:
+  min_train: 120           # months of history before the first test fold
+  test_size: 12            # months per out-of-sample fold
+  purge: 1                 # gap (periods) between train end and test start;
+                           # must be >= label horizon (h=1 here). Lopez de Prado.
+  embargo: 0               # extra periods dropped from train end
+  expanding: true          # expanding (true) vs rolling (false) train window
+
+models:
+  linear:                  # the benchmark the ML model must beat
+    kind: elasticnet
+    alpha: 0.0001
+    l1_ratio: 0.5
+  icnet:                   # from-scratch NumPy net, per-date IC objective
+    hidden: 16             # one tanh hidden layer; the point is the loss,
+    l2: 0.0001             # not the capacity (see src/models/icnet.py)
+    lr: 0.01
+    max_epochs: 300
+    patience: 25
+    val_fraction: 0.15     # chronological tail of TRAIN dates, for early stop
+  pulse:                   # Kalman-filtered time-varying efficacy (docs/05)
+    interactions: true     # filter pairwise-product efficacies too
+    a_grid: [0.97, 0.99, 1.0]        # mean-reversion candidates ("decay prior")
+    q_scale_grid: [0.002, 0.01, 0.05]  # state-noise scale candidates
+    ridge: 1.0e-6
+  lgbm:
+    n_estimators: 300
+    learning_rate: 0.05
+    num_leaves: 31
+    min_child_samples: 100
+    subsample: 0.8
+    colsample_bytree: 0.8
+    tune: false            # true -> optuna search inside each train window (slow)
+    tune_trials: 25
+
+agent:                     # differentiable cost-aware policy (docs/06)
+  enabled: true
+  epochs: 150
+  lr: 0.05
+  seed: 0
+
+deflated_sharpe:
+  # Trials counted against the headline strategy when deflating its Sharpe:
+  # every per-signal long-short examined + both combined models. Honest
+  # accounting of the selection surface per Bailey & Lopez de Prado (2014).
+  count_single_signal_trials: true

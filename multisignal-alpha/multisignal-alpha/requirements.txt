@@ -1,0 +1,30 @@
+# Core scientific stack (repo is numpy-2 compatible)
+numpy>=1.26
+pandas>=2.1
+scipy>=1.11
+statsmodels>=0.14
+scikit-learn>=1.4
+lightgbm>=4.3
+matplotlib>=3.8
+PyYAML>=6.0
+pytest>=8.0
+
+# Hyperparameter tuning (optional; used only if models.lgbm.tune = true)
+optuna>=3.6
+
+# --- Real-data path (install when you move off synthetic data) ---
+# openassetpricing>=1.0        # Chen-Zimmermann OSAP downloader (pandas/polars)
+# pandas-datareader>=0.10      # Kenneth French factor library loader
+#
+# NOTE on the Quantopian-lineage stack: the ORIGINAL alphalens/pyfolio/zipline
+# are unmaintained and break on modern Python. If you want them, install
+# Stefan Jansen's maintained forks instead -- and note parts of that stack
+# still prefer numpy<2, so isolate them in their own environment:
+# alphalens-reloaded
+# pyfolio-reloaded
+# empyrical-reloaded
+# zipline-reloaded
+#
+# This repo intentionally implements its own IC / portfolio-sort / walk-forward
+# machinery (src/evaluation, src/backtest) so the core research loop has zero
+# fragile dependencies and every statistical choice is visible in the code.
