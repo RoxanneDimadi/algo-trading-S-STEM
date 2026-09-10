@@ -1,0 +1,48 @@
+# =============================================================================
+# Execution Bridge & Webhook Listener Configuration
+# =============================================================================
+
+broker:
+  provider: alpaca
+  # Paper trading mode: true uses paper-api.alpaca.markets, false uses api.alpaca.markets
+  paper: true
+  # Keys can be specified here or via env vars: ALPACA_API_KEY / APCA_API_KEY_ID, ALPACA_SECRET_KEY / APCA_API_SECRET_KEY
+  api_key: ""
+  secret_key: ""
+  # Optional explicit base URL override
+  base_url: null
+  timeout_seconds: 10.0
+  max_retries: 2
+  retry_delay_seconds: 0.5
+
+webhook:
+  host: "0.0.0.0"
+  port: 8000
+  # Secret passphrase for authenticating incoming TradingView alerts
+  # Can also be set via env var WEBHOOK_PASSPHRASE
+  passphrase: "change_this_secret_passphrase"
+  debug: false
+
+agent_policy:
+  # Gârleanu-Pedersen trading speed (0 < gamma <= 1). 0.35 = partial adjustment to reduce turnover costs
+  gamma_speed: 0.35
+  # Assumed one-way transaction cost in basis points (10 bps = 0.10%)
+  cost_bps: 10.0
+  # Square-root market impact scaling parameter (bps)
+  impact_bps: 2.0
+  # Minimum net expected alpha (bps) required to approve a trade directive
+  alpha_hurdle_bps: 5.0
+  # Maximum position weight for any single stock (0.20 = 20% of portfolio equity)
+  max_position_pct: 0.20
+  # Maximum dollar value for a single order
+  max_order_notional: 50000.0
+  # Minimum trade dollar threshold (suppresses dust / trivial rebalancing)
+  min_trade_notional: 50.0
+  # Allow short positions (false for long-only accounts)
+  allow_short: false
+  # Baseline gross alpha expectation for a full-strength signal
+  default_base_alpha_bps: 30.0
+
+ledger:
+  db_path: "data/ledger.db"
+  jsonl_path: "data/audit_log.jsonl"
