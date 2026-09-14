@@ -14,6 +14,18 @@ import statsmodels.api as sm
 PERIODS_PER_YEAR = 12  # monthly data throughout
 
 
+def month_end_freq() -> str:
+    """Return a pandas month-end offset alias compatible with the installed version.
+
+    pandas < 2.2 uses ``M``; pandas >= 2.2 renamed it to ``ME``.
+    """
+    try:
+        pd.tseries.frequencies.to_offset("ME")
+        return "ME"
+    except (ValueError, KeyError):
+        return "M"
+
+
 def nw_mean_test(series: pd.Series, lags: int = 6) -> dict:
     """Mean of a time series with a Newey-West t-statistic.
 

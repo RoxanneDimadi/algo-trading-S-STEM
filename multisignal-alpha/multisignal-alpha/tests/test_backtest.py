@@ -6,10 +6,11 @@ import pytest
 from src.backtest.engine import run_model_backtest
 from src.backtest.walkforward import walkforward_splits
 from src.models.models import make_lgbm, make_linear
+from src.utils.stats import month_end_freq
 
 
 def test_walkforward_no_overlap_and_purge():
-    dates = pd.date_range("2000-01-31", periods=200, freq="ME")
+    dates = pd.date_range("2000-01-31", periods=200, freq=month_end_freq())
     folds = walkforward_splits(dates, min_train=100, test_size=12, purge=2,
                                embargo=1)
     all_test = []
@@ -23,7 +24,7 @@ def test_walkforward_no_overlap_and_purge():
 
 
 def test_walkforward_rejects_zero_purge():
-    dates = pd.date_range("2000-01-31", periods=200, freq="ME")
+    dates = pd.date_range("2000-01-31", periods=200, freq=month_end_freq())
     with pytest.raises(ValueError):
         walkforward_splits(dates, purge=0)
 

@@ -30,7 +30,12 @@ def ic_series(panel: pd.DataFrame, signal_col: str, fwd_col: str = "fwd_ret",
         rho, _ = sps.spearmanr(g[signal_col], g[fwd_col])
         return rho
 
-    out = df.groupby("date", sort=True).apply(_one, include_groups=False)
+    # pandas >= 2.2 supports include_groups=; older versions do not.
+    grouped = df.groupby("date", sort=True)
+    try:
+        out = grouped.apply(_one, include_groups=False)
+    except TypeError:
+        out = grouped.apply(_one)
     out.name = f"IC[{signal_col}]"
     return out.dropna()
 

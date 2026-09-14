@@ -57,7 +57,7 @@ def build_data(cfg: dict):
         panel = build_panel_from_osap(ocfg["signals_csv"], ocfg["returns_csv"],
                                       ocfg["signals"])
         meta = load_signal_doc(ocfg["signal_doc_csv"]).reindex(ocfg["signals"])
-        factors = load_french_factors()
+        factors = load_french_factors(csv_path=ocfg.get("french_factors_csv"))
         return panel, factors, meta
     raise ValueError(f"unknown data.mode: {mode}")
 

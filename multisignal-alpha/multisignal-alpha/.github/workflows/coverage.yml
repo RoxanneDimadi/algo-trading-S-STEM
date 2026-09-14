@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main, master]
 
+defaults:
+  run:
+    working-directory: .
+
 jobs:
   coverage:
     runs-on: ubuntu-latest
@@ -19,11 +23,9 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: |
-          pip install -r requirements-dev.txt
+        run: pip install -r requirements-dev.txt
 
       - name: Run tests with coverage
-        working-directory: multisignal-alpha/multisignal-alpha
         run: |
           python -m pytest tests/ \
             --cov=src \
@@ -35,6 +37,9 @@ jobs:
         uses: coverallsapp/github-action@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          file: multisignal-alpha/multisignal-alpha/coverage.xml
+          file: coverage.xml
           flag-name: python-3.11
           parallel: false
+        # If Coveralls is linked via repo token instead of GitHub App:
+        # env:
+        #   COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}

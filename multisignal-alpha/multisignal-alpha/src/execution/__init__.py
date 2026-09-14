@@ -1,4 +1,4 @@
-"""Execution Bridge, Webhook Listener, and Cost-Aware Agent Runtime."""
+"""Public exports for the execution package."""
 
 from src.execution.agent_evaluator import (
     AgentDecision,
