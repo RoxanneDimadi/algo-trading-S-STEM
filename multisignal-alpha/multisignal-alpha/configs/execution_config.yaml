@@ -1,0 +1,33 @@
+# Paper/live Alpaca + webhook listener. Prefer env vars for secrets:
+# ALPACA_API_KEY, ALPACA_SECRET_KEY, WEBHOOK_PASSPHRASE
+
+broker:
+  provider: alpaca
+  paper: true
+  api_key: ""
+  secret_key: ""
+  base_url: null
+  timeout_seconds: 10.0
+  max_retries: 2
+  retry_delay_seconds: 0.5
+
+webhook:
+  host: "0.0.0.0"
+  port: 8000
+  passphrase: "change_this_secret_passphrase"
+  debug: false
+
+agent_policy:
+  gamma_speed: 0.35          # GP partial adjustment; lower = slower turnover
+  cost_bps: 10.0
+  impact_bps: 2.0
+  alpha_hurdle_bps: 5.0      # skip trades with thinner net edge
+  max_position_pct: 0.20
+  max_order_notional: 50000.0
+  min_trade_notional: 50.0
+  allow_short: false
+  default_base_alpha_bps: 30.0
+
+ledger:
+  db_path: "data/ledger.db"
+  jsonl_path: "data/audit_log.jsonl"

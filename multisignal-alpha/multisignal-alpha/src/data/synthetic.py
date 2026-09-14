@@ -63,7 +63,9 @@ def make_synthetic_panel(cfg: dict, seed: int = 42):
     scfg = cfg["data"]["synthetic"]
     rng = np.random.default_rng(seed)
 
-    dates = pd.date_range(scfg["start"], scfg["end"], freq="ME")
+    from src.utils.stats import month_end_freq
+
+    dates = pd.date_range(scfg["start"], scfg["end"], freq=month_end_freq())
     T, N = len(dates), int(scfg["n_tickers"])
     tickers = [f"T{i:04d}" for i in range(N)]
 

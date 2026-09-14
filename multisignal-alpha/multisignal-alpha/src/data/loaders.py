@@ -95,14 +95,30 @@ def load_signal_doc(path: str) -> pd.DataFrame:
     return out
 
 
-def load_french_factors(start: str = "1963-07-01") -> pd.DataFrame:
+def load_french_factors(start: str = "1963-07-01",
+                        csv_path: str | None = None) -> pd.DataFrame:
     """FF5 + momentum, monthly, as decimal returns indexed by month-end.
 
-    Requires network + pandas_datareader; run on your machine, not needed for
-    the synthetic demo. Factors are indexed by their own period end here --
-    pass align='formation' (the default) in alpha_regression so they line up
-    with formation-dated strategy returns.
+    Prefer a local CSV written by the real-data ingest repo
+    (``data/raw/french_factors.csv``). Otherwise pull via pandas_datareader.
     """
+    from pathlib import Path
+
+    candidates = []
+    if csv_path:
+        candidates.append(Path(csv_path))
+    candidates.append(Path("data/raw/french_factors.csv"))
+
+    for path in candidates:
+        if path.exists():
+            f = pd.read_csv(path, index_col=0, parse_dates=True)
+            f.index = pd.to_datetime(f.index) + pd.offsets.MonthEnd(0)
+            f.index.name = "date"
+            f.columns = [c.strip().lower().replace("-", "_") for c in f.columns]
+            start_ts = pd.Timestamp(start) + pd.offsets.MonthEnd(0)
+            f = f.loc[f.index >= start_ts]
+            return f.drop(columns=[c for c in ["rf"] if c in f.columns], errors="ignore")
+
     from pandas_datareader import data as pdr  # lazy optional import
     ff5 = pdr.DataReader("F-F_Research_Data_5_Factors_2x3", "famafrench",
                          start=start)[0] / 100.0

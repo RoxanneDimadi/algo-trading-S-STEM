@@ -1,0 +1,23 @@
+[run]
+source = src
+branch = true
+omit =
+    */tests/*
+    */__pycache__/*
+    */site-packages/*
+
+[report]
+precision = 1
+show_missing = true
+skip_covered = false
+exclude_lines =
+    pragma: no cover
+    if __name__ == .__main__.:
+    raise NotImplementedError
+    if TYPE_CHECKING:
+
+[html]
+directory = htmlcov
+
+[xml]
+output = coverage.xml

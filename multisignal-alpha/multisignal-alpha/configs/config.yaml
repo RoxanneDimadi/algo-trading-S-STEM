@@ -57,6 +57,7 @@ data:
     signals_csv: data/raw/signed_predictors_dl_wide.csv
     signal_doc_csv: data/raw/SignalDoc.csv
     returns_csv: data/raw/returns.csv
+    french_factors_csv: data/raw/french_factors.csv
 
 evaluation:
   n_quantiles: 5           # quintile sorts (long Q5, short Q1)

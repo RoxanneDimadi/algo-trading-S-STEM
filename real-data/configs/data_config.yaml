@@ -1,0 +1,30 @@
+# Real-data ingest for the multisignal-alpha agent
+
+osap:
+  # blank => latest OpenAP release
+  release: null
+  # Firm-level signals (STreversal is constructed from returns, not OSAP)
+  signals: [Mom12m, Illiquidity, IdioVol3F, BM, GP]
+  # Also pull equal-weight original-paper long-short portfolios for sanity checks
+  download_portfolios: true
+  portfolio_form: op
+
+french:
+  start: "1963-07"
+  # Direct ZIP from Ken French's site (preferred); pandas_datareader as fallback
+  datasets:
+    - F-F_Research_Data_5_Factors_2x3
+    - F-F_Momentum_Factor
+
+returns:
+  # Sources tried in order: RETURNS_CSV env, WRDS (if creds), existing data/raw/returns.csv
+  prefer_delisting_adjusted: true
+
+panel:
+  # Forward return alignment: signal at t, fwd_ret over (t, t+1]
+  min_names_per_month: 50
+
+paths:
+  raw: data/raw
+  processed: data/processed
+  agent_raw: ../multisignal-alpha/multisignal-alpha/data/raw
