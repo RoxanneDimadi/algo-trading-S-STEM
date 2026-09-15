@@ -117,6 +117,7 @@ data:
     signals_csv: data/raw/signed_predictors_dl_wide.csv
     signal_doc_csv: data/raw/SignalDoc.csv
     returns_csv: data/raw/returns.csv
+    french_factors_csv: data/raw/french_factors.csv
 """
     out = agent_root / "configs" / "config_osap_overlay.yaml"
     out.parent.mkdir(parents=True, exist_ok=True)

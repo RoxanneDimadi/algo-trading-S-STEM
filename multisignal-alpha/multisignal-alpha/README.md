@@ -115,21 +115,32 @@ docs/math/                 # proof-driven lesson plan: every formula derived,
 
 ## Moving to real data
 
-1. **Signals** — either `pip install openassetpricing` (Chen–Zimmermann OSAP;
-   October 2025 release or later) or download `signed_predictors_dl_wide.csv`
-   and `SignalDoc.csv` from openassetpricing.com into `data/raw/`.
-2. **Returns** — `data/raw/returns.csv` with columns `permno, yyyymm, ret`
-   (CRSP via WRDS). Note: **Price, Size, and STreversal are not in the OSAP
-   file** (CRSP-licensed); STreversal is just the prior-month return, so it
-   can be computed from any price feed if you lack WRDS.
-3. **Factors** — `load_french_factors()` pulls FF5 + momentum via
-   `pandas-datareader`.
-4. Set `data.mode: osap` in `configs/config.yaml` and re-run `make demo`.
+Ingest lives in the sibling **`real-data/`** directory (not in this package):
 
-The loaders (`src/data/loaders.py`) implement this path with the correct
-signal-at-*t* → return-over-(*t*, *t*+1] alignment; they require network/WRDS
-access and are the one part of the repo not exercised by the offline test
-suite — validate the join row-counts and date ranges when you first run them.
+```bash
+cd ../real-data          # from repo root: real-data/
+pip install -r requirements.txt
+copy .env.example .env   # set RETURNS_CSV or WRDS_* as needed
+python scripts/run_all.py
+python scripts/sync_to_agent.py
+```
+
+That writes OSAP signals, SignalDoc, Ken French FF5+Mom, and (if available)
+returns into `data/raw/`, and drops `configs/config_osap_overlay.yaml`.
+
+1. **Signals** — `openassetpricing` subset matching config (Mom12m, Illiquidity,
+   IdioVol3F, BM, GP). Or place `signed_predictors_dl_wide.csv` + `SignalDoc.csv`
+   under `data/raw/` yourself.
+2. **Returns** — `data/raw/returns.csv` with columns `permno, yyyymm, ret`
+   (CRSP via WRDS or your own CSV). **Price, Size, and STreversal are not in
+   the public OSAP file**; `real-data` builds STreversal as `-ret_{t-1}`.
+3. **Factors** — prefer local `data/raw/french_factors.csv` from `real-data`;
+   `load_french_factors()` falls back to `pandas-datareader` if missing.
+4. Set `data.mode: osap` in `configs/config.yaml` (or merge the overlay) and
+   re-run `make demo` / `python -m src.pipeline`.
+
+The loaders (`src/data/loaders.py`) implement signal-at-*t* → return-over-
+(*t*, *t*+1] alignment. Returns still need WRDS or a CSV you supply.
 
 Tooling note: the original Quantopian libraries (alphalens/pyfolio/zipline)
 are unmaintained; if you want tear sheets, install Stefan Jansen's
