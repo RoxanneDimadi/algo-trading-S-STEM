@@ -5,9 +5,20 @@ osap:
   release: null
   # Firm-level signals (STreversal is constructed from returns, not OSAP)
   signals: [Mom12m, Illiquidity, IdioVol3F, BM, GP]
-  # Also pull equal-weight original-paper long-short portfolios for sanity checks
+  # Also pull equal-weight original-paper long-short portfolios
   download_portfolios: true
   portfolio_form: op
+  # Which signals' portfolios to pull: "all" (recommended -- gives the
+  # factor-mode panel a ~200-name cross-section, freely licensed) or a list.
+  portfolio_signals: all
+
+# The no-WRDS real-data path: each OSAP long-short portfolio becomes a
+# tradable asset with factor-momentum + publication-status features.
+# See src/factor_panel.py for the point-in-time reasoning.
+factor_panel:
+  lookback_months: 12      # history window for fmom_12m / fvol_12m
+  min_names_per_month: 3   # drop months with fewer factors than this
+  units: auto              # auto | percent | decimal (OSAP ships percent)
 
 french:
   start: "1963-07"

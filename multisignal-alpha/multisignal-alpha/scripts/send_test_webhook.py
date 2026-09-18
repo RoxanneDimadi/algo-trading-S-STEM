@@ -9,7 +9,8 @@ from typing import Any, Dict
 import requests
 
 
-def send_alert(url: str, payload: Dict[str, Any], passphrase: str = "") -> None:
+def send_alert(url: str, payload: Dict[str, Any],
+               passphrase: str = "") -> None:
     headers = {"Content-Type": "application/json"}
     if passphrase:
         payload = {**payload, "passphrase": passphrase}
@@ -22,7 +23,7 @@ def send_alert(url: str, payload: Dict[str, Any], passphrase: str = "") -> None:
         print(f"HTTP {resp.status_code}")
         try:
             print(json.dumps(resp.json(), indent=2))
-        except Exception:
+        except Exception:  # pylint: disable=broad-exception-caught
             print(resp.text)
     except requests.exceptions.RequestException as e:
         print(f"request failed: {e}", file=sys.stderr)
@@ -33,11 +34,13 @@ def main():
     p.add_argument("--url", default="http://127.0.0.1:8000/webhook")
     p.add_argument("--passphrase", default="change_this_secret_passphrase")
     p.add_argument("--symbol", default="AAPL")
-    p.add_argument("--action", default="buy", choices=["buy", "sell", "flat", "close"])
+    p.add_argument("--action", default="buy",
+                   choices=["buy", "sell", "flat", "close"])
     p.add_argument("--qty", type=float, default=10.0)
     p.add_argument("--price", type=float, default=225.50)
     p.add_argument("--strength", type=float, default=1.0)
-    p.add_argument("--order_type", default="market", choices=["market", "limit", "stop"])
+    p.add_argument("--order_type", default="market",
+                   choices=["market", "limit", "stop"])
     p.add_argument("--limit_price", type=float, default=None)
     p.add_argument(
         "--scenario",

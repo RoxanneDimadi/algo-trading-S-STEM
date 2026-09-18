@@ -1,4 +1,7 @@
-"""Copy raw artifacts into multisignal-alpha/data/raw and write an OSAP config overlay."""
+"""Copy raw artifacts into multisignal-alpha/data/raw.
+
+Also writes an OSAP config overlay for the agent.
+"""
 from __future__ import annotations
 
 import argparse
@@ -9,14 +12,20 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from src import agent_raw_dir, agent_root, load_config, processed_dir, raw_dir, signal_list
-from src.panel_build import build_panel, sync_to_agent, write_agent_config_snippet
+# The project package lives one level up; the bootstrap above
+# has to run before these imports resolve.
+# pylint: disable=wrong-import-position
+from src.panel_build import (build_panel, sync_to_agent,
+                             write_agent_config_snippet)
+from src import (agent_raw_dir, agent_root, load_config, processed_dir,
+                 raw_dir, signal_list)
 
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--config", default=None)
-    p.add_argument("--build-panel", action="store_true", help="also write processed panel parquet/csv")
+    p.add_argument("--build-panel", action="store_true",
+                   help="also write processed panel parquet/csv")
     p.add_argument("--debug", action="store_true")
     args = p.parse_args()
 
@@ -42,12 +51,13 @@ def main():
             raw / "returns.csv",
             signals,
             add_streversal=True,
-            min_names_per_month=int(cfg.get("panel", {}).get("min_names_per_month", 50)),
+            min_names_per_month=int(
+                cfg.get("panel", {}).get("min_names_per_month", 50)),
         )
         out = processed_dir(cfg) / "panel.parquet"
         try:
             panel.to_parquet(out, index=False)
-        except Exception:
+        except Exception:  # pylint: disable=broad-exception-caught
             out = processed_dir(cfg) / "panel.csv"
             panel.to_csv(out, index=False)
         print(f"panel: {out} ({len(panel)} rows)")

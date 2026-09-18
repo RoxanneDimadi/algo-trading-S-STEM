@@ -55,8 +55,9 @@ def decay_table(ls_by_signal: dict[str, pd.Series], meta: pd.DataFrame,
             "post_sample_sharpe": seg.loc["post_sample", "sharpe"],
             "post_pub_sharpe": seg.loc["post_publication", "sharpe"],
             "post_sample_retention": seg.loc["post_sample", "pct_of_in_sample"]
-                if "pct_of_in_sample" in seg else np.nan,
-            "post_pub_retention": seg.loc["post_publication", "pct_of_in_sample"]
-                if "pct_of_in_sample" in seg else np.nan,
+            if "pct_of_in_sample" in seg else np.nan,
+            "post_pub_retention":
+            seg.loc["post_publication", "pct_of_in_sample"]
+            if "pct_of_in_sample" in seg else np.nan,
         })
     return pd.DataFrame(rows).set_index("signal")

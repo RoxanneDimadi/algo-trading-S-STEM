@@ -1,0 +1,65 @@
+name: CI
+
+# GitHub Actions only reads workflows from .github/workflows/ at the
+# repository root, so this file lives here rather than inside either
+# sub-project.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    name: pylint (PEP 8)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            multisignal-alpha/multisignal-alpha/requirements.txt
+            real-data/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r multisignal-alpha/multisignal-alpha/requirements.txt
+          # real-data's own imports, minus openassetpricing and wrds, which
+          # are heavy/licensed and are listed in .pylintrc ignored-modules
+          pip install python-dotenv pandas-datareader
+          pip install pylint
+
+      - name: pylint -- research agent
+        working-directory: multisignal-alpha/multisignal-alpha
+        run: pylint --rcfile=../../.pylintrc src scripts tests
+
+      - name: pylint -- real-data ingest
+        working-directory: real-data
+        run: pylint --rcfile=../.pylintrc src scripts
+
+  test:
+    name: pytest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            multisignal-alpha/multisignal-alpha/requirements-dev.txt
+
+      - name: Install dependencies
+        working-directory: multisignal-alpha/multisignal-alpha
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Statistical-correctness suite
+        working-directory: multisignal-alpha/multisignal-alpha
+        run: python -m pytest -q --cov=src --cov-report=term-missing

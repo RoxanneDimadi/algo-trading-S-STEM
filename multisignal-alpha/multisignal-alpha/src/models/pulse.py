@@ -73,12 +73,19 @@ class PulseModel:
 
     def __init__(self, interactions: bool = True, ridge: float = 1e-6,
                  a_grid=(0.97, 0.99, 1.0), q_scale_grid=(0.002, 0.01, 0.05),
-                 min_names: int = 60):
+                 min_names: int = 60, obs_margin: int = 10):
         self.interactions = bool(interactions)
         self.ridge = float(ridge)
         self.a_grid = tuple(a_grid)
         self.q_scale_grid = tuple(q_scale_grid)
         self.min_names = int(min_names)
+        # obs_margin is the identification headroom of the per-date
+        # cross-sectional regression: with obs_margin > 0 dates need
+        # n >= max(min_names, P + obs_margin) observations (well-identified
+        # OLS; 10 is the default statistical floor). obs_margin <= 0 is
+        # smoke-test mode: only min_names applies and the ridge term carries
+        # identification of the (possibly underdetermined) per-date system.
+        self.obs_margin = int(obs_margin)
 
     # ---------------------------------------------------------- pass 1: lam_t
     def _per_date_coefs(self, Z, y, dates):
@@ -93,13 +100,15 @@ class PulseModel:
         stops = np.append(starts[1:], len(dates))
         P = Z.shape[1]
         lam_rows, r_rows, used_dates = [], [], []
-        I = np.eye(P)
+        eye = np.eye(P)
         for (a, b), dt in zip(zip(starts, stops), uniq[order]):
             n = b - a
-            if n < max(self.min_names, P + 10):
+            floor = (max(self.min_names, P + self.obs_margin)
+                     if self.obs_margin > 0 else self.min_names)
+            if n < floor:
                 continue
             Zi, yi = Z[a:b], y[a:b]
-            G = Zi.T @ Zi + self.ridge * n * I
+            G = Zi.T @ Zi + self.ridge * n * eye
             Ginv = np.linalg.inv(G)
             beta = Ginv @ (Zi.T @ yi)
             resid = yi - Zi @ beta
@@ -141,7 +150,8 @@ class PulseModel:
     # ---------------------------------------------------------------- fit
     def fit(self, X, y, dates=None):
         if dates is None:
-            raise ValueError("PULSE requires formation dates: fit(X, y, dates=...)")
+            raise ValueError(
+                "PULSE requires formation dates: fit(X, y, dates=...)")
         Xa = np.asarray(X, dtype=float)
         base_names = (list(X.columns) if hasattr(X, "columns")
                       else [f"x{i}" for i in range(Xa.shape[1])])
@@ -167,8 +177,9 @@ class PulseModel:
             for qs in self.q_scale_grid:
                 ll = 0.0
                 for k in range(Pdim):
-                    _, _, l = self._filter_1d(LAM[:, k], R[:, k], a, qs * med_r[k])
-                    ll += l
+                    _, _, loglik = self._filter_1d(
+                        LAM[:, k], R[:, k], a, qs * med_r[k])
+                    ll += loglik
                 if ll > best[2]:
                     best = (a, qs, ll)
         self.a_, self.q_scale_ = best[0], best[1]
@@ -204,7 +215,8 @@ class PulseModel:
             return Z @ (self.a_ * self.state_mean_)
         dates = np.asarray(dates)
         uniq = np.sort(np.unique(dates))
-        step = {dt: h + 1 for h, dt in enumerate(uniq)}   # months past train end
+        # months past train end
+        step = {dt: h + 1 for h, dt in enumerate(uniq)}
         out = np.empty(len(Z))
         for dt in uniq:
             mask = dates == dt
@@ -218,4 +230,6 @@ def make_pulse(cfg: dict):
         ridge=float(cfg.get("ridge", 1e-6)),
         a_grid=tuple(cfg.get("a_grid", (0.97, 0.99, 1.0))),
         q_scale_grid=tuple(cfg.get("q_scale_grid", (0.002, 0.01, 0.05))),
+        min_names=int(cfg.get("min_names", 60)),
+        obs_margin=int(cfg.get("obs_margin", 10)),
     )

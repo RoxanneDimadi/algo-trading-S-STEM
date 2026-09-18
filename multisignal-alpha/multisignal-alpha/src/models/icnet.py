@@ -79,7 +79,7 @@ class ICNet:
     def _slices_by_date(dates: np.ndarray):
         """Contiguous [start, stop) row slices per unique date.
         Assumes rows sorted by date (the caller sorts)."""
-        uniq, starts = np.unique(dates, return_index=True)
+        _uniq, starts = np.unique(dates, return_index=True)
         order = np.argsort(starts)
         starts = starts[order]
         stops = np.append(starts[1:], len(dates))
@@ -141,7 +141,8 @@ class ICNet:
     # ------------------------------------------------------------------- API
     def fit(self, X, y, dates=None):
         if dates is None:
-            raise ValueError("ICNet requires formation dates: fit(X, y, dates=...)")
+            raise ValueError(
+                "ICNet requires formation dates: fit(X, y, dates=...)")
         X = np.asarray(X, dtype=float)
         y = np.asarray(y, dtype=float).ravel()
         dates = np.asarray(dates)
@@ -183,7 +184,8 @@ class ICNet:
                 mhat = m[p] / (1 - beta1 ** epoch)
                 vhat = v[p] / (1 - beta2 ** epoch)
                 # gradient ASCENT on mean corr
-                setattr(self, p, getattr(self, p) + self.lr * mhat / (np.sqrt(vhat) + eps))
+                setattr(self, p, getattr(self, p) +
+                        self.lr * mhat / (np.sqrt(vhat) + eps))
 
             val_corr = self._mean_corr(Xva, yva, va_slices)
             self.history_.append(val_corr)
@@ -203,10 +205,14 @@ class ICNet:
         self.n_epochs_ = epoch
 
         # first-layer path importance: sum_h |W1[k,h]| * |w2[h]|
-        self.feature_importances_ = (np.abs(self.W1) * np.abs(self.w2)).sum(axis=1)
+        self.feature_importances_ = (
+            np.abs(self.W1) * np.abs(self.w2)).sum(axis=1)
         return self
 
-    def predict(self, X, dates=None):  # dates unused; accepted for interface parity
+    def predict(self, X, dates=None):
+        # `dates` is unused here; it exists for parity with the
+        # other model interfaces, which do need it.
+        # pylint: disable=unused-argument
         X = np.asarray(X, dtype=float)
         _, p = self._forward(X)
         return p
@@ -221,5 +227,6 @@ def make_icnet(cfg: dict):
         max_epochs=int(cfg.get("max_epochs", 300)),
         patience=int(cfg.get("patience", 25)),
         val_fraction=float(cfg.get("val_fraction", 0.15)),
+        min_names=int(cfg.get("min_names", 30)),
         seed=int(cfg.get("seed", 0)),
     )

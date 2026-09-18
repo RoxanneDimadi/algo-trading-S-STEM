@@ -8,12 +8,17 @@ import sys
 
 import yaml
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(0, os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..")))
 
-from src.execution.agent_evaluator import AgentPolicyConfig, CostAwareAgentEvaluator
-from src.execution.alpaca_bridge import AlpacaConfig, AlpacaExecutionBridge
-from src.execution.ledger import ExecutionLedger
+# The package lives one level up; the bootstrap above has to run
+# before these imports resolve.
+# pylint: disable=wrong-import-position
 from src.execution.webhook_listener import create_webhook_app
+from src.execution.ledger import ExecutionLedger
+from src.execution.alpaca_bridge import AlpacaConfig, AlpacaExecutionBridge
+from src.execution.agent_evaluator import (AgentPolicyConfig,
+                                           CostAwareAgentEvaluator)
 
 
 def load_config(config_path: str = "configs/execution_config.yaml") -> dict:
@@ -38,15 +43,18 @@ def load_config(config_path: str = "configs/execution_config.yaml") -> dict:
         broker["paper"] = paper_env.lower() in ("true", "1", "yes")
     else:
         broker.setdefault("paper", True)
-    broker["base_url"] = os.environ.get("ALPACA_BASE_URL") or broker.get("base_url")
+    broker["base_url"] = os.environ.get(
+        "ALPACA_BASE_URL") or broker.get("base_url")
 
     webhook = cfg.setdefault("webhook", {})
-    webhook["passphrase"] = os.environ.get("WEBHOOK_PASSPHRASE") or webhook.get("passphrase", "")
+    webhook["passphrase"] = os.environ.get(
+        "WEBHOOK_PASSPHRASE") or webhook.get("passphrase", "")
     return cfg
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Alpaca paper/live webhook server")
+    parser = argparse.ArgumentParser(
+        description="Alpaca paper/live webhook server")
     parser.add_argument("--config", default="configs/execution_config.yaml")
     parser.add_argument("--host", default=None)
     parser.add_argument("--port", type=int, default=None)
@@ -100,9 +108,11 @@ def main():
         allow_short=ap.get("allow_short", False),
         default_base_alpha_bps=ap.get("default_base_alpha_bps", 30.0),
     )
-    evaluator = CostAwareAgentEvaluator(bridge=bridge, config=policy, ledger=ledger)
+    evaluator = CostAwareAgentEvaluator(
+        bridge=bridge, config=policy, ledger=ledger)
     app = create_webhook_app(
-        bridge=bridge, evaluator=evaluator, webhook_passphrase=passphrase, ledger=ledger,
+        bridge=bridge, evaluator=evaluator,
+        webhook_passphrase=passphrase, ledger=ledger,
     )
 
     mode = "paper" if alpaca.paper else "live"

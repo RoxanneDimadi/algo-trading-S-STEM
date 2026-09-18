@@ -65,8 +65,10 @@ def run_model_backtest(panel: pd.DataFrame, feature_cols: list[str],
         preds.append(out)
         fold_rows.append({
             "fold": fold.fold_id,
-            "train_start": fold.train_dates.min(), "train_end": fold.train_dates.max(),
-            "test_start": fold.test_dates.min(), "test_end": fold.test_dates.max(),
+            "train_start": fold.train_dates.min(),
+            "train_end": fold.train_dates.max(),
+            "test_start": fold.test_dates.min(),
+            "test_end": fold.test_dates.max(),
             "n_train": len(tr), "n_test": len(te),
         })
         if collect_importance and hasattr(model, "feature_importances_"):
@@ -84,7 +86,8 @@ def run_model_backtest(panel: pd.DataFrame, feature_cols: list[str],
 
     # --- portfolio on the OOS forecast --------------------------------------
     w = score_to_weights(pred_panel, "prediction",
-                         n_q=int(eval_cfg.get("n_quantiles", 5)))
+                         n_q=int(eval_cfg.get("n_quantiles", 5)),
+                         min_names=int(eval_cfg.get("min_names_per_date", 50)))
     gross = portfolio_returns(w, pred_panel, fwd_col=label_col)
     traded = turnover_series(w)
     net = apply_costs(gross, traded,
@@ -92,7 +95,8 @@ def run_model_backtest(panel: pd.DataFrame, feature_cols: list[str],
     nw_lags = int(eval_cfg.get("nw_lags", 6))
 
     oos_ic = mean_ic(pred_panel.rename(columns={label_col: "fwd_ret"}),
-                     "prediction", "fwd_ret", nw_lags=nw_lags)
+                     "prediction", "fwd_ret", nw_lags=nw_lags,
+                     min_names=int(eval_cfg.get("min_names_per_date", 30)))
 
     result = {
         "pred_panel": pred_panel,
@@ -100,7 +104,8 @@ def run_model_backtest(panel: pd.DataFrame, feature_cols: list[str],
         "gross": annualized_stats(gross, nw_lags),
         "net": annualized_stats(net, nw_lags),
         "oos_ic": oos_ic,
-        "avg_one_way_turnover": float(traded.mean() / 2.0) if len(traded) else np.nan,
+        "avg_one_way_turnover": (float(traded.mean() / 2.0)
+                                 if len(traded) else np.nan),
         "folds": pd.DataFrame(fold_rows),
     }
     if importances:

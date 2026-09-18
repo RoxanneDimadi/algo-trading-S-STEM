@@ -27,6 +27,8 @@ def ic_series(panel: pd.DataFrame, signal_col: str, fwd_col: str = "fwd_ret",
     def _one(g: pd.DataFrame) -> float:
         if len(g) < min_names:
             return np.nan
+        if g[signal_col].nunique() < 2 or g[fwd_col].nunique() < 2:
+            return np.nan  # IC undefined on a constant cross-section
         rho, _ = sps.spearmanr(g[signal_col], g[fwd_col])
         return rho
 
@@ -41,13 +43,13 @@ def ic_series(panel: pd.DataFrame, signal_col: str, fwd_col: str = "fwd_ret",
 
 
 def mean_ic(panel: pd.DataFrame, signal_col: str, fwd_col: str = "fwd_ret",
-            nw_lags: int = 6) -> dict:
+            nw_lags: int = 6, min_names: int = 30) -> dict:
     """Mean IC with a Newey-West t-stat, plus ICIR.
 
     ICIR = mean(IC) / std(IC): the STABILITY of predictive power, valued as
     highly as its magnitude (a large-but-erratic IC is hard to monetize).
     """
-    s = ic_series(panel, signal_col, fwd_col)
+    s = ic_series(panel, signal_col, fwd_col, min_names=min_names)
     if len(s) < 12:
         return {"ic_mean": np.nan, "ic_tstat": np.nan, "icir": np.nan,
                 "ic_std": np.nan, "n_periods": len(s)}
@@ -63,6 +65,7 @@ def mean_ic(panel: pd.DataFrame, signal_col: str, fwd_col: str = "fwd_ret",
 
 
 def rolling_ic(panel: pd.DataFrame, signal_col: str, window: int = 24,
-               fwd_col: str = "fwd_ret") -> pd.Series:
+               fwd_col: str = "fwd_ret", min_names: int = 30) -> pd.Series:
     """Rolling-mean IC -- the stability picture behind ICIR."""
-    return ic_series(panel, signal_col, fwd_col).rolling(window).mean()
+    return ic_series(panel, signal_col, fwd_col,
+                     min_names=min_names).rolling(window).mean()

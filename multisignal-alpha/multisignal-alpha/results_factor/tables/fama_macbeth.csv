@@ -1,0 +1,8 @@
+variable,mean_coef,nw_tstat,n_periods
+const,,,0
+fmom_1m,,,0
+fmom_12_2,,,0
+fmom_12m,,,0
+fvol_12m,,,0
+post_pub,,,0
+years_since_pub,,,0

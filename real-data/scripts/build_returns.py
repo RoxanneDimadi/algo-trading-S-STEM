@@ -9,9 +9,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from src import load_config, processed_dir, raw_dir
-from src.panel_build import augment_osap_with_streversal
+# The project package lives one level up; the bootstrap above
+# has to run before these imports resolve.
+# pylint: disable=wrong-import-position
 from src.returns import resolve_returns
+from src.panel_build import augment_osap_with_streversal
+from src import load_config, processed_dir, raw_dir
 
 
 def main():
@@ -34,10 +37,13 @@ def main():
         out = processed_dir(cfg) / "signed_predictors_with_streversal.csv"
         augment_osap_with_streversal(signals_csv, returns_path, out)
         # also refresh raw copy used by the agent
-        augment_osap_with_streversal(signals_csv, returns_path, raw / "signed_predictors_dl_wide.csv")
-        print(f"streversal merged into {raw / 'signed_predictors_dl_wide.csv'}")
+        augment_osap_with_streversal(
+            signals_csv, returns_path, raw / "signed_predictors_dl_wide.csv")
+        print(
+            f"streversal merged into {raw / 'signed_predictors_dl_wide.csv'}")
     else:
-        print("OSAP signals CSV not found yet — run scripts/download_osap.py first")
+        print("OSAP signals CSV not found yet --",
+              "run scripts/download_osap.py first")
 
 
 if __name__ == "__main__":

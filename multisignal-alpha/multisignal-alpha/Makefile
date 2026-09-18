@@ -1,4 +1,4 @@
-.PHONY: demo test coverage coverage-html coveralls notebooks clean
+.PHONY: demo test lint coverage coverage-html coveralls notebooks clean
 
 # Run the full synthetic-data pipeline end-to-end (placebo-validated demo)
 demo:
@@ -7,6 +7,10 @@ demo:
 # Run the statistical-correctness test suite
 test:
 	python -m pytest -q tests/
+
+# PEP 8 + defect gate (the same command CI runs)
+lint:
+	pylint --rcfile=../../.pylintrc src scripts tests
 
 # Run tests with terminal coverage report (line + branch)
 coverage:

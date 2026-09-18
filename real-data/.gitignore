@@ -1,7 +1,11 @@
-data/raw/
-data/processed/
+data/raw/*
+data/processed/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
+# small factor smoke-test outputs -- tracked on purpose so the factor run is reproducible
+!data/processed/factor_panel.csv
+!data/processed/factor_meta.csv
+!data/processed/factor_decay.csv
 .env
 __pycache__/
 *.pyc

@@ -67,7 +67,8 @@ def tune_lgbm(X_train, y_train, X_val, y_val, base_cfg: dict,
         params = dict(base_cfg)
         params.update(
             num_leaves=trial.suggest_int("num_leaves", 15, 63),
-            learning_rate=trial.suggest_float("learning_rate", 0.01, 0.1, log=True),
+            learning_rate=trial.suggest_float(
+                "learning_rate", 0.01, 0.1, log=True),
             min_child_samples=trial.suggest_int("min_child_samples", 50, 300),
         )
         model = make_lgbm(params)

@@ -16,23 +16,26 @@ flagship example: chapter 3 predicts the momentum strategy's gross annual
 return to be **10.14%** from four config numbers; the pipeline measures
 **10.17%**.
 
+This file is the whole lesson plan as one document. Each chapter also
+exists on its own under `math/`, linked in the table below.
+
 ### Reading order
 
 | # | Chapter | What is proved there |
 |---|---------|----------------------|
-| 1 | `01_foundations.md` | Returns, expectation, variance, correlation; \|corr\| ≤ 1 (Cauchy–Schwarz); Sharpe ratio and the √12 annualization rule |
-| 2 | `02_correlation_and_the_ic.md` | Correlation as a cosine; invariance theorems; Spearman's 1 − 6Σd²/(n(n²−1)) formula derived; what the IC is and why it is computed per date |
-| 3 | `03_from_signal_to_portfolio.md` | Portfolio return as a dot product; dollar-neutrality theorem; the truncated-normal mean E[Z\|Z>a] = φ(a)/(1−Φ(a)); the 10.14% prediction; turnover and cost algebra; AR(1) staleness law IC(k) ≈ ρᵏ·IC(0) |
-| 4 | `04_inference_time_series.md` | Why t-statistics; Var(mean) = σ²/T proof; the autocorrelation correction (Newey–West) derived; Fama–MacBeth as one regression per date |
-| 5 | `05_linear_models_and_shrinkage.md` | Least squares from scratch (normal equations); what "alpha" is; bias–variance decomposition proved; ridge shrinks by 1/(1+λ), lasso soft-thresholds (proved in the orthonormal case) |
-| 6 | `06_trees_boosting_interactions.md` | Gradient boosting = fitting residuals (proved for squared loss); theorem: a product z₁z₂ cannot be written as f(z₁)+g(z₂) — why linear models miss interactions and trees don't |
-| 7 | `07_icnet.md` | The MSE decomposition MSE = level² + scale² + 2σₚσᵧ(1−ρ) — the motivating theorem; the IC objective's invariance proofs; the full gradient derivation matching the code line-by-line; tanh backprop; Adam |
-| 8 | `08_backtest_validity_and_leakage.md` | Information sets; the purging theorem (purge ≥ horizon); predicting the leak-demo IC (≈0.43) before measuring it (0.395); the placebo that crossed t = 2 and what it teaches |
-| 9 | `09_multiple_testing_and_dsr.md` | Why the best of N tries is biased; E[max] ≤ √(2 ln N) proved; the Probabilistic and Deflated Sharpe Ratio, term by term; decay as estimation |
-| 10 | `10_pulse_state_space.md` | The Kalman filter derived from Bayes' rule (one completed square); theorem: its steady state is an EWMA with a data-chosen half-life; point-in-time proof for the PULSE forecast |
-| 11 | `11_differentiable_trading.md` | The trading policy as an EWMA of aims (proved); the exact gradient of the Sharpe ratio; forward-mode sensitivities through the trading recursion; why exact gradients beat model-free RL |
-| 12 | `12_msrr_and_execution.md` | MSRR closed form: max-Sharpe blend is Σ⁻¹μ (via Cauchy–Schwarz); the Sherman–Morrison identity behind the "Regression" name; the capture-ratio theorem κ = γ/(1−(1−γ)ρ); square-root impact |
-| 13 | `13_symmetries_identifiability_composition.md` | The null-direction theorem (symmetry ⇒ gradient ⊥ θ) that predicted a real bug; why Adam random-walks flat directions; effective exposure and identifiability; composition is point-in-time by induction; the Pearson formula for a proportional book, checked to 2% |
+| 1 | `math/01_foundations.md` | Returns, expectation, variance, correlation; \|corr\| ≤ 1 (Cauchy–Schwarz); Sharpe ratio and the √12 annualization rule |
+| 2 | `math/02_correlation_and_the_ic.md` | Correlation as a cosine; invariance theorems; Spearman's 1 − 6Σd²/(n(n²−1)) formula derived; what the IC is and why it is computed per date |
+| 3 | `math/03_from_signal_to_portfolio.md` | Portfolio return as a dot product; dollar-neutrality theorem; the truncated-normal mean E[Z\|Z>a] = φ(a)/(1−Φ(a)); the 10.14% prediction; turnover and cost algebra; AR(1) staleness law IC(k) ≈ ρᵏ·IC(0) |
+| 4 | `math/04_inference_time_series.md` | Why t-statistics; Var(mean) = σ²/T proof; the autocorrelation correction (Newey–West) derived; Fama–MacBeth as one regression per date |
+| 5 | `math/05_linear_models_and_shrinkage.md` | Least squares from scratch (normal equations); what "alpha" is; bias–variance decomposition proved; ridge shrinks by 1/(1+λ), lasso soft-thresholds (proved in the orthonormal case) |
+| 6 | `math/06_trees_boosting_interactions.md` | Gradient boosting = fitting residuals (proved for squared loss); theorem: a product z₁z₂ cannot be written as f(z₁)+g(z₂) — why linear models miss interactions and trees don't |
+| 7 | `math/07_icnet.md` | The MSE decomposition MSE = level² + scale² + 2σₚσᵧ(1−ρ) — the motivating theorem; the IC objective's invariance proofs; the full gradient derivation matching the code line-by-line; tanh backprop; Adam |
+| 8 | `math/08_backtest_validity_and_leakage.md` | Information sets; the purging theorem (purge ≥ horizon); predicting the leak-demo IC (≈0.43) before measuring it (0.395); the placebo that crossed t = 2 and what it teaches |
+| 9 | `math/09_multiple_testing_and_dsr.md` | Why the best of N tries is biased; E[max] ≤ √(2 ln N) proved; the Probabilistic and Deflated Sharpe Ratio, term by term; decay as estimation |
+| 10 | `math/10_pulse_state_space.md` | The Kalman filter derived from Bayes' rule (one completed square); theorem: its steady state is an EWMA with a data-chosen half-life; point-in-time proof for the PULSE forecast |
+| 11 | `math/11_differentiable_trading.md` | The trading policy as an EWMA of aims (proved); the exact gradient of the Sharpe ratio; forward-mode sensitivities through the trading recursion; why exact gradients beat model-free RL |
+| 12 | `math/12_msrr_and_execution.md` | MSRR closed form: max-Sharpe blend is Σ⁻¹μ (via Cauchy–Schwarz); the Sherman–Morrison identity behind the "Regression" name; the capture-ratio theorem κ = γ/(1−(1−γ)ρ); square-root impact |
+| 13 | `math/13_symmetries_identifiability_composition.md` | The null-direction theorem (symmetry ⇒ gradient ⊥ θ) that predicted a real bug; why Adam random-walks flat directions; effective exposure and identifiability; composition is point-in-time by induction; the Pearson formula for a proportional book, checked to 2% |
 
 ### Notation (used throughout)
 
