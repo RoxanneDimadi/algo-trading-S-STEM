@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from src import agent_raw_dir, agent_root, load_config, processed_dir, raw_dir, signal_list
+from src.factor_panel import build_factor_panel, factor_decay_table
 from src.french_download import run_french_download
 from src.osap_download import run_osap_download
 from src.panel_build import (
@@ -17,6 +18,7 @@ from src.panel_build import (
     build_panel,
     sync_to_agent,
     write_agent_config_snippet,
+    write_agent_factor_config,
 )
 from src.returns import resolve_returns
 
@@ -29,6 +31,8 @@ def main():
     p.add_argument("--skip-returns", action="store_true",
                    help="skip returns resolution (OSAP+French only)")
     p.add_argument("--skip-sync", action="store_true")
+    p.add_argument("--skip-factor-panel", action="store_true",
+                   help="skip building the factor-mode panel")
     p.add_argument("--build-panel", action="store_true")
     p.add_argument("--debug", action="store_true")
     args = p.parse_args()
@@ -62,7 +66,7 @@ def main():
                 augment_osap_with_streversal(pristine, returns_path, signals_csv)
         except FileNotFoundError as e:
             log.error("%s", e)
-            log.error("continuing without returns — sync will omit returns.csv / STreversal")
+            log.error("continuing without returns - sync will omit returns.csv / STreversal")
 
     if not args.skip_sync:
         log.info("=== sync to agent ===")
@@ -71,6 +75,36 @@ def main():
             signals = signals + ["STreversal"]
         sync_to_agent(raw, agent_raw_dir(cfg))
         write_agent_config_snippet(agent_root(cfg), signals)
+
+    # Factor-mode panel: the real-data path that needs NO returns.csv / WRDS.
+    if not args.skip_factor_panel:
+        form = cfg.get("osap", {}).get("portfolio_form", "op")
+        ports = raw / f"osap_portfolios_{form}.csv"
+        if ports.exists():
+            log.info("=== factor panel (no-WRDS path) ===")
+            fcfg = cfg.get("factor_panel", {})
+            panel, meta = build_factor_panel(
+                ports,
+                raw / "SignalDoc.csv" if (raw / "SignalDoc.csv").exists() else None,
+                lookback=int(fcfg.get("lookback_months", 12)),
+                min_names_per_month=int(fcfg.get("min_names_per_month", 3)),
+                units=str(fcfg.get("units", "auto")),
+            )
+            processed = processed_dir(cfg)
+            panel.to_csv(processed / "factor_panel.csv", index=False)
+            meta.to_csv(processed / "factor_meta.csv", index=False)
+            if (raw / "SignalDoc.csv").exists():
+                factor_decay_table(ports, raw / "SignalDoc.csv",
+                                   units=str(fcfg.get("units", "auto"))
+                                   ).to_csv(processed / "factor_decay.csv")
+            if not args.skip_sync:
+                sync_to_agent(processed, agent_raw_dir(cfg),
+                              files=["factor_panel.csv", "factor_meta.csv"])
+                write_agent_factor_config(agent_root(cfg),
+                                          n_factors=panel["ticker"].nunique())
+        else:
+            log.warning("no %s -- skipping factor panel (run download_osap first)",
+                        ports.name)
 
     if args.build_panel and (raw / "returns.csv").exists():
         log.info("=== panel ===")

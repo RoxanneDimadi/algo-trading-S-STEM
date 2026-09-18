@@ -100,10 +100,10 @@ def apply_costs(gross: pd.Series, traded: pd.Series,
 
 def evaluate_signal_portfolio(panel: pd.DataFrame, score_col: str,
                               n_q: int = 5, cost_bps_per_side: float = 10.0,
-                              nw_lags: int = 6) -> dict:
+                              nw_lags: int = 6, min_names: int = 50) -> dict:
     """Full economic evaluation of one score: gross/net long-short stats plus
     turnover. Returns the series too, for plotting and decay analysis."""
-    w = score_to_weights(panel, score_col, n_q=n_q)
+    w = score_to_weights(panel, score_col, n_q=n_q, min_names=min_names)
     gross = portfolio_returns(w, panel)
     traded = turnover_series(w)
     net = apply_costs(gross, traded, cost_bps_per_side)

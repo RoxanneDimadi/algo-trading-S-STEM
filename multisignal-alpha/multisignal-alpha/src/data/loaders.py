@@ -129,3 +129,43 @@ def load_french_factors(start: str = "1963-07-01",
     f = f.rename(columns={"mkt_rf": "mkt_rf", "mom": "mom"})
     f.index.name = "date"
     return f.drop(columns=[c for c in ["rf"] if c in f.columns])
+
+
+# ---------------------------------------------------------------------------
+# generic prebuilt-panel mode (data.mode: panel_csv)
+# ---------------------------------------------------------------------------
+
+def load_prebuilt_panel(panel_csv: str, meta_csv: str):
+    """Load any prebuilt long panel + its feature-meta table.
+
+    This is the generic real-data entry point: whatever upstream ingest
+    produced the panel (the real-data repo's factor-mode builder today; a
+    WRDS firm-level panel someday), the agent consumes it here without
+    caring where it came from.
+
+    panel_csv columns: date, ticker, <feature columns...>, [ret], fwd_ret
+    meta_csv columns:  signal, sample_end, pub_date
+        * ``signal`` rows define WHICH panel columns are treated as features.
+        * sample_end / pub_date may be empty. When they are absent for every
+          feature, the pipeline skips the McLean-Pontiff decay stage --
+          derived features (e.g. factor momentum) have no publication dates,
+          so measuring "post-publication" decay on them would be meaningless.
+    """
+    panel = pd.read_csv(panel_csv, parse_dates=["date"])
+    panel["date"] = pd.to_datetime(panel["date"]) + pd.offsets.MonthEnd(0)
+    panel["ticker"] = panel["ticker"].astype(str)
+    if "fwd_ret" not in panel.columns:
+        raise ValueError(f"{panel_csv} must contain a fwd_ret column")
+
+    meta = pd.read_csv(meta_csv)
+    if "signal" not in meta.columns:
+        raise ValueError(f"{meta_csv} must contain a 'signal' column")
+    for c in ("sample_end", "pub_date"):
+        meta[c] = pd.to_datetime(meta[c], errors="coerce") if c in meta.columns else pd.NaT
+    meta = meta.set_index("signal")
+
+    missing = [s for s in meta.index if s not in panel.columns]
+    if missing:
+        raise ValueError(f"meta lists features absent from the panel: {missing}")
+    panel = panel.sort_values(["ticker", "date"]).reset_index(drop=True)
+    return panel, meta

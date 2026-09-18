@@ -221,5 +221,6 @@ def make_icnet(cfg: dict):
         max_epochs=int(cfg.get("max_epochs", 300)),
         patience=int(cfg.get("patience", 25)),
         val_fraction=float(cfg.get("val_fraction", 0.15)),
+        min_names=int(cfg.get("min_names", 30)),
         seed=int(cfg.get("seed", 0)),
     )

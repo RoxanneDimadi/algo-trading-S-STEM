@@ -29,15 +29,37 @@ Edit `.env`:
 ## Run
 
 ```bash
-# everything that can run without WRDS (OSAP + French), then try returns/sync
-python scripts/run_all.py
+# everything that can run without WRDS: OSAP + French + the FACTOR PANEL
+# (the supported real-data path -- OSAP long-short portfolios as assets)
+python scripts/run_all.py --skip-returns
+
+# check what's present / which agent modes are runnable
+python scripts/validate_data.py
 
 # pieces
 python scripts/download_osap.py
 python scripts/download_french.py
-python scripts/build_returns.py
+python scripts/build_factor_panel.py     # no-WRDS panel + real decay exhibit
+python scripts/build_returns.py          # only if you have a returns CSV/WRDS
 python scripts/sync_to_agent.py --build-panel
 ```
+
+### The no-WRDS path (recommended)
+
+`build_factor_panel.py` turns `osap_portfolios_op.csv` (freely licensed)
+into a factor-timing panel -- each anomaly's LS portfolio is a "ticker",
+features are its own trailing momentum/vol plus publication-status flags --
+plus `factor_decay.csv`, the REAL McLean-Pontiff decay measured per factor.
+It syncs both into the agent and writes a complete runnable config:
+
+```bash
+cd ../multisignal-alpha/multisignal-alpha
+python -m src.pipeline --config configs/config_factor.yaml
+```
+
+Set `osap.portfolio_signals: all` in `configs/data_config.yaml` (default) so
+the download covers the full ~200-predictor universe; with fewer than 25
+factors the generated config is marked as a smoke test.
 
 After a successful sync + returns:
 
@@ -61,3 +83,5 @@ After a successful sync + returns:
 - Full `dl_all_signals` needs WRDS; we only pull the configured subset.
 - French ZIPs are fetched from the Dartmouth FTP; `pandas_datareader` is the fallback.
 - Do not commit `.env` (password). `.env.example` is the template.
+- Without `returns.csv`, sync still copies OSAP + French; the overlay omits `STreversal`
+  until returns are available. The agent panel (`data.mode: osap`) needs returns.

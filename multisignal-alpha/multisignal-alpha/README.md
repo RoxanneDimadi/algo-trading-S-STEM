@@ -10,7 +10,7 @@ The claim is deliberately *not* "I found alpha." The claim is: **here is a real,
 
 ```bash
 pip install -r requirements.txt
-make test     # 17 statistical-correctness tests (placebo, leak, purge, ...)
+make test     # 53 statistical-correctness tests (placebo, leak, purge, ...)
 make demo     # full pipeline on synthetic data with PLANTED signals
 ```
 
@@ -52,6 +52,27 @@ Sharpe over the static blend (5.35 vs 2.96; scripts/compose_pulse_agent.py).
 > real data expect numbers an order of magnitude humbler — reporting those
 > honestly is the point of the project.
 
+## Real data without WRDS: factor mode
+
+Firm-level CRSP returns are license-blocked without WRDS, so `data.mode: osap`
+stays a documented-but-gated path. The **supported real-data path** trades
+OSAP's freely-distributed long-short *portfolio* returns instead: each of the
+~200 published anomalies becomes a tradable asset, with factor-momentum and
+publication-status features (the McLean-Pontiff angle, point-in-time safe).
+This is the factor-timing setting of Ehsani-Linnainmaa / Gupta-Kelly -- and
+PULSE's natural habitat on real data.
+
+```bash
+cd ../real-data
+python scripts/run_all.py --skip-returns   # OSAP + French + factor panel
+python scripts/validate_data.py            # readiness report per data mode
+cd ../multisignal-alpha/multisignal-alpha
+python -m src.pipeline --config configs/config_factor.yaml
+```
+
+Outputs land in `results_factor/`. See `../../docs/USER_GUIDE.md` for the complete
+walkthrough and how to read every table.
+
 ## Repository map
 
 ```
@@ -78,9 +99,11 @@ src/
 notebooks/                 # 01 data+leaks, 02 eval+decay, 03 ML-vs-linear, 04 controls+DSR
 tests/                     # the statistical-correctness gate
 docs/                      # research findings + roadmap + backlog + model proposal
-docs/math/                 # proof-driven lesson plan: every formula derived,
-                           #   with predictions checked against `make demo` output
 ```
+
+The user guide and the proof-driven lesson plan live at the repository root,
+in `../../docs/`: `USER_GUIDE.md` and `math/` (every formula derived, with
+predictions checked against `make demo` output).
 
 ## Methodology (the defensible core)
 
@@ -115,21 +138,32 @@ docs/math/                 # proof-driven lesson plan: every formula derived,
 
 ## Moving to real data
 
-1. **Signals** — either `pip install openassetpricing` (Chen–Zimmermann OSAP;
-   October 2025 release or later) or download `signed_predictors_dl_wide.csv`
-   and `SignalDoc.csv` from openassetpricing.com into `data/raw/`.
-2. **Returns** — `data/raw/returns.csv` with columns `permno, yyyymm, ret`
-   (CRSP via WRDS). Note: **Price, Size, and STreversal are not in the OSAP
-   file** (CRSP-licensed); STreversal is just the prior-month return, so it
-   can be computed from any price feed if you lack WRDS.
-3. **Factors** — `load_french_factors()` pulls FF5 + momentum via
-   `pandas-datareader`.
-4. Set `data.mode: osap` in `configs/config.yaml` and re-run `make demo`.
+Ingest lives in the sibling **`real-data/`** directory (not in this package):
 
-The loaders (`src/data/loaders.py`) implement this path with the correct
-signal-at-*t* → return-over-(*t*, *t*+1] alignment; they require network/WRDS
-access and are the one part of the repo not exercised by the offline test
-suite — validate the join row-counts and date ranges when you first run them.
+```bash
+cd ../real-data          # from repo root: real-data/
+pip install -r requirements.txt
+copy .env.example .env   # set RETURNS_CSV or WRDS_* as needed
+python scripts/run_all.py
+python scripts/sync_to_agent.py
+```
+
+That writes OSAP signals, SignalDoc, Ken French FF5+Mom, and (if available)
+returns into `data/raw/`, and drops `configs/config_osap_overlay.yaml`.
+
+1. **Signals** — `openassetpricing` subset matching config (Mom12m, Illiquidity,
+   IdioVol3F, BM, GP). Or place `signed_predictors_dl_wide.csv` + `SignalDoc.csv`
+   under `data/raw/` yourself.
+2. **Returns** — `data/raw/returns.csv` with columns `permno, yyyymm, ret`
+   (CRSP via WRDS or your own CSV). **Price, Size, and STreversal are not in
+   the public OSAP file**; `real-data` builds STreversal as `-ret_{t-1}`.
+3. **Factors** — prefer local `data/raw/french_factors.csv` from `real-data`;
+   `load_french_factors()` falls back to `pandas-datareader` if missing.
+4. Set `data.mode: osap` in `configs/config.yaml` (or merge the overlay) and
+   re-run `make demo` / `python -m src.pipeline`.
+
+The loaders (`src/data/loaders.py`) implement signal-at-*t* → return-over-
+(*t*, *t*+1] alignment. Returns still need WRDS or a CSV you supply.
 
 Tooling note: the original Quantopian libraries (alphalens/pyfolio/zipline)
 are unmaintained; if you want tear sheets, install Stefan Jansen's
@@ -139,7 +173,7 @@ statistical choice is visible and testable.
 
 ## The mathematics, derived
 
-`docs/math/` (start at `00_index.md`) is a nine-chapter, proof-driven lesson
+`../../docs/math/` (repo root `docs/math/`; start at `00_index.md`) is a nine-chapter, proof-driven lesson
 plan assuming no finance background: correlation and the IC, portfolio
 algebra, Newey-West, shrinkage, boosting, the IC-Net objective and its full
 gradient derivation, purging, and the deflated Sharpe ratio. Its signature

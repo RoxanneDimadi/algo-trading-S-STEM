@@ -59,6 +59,15 @@ def build_data(cfg: dict):
         meta = load_signal_doc(ocfg["signal_doc_csv"]).reindex(ocfg["signals"])
         factors = load_french_factors(csv_path=ocfg.get("french_factors_csv"))
         return panel, factors, meta
+    if mode == "panel_csv":
+        # generic prebuilt panel (e.g. the real-data repo's factor-mode
+        # output: OSAP long-short portfolios as tradable assets -- the
+        # supported real-data path when WRDS/CRSP returns are unavailable)
+        from .data.loaders import load_french_factors, load_prebuilt_panel
+        pcfg = cfg["data"]["panel_csv"]
+        panel, meta = load_prebuilt_panel(pcfg["panel"], pcfg["meta"])
+        factors = load_french_factors(csv_path=pcfg.get("french_factors_csv"))
+        return panel, factors, meta
     raise ValueError(f"unknown data.mode: {mode}")
 
 
@@ -70,6 +79,13 @@ def main(config_path: str = "configs/config.yaml") -> dict:
     figures.mkdir(parents=True, exist_ok=True)
     ecfg, wcfg = cfg["evaluation"], cfg["walkforward"]
     nw = int(ecfg["nw_lags"])
+    # optional min cross-section size; None keeps each module's own default
+    # (30 for IC-type stats, 50 for quantile books, 60 for PULSE dates)
+    mn = ecfg.get("min_names_per_date")
+    mn_kw = {} if mn is None else {"min_names": int(mn)}
+    if mn is not None:
+        for m in ("icnet", "pulse"):
+            cfg["models"].setdefault(m, {}).setdefault("min_names", int(mn))
 
     # ---- 1. data -------------------------------------------------------------
     panel, factors, meta = build_data(cfg)
@@ -79,11 +95,13 @@ def main(config_path: str = "configs/config.yaml") -> dict:
           f"{panel['ticker'].nunique()} names, signals={signal_cols}")
 
     # ---- 2. leak checks --------------------------------------------------------
-    leaks = leak_report(panel, signal_cols, nw_lags=nw)
+    leaks = leak_report(panel, signal_cols, nw_lags=nw, **mn_kw)
     leaks.to_csv(tables / "leak_report.csv")
-    demo = demonstrate_lookahead(panel, seed=int(cfg["run"]["seed"]), nw_lags=nw)
+    demo = demonstrate_lookahead(panel, seed=int(cfg["run"]["seed"]), nw_lags=nw,
+                                 **mn_kw)
     demo.to_csv(tables / "lookahead_demonstration.csv")
-    stale = staleness_experiment(panel, signal_cols, max_lag=6, nw_lags=nw)
+    stale = staleness_experiment(panel, signal_cols, max_lag=6, nw_lags=nw,
+                                 **mn_kw)
     stale.to_csv(tables / "staleness_profile.csv", index=False)
     print("[leak] lookahead demo -- leaky feature IC "
           f"{demo.loc['leaky_feature', 'IC']:.3f} vs honest noise "
@@ -94,14 +112,16 @@ def main(config_path: str = "configs/config.yaml") -> dict:
     for c in signal_cols:
         res = evaluate_signal_portfolio(
             panel, c, n_q=int(ecfg["n_quantiles"]),
-            cost_bps_per_side=float(ecfg["cost_bps_per_side"]), nw_lags=nw)
-        icr = mean_ic(panel, c, nw_lags=nw)
+            cost_bps_per_side=float(ecfg["cost_bps_per_side"]), nw_lags=nw,
+            **mn_kw)
+        icr = mean_ic(panel, c, nw_lags=nw, **mn_kw)
         row = summary_row(res)
         row.update({"IC": icr["ic_mean"], "IC_t": icr["ic_tstat"],
                     "ICIR": icr["icir"]})
         rows.append(row)
         ls_gross[c] = res["series"]["gross"]
-        roll[c] = rolling_ic(panel, c, window=int(ecfg["rolling_ic_window"]))
+        roll[c] = rolling_ic(panel, c, window=int(ecfg["rolling_ic_window"]),
+                             **mn_kw)
     sig_table = pd.DataFrame(rows).set_index("signal")
     order = ["IC", "IC_t", "ICIR", "ann_ret_gross", "sharpe_gross", "nw_t_gross",
              "ann_ret_net", "sharpe_net", "nw_t_net", "one_way_turnover",
@@ -118,13 +138,29 @@ def main(config_path: str = "configs/config.yaml") -> dict:
                     window=int(ecfg["rolling_ic_window"]))
 
     # ---- 4. decay ----------------------------------------------------------------
-    dec = decay_table(ls_gross, meta, nw_lags=nw)
-    dec.to_csv(tables / "decay_analysis.csv")
-    lead = sig_table["sharpe_gross"].idxmax()
-    plot_decay(ls_gross[lead], meta.loc[lead, "sample_end"],
-               meta.loc[lead, "pub_date"],
-               str(figures / "decay_leading_signal.png"), lead)
-    print("[decay]\n" + dec.round(3).to_string())
+    # Only meaningful when features have publication dates (synthetic planted
+    # signals, or firm-level OSAP anomalies). Derived features -- e.g. the
+    # factor-momentum columns of panel_csv mode -- carry no pub dates, and
+    # the McLean-Pontiff split does not apply to them; the REAL per-factor
+    # decay exhibit for that mode lives in real-data (factor_decay.csv).
+    have_dates = meta[["sample_end", "pub_date"]].notna().all(axis=1)
+    if have_dates.any():
+        dec = decay_table({k: v for k, v in ls_gross.items()
+                           if have_dates.get(k, False)},
+                          meta.loc[have_dates], nw_lags=nw)
+        dec.to_csv(tables / "decay_analysis.csv")
+        dated = [c for c in signal_cols if have_dates.get(c, False)]
+        lead = sig_table.loc[dated, "sharpe_gross"].idxmax()
+        plot_decay(ls_gross[lead], meta.loc[lead, "sample_end"],
+                   meta.loc[lead, "pub_date"],
+                   str(figures / "decay_leading_signal.png"), lead)
+        print("[decay]\n" + dec.round(3).to_string())
+    else:
+        dec = pd.DataFrame(
+            {"note": ["skipped: no publication dates in feature meta "
+                      "(see real-data factor_decay.csv for the per-factor "
+                      "McLean-Pontiff exhibit)"]})
+        print("[decay] skipped -- features carry no publication dates")
 
     # ---- 5. models: linear benchmark vs LightGBM ---------------------------------
     results = {

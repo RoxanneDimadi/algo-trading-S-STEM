@@ -73,12 +73,19 @@ class PulseModel:
 
     def __init__(self, interactions: bool = True, ridge: float = 1e-6,
                  a_grid=(0.97, 0.99, 1.0), q_scale_grid=(0.002, 0.01, 0.05),
-                 min_names: int = 60):
+                 min_names: int = 60, obs_margin: int = 10):
         self.interactions = bool(interactions)
         self.ridge = float(ridge)
         self.a_grid = tuple(a_grid)
         self.q_scale_grid = tuple(q_scale_grid)
         self.min_names = int(min_names)
+        # obs_margin is the identification headroom of the per-date
+        # cross-sectional regression: with obs_margin > 0 dates need
+        # n >= max(min_names, P + obs_margin) observations (well-identified
+        # OLS; 10 is the default statistical floor). obs_margin <= 0 is
+        # smoke-test mode: only min_names applies and the ridge term carries
+        # identification of the (possibly underdetermined) per-date system.
+        self.obs_margin = int(obs_margin)
 
     # ---------------------------------------------------------- pass 1: lam_t
     def _per_date_coefs(self, Z, y, dates):
@@ -96,7 +103,9 @@ class PulseModel:
         I = np.eye(P)
         for (a, b), dt in zip(zip(starts, stops), uniq[order]):
             n = b - a
-            if n < max(self.min_names, P + 10):
+            floor = (max(self.min_names, P + self.obs_margin)
+                     if self.obs_margin > 0 else self.min_names)
+            if n < floor:
                 continue
             Zi, yi = Z[a:b], y[a:b]
             G = Zi.T @ Zi + self.ridge * n * I
@@ -218,4 +227,6 @@ def make_pulse(cfg: dict):
         ridge=float(cfg.get("ridge", 1e-6)),
         a_grid=tuple(cfg.get("a_grid", (0.97, 0.99, 1.0))),
         q_scale_grid=tuple(cfg.get("q_scale_grid", (0.002, 0.01, 0.05))),
+        min_names=int(cfg.get("min_names", 60)),
+        obs_margin=int(cfg.get("obs_margin", 10)),
     )

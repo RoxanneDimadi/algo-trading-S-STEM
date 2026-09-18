@@ -58,20 +58,52 @@ def download_signals(
 
 
 def download_portfolios(
-    signals: List[str],
+    signals: List[str] | str,
     out_path: Path,
     form: str = "op",
     release: Optional[Any] = None,
+    signal_doc: Optional[pd.DataFrame] = None,
 ) -> pd.DataFrame:
-    """Long-short / sorted portfolio returns from OSAP (sanity-check series)."""
+    """Long-short / sorted portfolio returns from OSAP.
+
+    ``signals`` may be a list of acronyms, or the string ``"all"`` to pull
+    the full predictor universe -- portfolio returns are freely distributed
+    (unlike firm-level CRSP fields), so "all" is the recommended setting for
+    the factor-mode panel: ~200 LS series instead of a handful.
+    """
     openap = _openap(release)
     crsp_only = {"Price", "Size", "STreversal"}
-    want = [s for s in signals if s not in crsp_only]
-    logger.info("downloading OSAP portfolios form=%s signals=%s", form, want)
-    df = openap.dl_port(form, "pandas", want)
+
+    if isinstance(signals, str) and signals.lower() == "all":
+        try:
+            logger.info("downloading OSAP portfolios form=%s for ALL predictors", form)
+            df = openap.dl_port(form, "pandas")
+        except TypeError:
+            # older openassetpricing requires an explicit list: take every
+            # Predictor-class acronym from SignalDoc
+            if signal_doc is None:
+                raise RuntimeError(
+                    "openassetpricing needs an explicit signal list and no "
+                    "SignalDoc was provided; download SignalDoc first")
+            cols = {c.lower(): c for c in signal_doc.columns}
+            acr = cols["acronym"]
+            cat = cols.get("cat.signal")
+            doc = signal_doc
+            if cat:
+                doc = doc[doc[cat].astype(str).str.lower() == "predictor"]
+            want = sorted(set(doc[acr].dropna().astype(str)) - crsp_only)
+            logger.info("falling back to explicit list of %d predictors", len(want))
+            df = openap.dl_port(form, "pandas", want)
+    else:
+        want = [s for s in signals if s not in crsp_only]
+        logger.info("downloading OSAP portfolios form=%s signals=%s", form, want)
+        df = openap.dl_port(form, "pandas", want)
+
     out_path.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(out_path, index=False)
-    logger.info("wrote portfolios (%d rows) -> %s", len(df), out_path)
+    n_sig = df["signalname"].nunique() if "signalname" in df.columns else "?"
+    logger.info("wrote portfolios (%d rows, %s signals) -> %s",
+                len(df), n_sig, out_path)
     return df
 
 
@@ -84,15 +116,19 @@ def run_osap_download(cfg: Dict[str, Any], raw: Path) -> Dict[str, Path]:
         "signal_doc": raw / "SignalDoc.csv",
         "signals": raw / "signed_predictors_dl_wide.csv",
     }
-    download_signal_doc(paths["signal_doc"], release=release)
+    doc = download_signal_doc(paths["signal_doc"], release=release)
     download_signals(signals, paths["signals"], release=release)
 
     if ocfg.get("download_portfolios", True):
         paths["portfolios"] = raw / f"osap_portfolios_{ocfg.get('portfolio_form', 'op')}.csv"
+        # portfolio_signals: "all" (recommended for factor mode) or a list;
+        # defaults to the firm-signal list for backwards compatibility
+        port_signals = ocfg.get("portfolio_signals", signals)
         download_portfolios(
-            signals,
+            port_signals,
             paths["portfolios"],
             form=ocfg.get("portfolio_form", "op"),
             release=release,
+            signal_doc=doc,
         )
     return paths
