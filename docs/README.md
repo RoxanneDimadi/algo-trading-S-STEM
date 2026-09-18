@@ -10,6 +10,8 @@ configuration live in `multisignal-alpha/` (research agent) and `real-data/`
 | `math/` | Proof-driven lesson plan, chapter per file — every formula in the repository derived from first principles, assuming no finance background. Start at `math/00_index.md`. |
 | `mathematical_foundations_lesson_plan.md` | The same lesson plan as one continuous document, for reading or printing end-to-end. |
 
-Design and research notes stay next to the code they describe:
+Design and research notes stay next to the code they describe, in
 `multisignal-alpha/multisignal-alpha/docs/` (research findings, roadmap,
-improvement backlog, model proposals) and `research/documents/`.
+improvement backlog, model proposals). `research/documents/` used to hold a
+second, byte-identical copy of those; it now holds only the original project
+archive and a pointer.

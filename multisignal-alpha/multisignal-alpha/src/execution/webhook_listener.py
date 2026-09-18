@@ -29,6 +29,11 @@ def create_webhook_app(
     app_evaluator = evaluator or CostAwareAgentEvaluator(
         bridge=app_bridge, ledger=app_ledger)
     passphrase = webhook_passphrase
+    if not passphrase:
+        logger.warning(
+            "webhook listener started with NO passphrase: every caller who "
+            "can reach this port can submit trade signals. Set "
+            "WEBHOOK_PASSPHRASE unless this is bound to localhost.")
 
     def _verify_auth(req, data: Dict[str, Any]) -> Tuple[bool, str]:
         if not passphrase:

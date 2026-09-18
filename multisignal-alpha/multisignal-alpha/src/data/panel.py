@@ -57,18 +57,36 @@ def leak_report(panel: pd.DataFrame, signal_cols: list[str], *,
     the classic trap with news/sentiment data. Neither number should ever be
     computed with misaligned timestamps; this table makes the comparison
     explicit and auditable.
+
+    The ``note`` column separates the two ways a correlation of 1.0 can
+    arise. A feature that simply IS the contemporaneous return (factor
+    mode's ``fmom_1m`` is ``ret_t``) correlates perfectly with it by
+    construction -- that is not lookahead, because ``ret_t`` is known at the
+    end of month t, and its t-statistic is meaningless, so it is dropped.
+    Any OTHER signal sitting at |corr| > 0.999 is the alarm this table
+    exists to raise.
     """
     rows = []
     for c in signal_cols:
         pred = mean_ic(panel, c, "fwd_ret",
                        nw_lags=nw_lags, min_names=min_names)
         cont = mean_ic(panel, c, "ret", nw_lags=nw_lags, min_names=min_names)
+        duplicate = "ret" in panel.columns and panel[c].equals(panel["ret"])
+        corr, tstat = cont["ic_mean"], cont["ic_tstat"]
+        if duplicate:
+            note = "IS ret_t by construction -- point-in-time, not a leak"
+            tstat = np.nan
+        elif np.isfinite(corr) and abs(corr) > 0.999:
+            note = "near-perfect contemporaneous corr -- CHECK ALIGNMENT"
+        else:
+            note = ""
         rows.append({
             "signal": c,
             "predictive_IC": pred["ic_mean"],
             "predictive_IC_t": pred["ic_tstat"],
-            "contemporaneous_corr": cont["ic_mean"],
-            "contemporaneous_t": cont["ic_tstat"],
+            "contemporaneous_corr": corr,
+            "contemporaneous_t": tstat,
+            "note": note,
         })
     return pd.DataFrame(rows).set_index("signal")
 

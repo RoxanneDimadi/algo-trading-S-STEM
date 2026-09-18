@@ -156,7 +156,7 @@ python scripts/validate_data.py             # confirm: factor RUNNABLE
 
 Two artifacts worth knowing about beyond the panel:
 
-- `data/processed/factor_decay.csv` — the **real McLean–Pontiff exhibit**: each factor's annualized return and Sharpe in-sample vs post-sample vs post-publication, with retention ratios. On the currently downloaded five factors, e.g., Illiquidity retains only ~12% of its in-sample Sharpe post-publication while BM retains ~77% — measured, not simulated. This is poster material.
+- `data/processed/factor_decay.csv` — the **real McLean–Pontiff exhibit**: each factor's annualized return and Sharpe in-sample vs post-sample vs post-publication, with retention ratios. The `post_sample_retention` / `post_pub_retention` columns are ratios of **annualized return**, not of Sharpe. On the currently downloaded five factors, Illiquidity retains only ~12% of its in-sample annualized return post-publication while BM retains ~77%; on Sharpe the same two are ~21% and ~63%. Measured, not simulated — and quote it with the units attached.
 - `configs/config_factor.yaml` (written into the *agent* repo) — a complete runnable config. If fewer than 25 factors are on disk it is marked **SMOKE-TEST** in the header and relaxes statistical thresholds to their structural minimum; with the full universe it uses quintile sorts and a 20-name minimum per date.
 
 ### If you ever get returns anyway
@@ -174,6 +174,8 @@ Runtime: a few minutes on the 5-factor panel; longer with the full universe. Out
 
 1. **data** — panel shape sanity line (months × names × features).
 2. **leak checks** — the same lookahead demonstration runs on real data: a deliberately leaked feature is planted and must still look absurd (IC ~0.27 vs ~0.00 in the verified run). If your honest features ever approach the leaky feature's IC, stop and audit.
+
+   Read `leak_report.csv` with its `note` column. In factor mode `fmom_1m` **is** `ret_t` — last month's factor return, used as this month's signal — so its contemporaneous correlation with `ret` is exactly 1.0 by construction. That is not lookahead (`ret_t` is known at the end of month *t*), and the table says so in the note while suppressing the meaningless t-statistic. A correlation near 1.0 on **any other** signal is the alarm this table exists to raise: the note column flags it as `CHECK ALIGNMENT`.
 3. **per-signal evaluation** — IC/ICIR and tercile/quintile long-short economics per feature.
 4. **decay** — *skipped* in factor mode, by design: derived features like `fmom_12m` have no publication dates, so a McLean–Pontiff split on them is meaningless. The real decay exhibit lives in `real-data/data/processed/factor_decay.csv` instead.
 5. **models** — purged walk-forward comparison of all four models.
@@ -252,6 +254,17 @@ Key agent knobs:
 | `agent.epochs / lr` | policy training | 150 / 0.05 |
 
 Key ingest knobs: `osap.portfolio_signals` (`all` recommended), `factor_panel.lookback_months / min_names_per_month / units` (`auto` handles OSAP's percent units).
+
+### A warning about the execution bridge
+
+`src/execution/` places real orders. Two defaults matter:
+
+- `AlpacaConfig.paper` is `True`, so you hit the paper endpoint unless you
+  deliberately set it false.
+- The webhook listener runs in **public mode with no authentication at all**
+  when `WEBHOOK_PASSPHRASE` is unset — anyone who can reach the port can
+  submit trade signals. It logs a warning at startup when that happens. Set a
+  passphrase, or bind it to localhost, before exposing it anywhere.
 
 ## 12. What the results mean — and what they don't
 

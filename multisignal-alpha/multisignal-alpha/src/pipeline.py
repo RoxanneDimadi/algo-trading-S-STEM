@@ -42,6 +42,11 @@ from .utils.plotting import (plot_cumulative_ls, plot_decay,
 from .utils.stats import rank_normalize_cross_section
 
 
+# Below this many names in the cross-section, a run is a plumbing check
+# rather than evidence, and summary.md says so.
+SMOKE_TEST_MIN_NAMES = 25
+
+
 def load_config(path: str) -> dict:
     with open(path, encoding="utf-8") as f:
         return yaml.safe_load(f)
@@ -292,8 +297,23 @@ def main(config_path: str = "configs/config.yaml") -> dict:
           f"n_trials={dsr['n_trials']})")
 
     # ---- summary.md -------------------------------------------------
+    n_names = panel["ticker"].nunique()
+    banner = []
+    if n_names < SMOKE_TEST_MIN_NAMES:
+        # Same threshold real-data/src/panel_build.py uses to decide it is
+        # generating a smoke-test config. Say so on the artifact a reader
+        # actually opens, not only in the config header.
+        banner = [
+            f"> **SMOKE TEST -- NOT EVIDENCE.** Only {n_names} names in the\n"
+            "> cross-section, so the statistical thresholds are relaxed to\n"
+            "> their structural minimum and the sorts are coarse. Every\n"
+            "> number below is a plumbing check. Rebuild with the full\n"
+            "> universe (`osap.portfolio_signals: all` in real-data) for a\n"
+            "> result worth citing.\n",
+        ]
     lines = [
         "# Pipeline summary\n",
+        *banner,
         f"Panel: {panel['date'].nunique()} months x "
         f"{panel['ticker'].nunique()} names; "
         f"signals: {', '.join(signal_cols)}\n",

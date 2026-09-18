@@ -21,7 +21,7 @@ New/changed in the agent repo:
 - `src/data/loaders.py` — `load_prebuilt_panel()`: generic `data.mode: panel_csv` entry point (today's factor panel; a WRDS firm panel someday, unchanged agent).
 - `src/pipeline.py` — `panel_csv` mode; decay stage now **skips gracefully with an explanatory note** when features carry no publication dates (derived features like `fmom_12m` have none; the real per-factor decay lives in `real-data/data/processed/factor_decay.csv`).
 
-**Verified end-to-end on real data** (5 factors currently on disk; full universe after re-download): leak demo IC 0.27 vs 0.00 honest; factor momentum IC ≈ 0.11–0.12 (NW t ≈ 5.9), net Sharpe ≈ 0.23–0.28 at 10 bps; IC-Net leads the OOS model table; agent γ ≈ 0.95 ≈ myopic (honest null at low cost); factor-controlled alphas insignificant; DSR 0.79. Real decay exhibit: Illiquidity retains ~12% of in-sample Sharpe post-publication, BM ~77%.
+**Verified end-to-end on real data** (5 factors currently on disk; full universe after re-download): leak demo IC 0.27 vs 0.00 honest; factor momentum IC ≈ 0.11–0.12 (NW t ≈ 5.9), net Sharpe ≈ 0.23–0.28 at 10 bps; IC-Net leads the OOS model table; agent γ ≈ 0.95 ≈ myopic (honest null at low cost); factor-controlled alphas insignificant; DSR 0.79. Real decay exhibit: the retention columns are annualized-RETURN ratios -- Illiquidity retains ~12% of its in-sample annualized return post-publication, BM ~77% (on Sharpe the same two are ~21% and ~63%).
 
 ## 2. Hardcoded statistical thresholds made config-driven (bug-class fix)
 
@@ -57,4 +57,4 @@ Then re-download with the full universe when convenient (`python scripts/downloa
 
 - `data.mode: osap` remains gated on returns — correctly so; the gate and its unlock (any permno-keyed returns CSV, or WRDS creds) are documented rather than faked with survivorship-biased free feeds.
 - OP long-short portfolios are paper portfolios (hundreds of underlying names); factor-mode cost numbers model trading the *factor books*, and the guide says so.
-- The 5-factor run committed in `results_factor/` is a verified smoke test, labeled as such everywhere; the full-universe run is yours to produce (needs the OSAP download, ~440 MB).
+- The 5-factor run committed in `results_factor/` is a verified smoke test. `summary.md` now opens with a SMOKE TEST banner (emitted by `src/pipeline.py` whenever the cross-section is under 25 names) and `configs/config_factor.yaml` carries one in its header; the full-universe run is yours to produce (needs the OSAP download, ~440 MB).

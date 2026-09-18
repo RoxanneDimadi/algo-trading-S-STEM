@@ -174,10 +174,12 @@ statistical choice is visible and testable.
 
 ## The mathematics, derived
 
-`../../docs/math/` (repo root `docs/math/`; start at `00_index.md`) is a nine-chapter, proof-driven lesson
+`../../docs/math/` (repo root `docs/math/`; start at `00_index.md`) is a 13-chapter, proof-driven lesson
 plan assuming no finance background: correlation and the IC, portfolio
 algebra, Newey-West, shrinkage, boosting, the IC-Net objective and its full
-gradient derivation, purging, and the deflated Sharpe ratio. Its signature
+gradient derivation, purging, the deflated Sharpe ratio, the PULSE state
+space, differentiable trading, MSRR and execution, and the symmetry
+and identifiability results. Its signature
 move: because the demo data has planted truth, most derivations end with a
 numerical prediction checked against pipeline output (e.g., momentum's gross
 annual return: predicted 10.14%, measured 10.17%).
