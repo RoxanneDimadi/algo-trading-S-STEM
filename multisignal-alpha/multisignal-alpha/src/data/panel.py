@@ -39,13 +39,15 @@ def add_forward_returns(panel: pd.DataFrame, ret_col: str = "ret",
     else:
         def _compound(s: pd.Series) -> pd.Series:
             gross = (1.0 + s).shift(-1)
-            roll = gross.rolling(horizon).apply(np.prod, raw=True).shift(-(horizon - 1))
+            roll = gross.rolling(horizon).apply(
+                np.prod, raw=True).shift(-(horizon - 1))
             return roll - 1.0
         out["fwd_ret"] = out.groupby("ticker")[ret_col].transform(_compound)
     return out
 
 
-def leak_report(panel: pd.DataFrame, signal_cols: list[str], *, min_names: int = 30,
+def leak_report(panel: pd.DataFrame, signal_cols: list[str], *,
+                min_names: int = 30,
                 nw_lags: int = 6) -> pd.DataFrame:
     """Compare each signal's PREDICTIVE IC (vs fwd_ret -- the only number that
     is tradeable) against its CONTEMPORANEOUS correlation (vs ret).
@@ -58,7 +60,8 @@ def leak_report(panel: pd.DataFrame, signal_cols: list[str], *, min_names: int =
     """
     rows = []
     for c in signal_cols:
-        pred = mean_ic(panel, c, "fwd_ret", nw_lags=nw_lags, min_names=min_names)
+        pred = mean_ic(panel, c, "fwd_ret",
+                       nw_lags=nw_lags, min_names=min_names)
         cont = mean_ic(panel, c, "ret", nw_lags=nw_lags, min_names=min_names)
         rows.append({
             "signal": c,
@@ -70,7 +73,8 @@ def leak_report(panel: pd.DataFrame, signal_cols: list[str], *, min_names: int =
     return pd.DataFrame(rows).set_index("signal")
 
 
-def demonstrate_lookahead(panel: pd.DataFrame, seed: int = 0, *, min_names: int = 30,
+def demonstrate_lookahead(panel: pd.DataFrame, seed: int = 0, *,
+                          min_names: int = 30,
                           nw_lags: int = 6) -> pd.DataFrame:
     """Deliberately construct a LEAKED feature and show what it does to the IC.
 
@@ -97,7 +101,8 @@ def demonstrate_lookahead(panel: pd.DataFrame, seed: int = 0, *, min_names: int 
     return pd.DataFrame(rows).set_index("feature")
 
 
-def staleness_experiment(panel: pd.DataFrame, signal_cols: list[str], *, min_names: int = 30,
+def staleness_experiment(panel: pd.DataFrame, signal_cols: list[str], *,
+                         min_names: int = 30,
                          max_lag: int = 6, nw_lags: int = 6) -> pd.DataFrame:
     """Measure how each signal's IC decays as the signal gets STALE.
 
@@ -113,7 +118,8 @@ def staleness_experiment(panel: pd.DataFrame, signal_cols: list[str], *, min_nam
         for lag in range(0, max_lag + 1):
             col = f"__stale_{c}_{lag}"
             df[col] = df.groupby("ticker")[c].shift(lag)
-            r = mean_ic(df, col, "fwd_ret", nw_lags=nw_lags, min_names=min_names)
+            r = mean_ic(df, col, "fwd_ret", nw_lags=nw_lags,
+                        min_names=min_names)
             rows.append({"signal": c, "staleness_months": lag,
                          "IC": r["ic_mean"], "IC_t": r["ic_tstat"]})
             df.drop(columns=[col], inplace=True)

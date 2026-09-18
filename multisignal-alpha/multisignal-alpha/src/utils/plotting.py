@@ -1,10 +1,10 @@
 """Figures for the research note. Matplotlib only, Agg backend (headless)."""
 from __future__ import annotations
+import pandas as pd
+import matplotlib.pyplot as plt
 
 import matplotlib
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import pandas as pd
 
 
 def _save(fig, path: str):
@@ -14,7 +14,8 @@ def _save(fig, path: str):
 
 
 def plot_cumulative_ls(series_by_signal: dict[str, pd.Series], path: str,
-                       title: str = "Single-signal long-short (gross, cumulative)"):
+                       title: str = ("Single-signal long-short "
+                                     "(gross, cumulative)")):
     fig, ax = plt.subplots(figsize=(9, 5))
     for name, s in series_by_signal.items():
         ax.plot(s.index, s.cumsum(), label=name, lw=1.4)

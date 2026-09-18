@@ -16,12 +16,16 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import pandas as pd
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-import pandas as pd
-
+# The project package lives one level up; the bootstrap above
+# has to run before these imports resolve.
+# pylint: disable=wrong-import-position
 from src import agent_raw_dir, load_config, processed_dir, raw_dir
+
 
 OK, BAD, WARN = "[ok]  ", "[MISS]", "[warn]"
 
@@ -38,6 +42,7 @@ def check_csv(path: Path, need_cols, lines, date_col=None, unit_col=None):
         return False
     try:
         df = pd.read_csv(path, nrows=200_000)
+    # pylint: disable=broad-exception-caught
     except Exception as e:  # noqa: BLE001
         _report(lines, BAD, f"{path.name}: unreadable ({e})")
         return False
@@ -93,13 +98,15 @@ def main() -> int:
                 f"{name}: {'synced' if p.exists() else 'not synced yet'}")
 
     print("\n=== agent-mode readiness ===")
-    print("  synthetic : RUNNABLE (needs no data; `make demo` in the agent repo)")
+    print("  synthetic : RUNNABLE (needs no data;",
+          "`make demo` in the agent repo)")
     factor_ready = have_ports and have_doc and have_french
     print(f"  factor    : {'RUNNABLE' if factor_ready else 'blocked'} "
           "(OSAP LS portfolios as tradable assets -- no WRDS needed)"
           + ("" if have_panel else
              " -- run scripts/build_factor_panel.py to (re)build the panel"))
-    print(f"  osap      : {'RUNNABLE' if (have_wide and have_returns) else 'blocked'} "
+    runnable = "RUNNABLE" if (have_wide and have_returns) else "blocked"
+    print(f"  osap      : {runnable} "
           "(firm-level; returns.csv requires CRSP via WRDS or your own "
           "permno-keyed returns file)")
     if not have_returns:

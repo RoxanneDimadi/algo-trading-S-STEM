@@ -92,7 +92,10 @@ class AlpacaExecutionBridge:
         json_data: Optional[Dict[str, Any]] = None,
         client_order_id: Optional[str] = None,
     ) -> Tuple[int, Dict[str, Any], Optional[str], Optional[str]]:
-        """HTTP call with ledger audit. Returns (status, body, x_request_id, error)."""
+        """HTTP call with ledger audit.
+
+        Returns (status, body, x_request_id, error).
+        """
         url = f"{self.config.get_effective_base_url()}{endpoint}"
         req_body_str = json.dumps(json_data) if json_data else None
 
@@ -115,19 +118,21 @@ class AlpacaExecutionBridge:
             )
             status_code = resp.status_code
             latency_ms = (time.perf_counter() - start) * 1000.0
-            x_request_id = resp.headers.get("X-Request-ID") or resp.headers.get("x-request-id")
+            x_request_id = resp.headers.get(
+                "X-Request-ID") or resp.headers.get("x-request-id")
             response_body_str = resp.text
 
             try:
                 parsed_data = resp.json() if resp.text else {}
-            except Exception:
+            except Exception:  # pylint: disable=broad-exception-caught
                 parsed_data = {"raw_text": resp.text}
 
             if 200 <= status_code < 300:
                 success = True
                 logger.info(
                     "%s %s -> %d (x-request-id=%s, %.1fms)",
-                    method.upper(), endpoint, status_code, x_request_id or "-", latency_ms,
+                    method.upper(), endpoint, status_code,
+                    x_request_id or "-", latency_ms,
                 )
             else:
                 error_message = (
@@ -145,7 +150,8 @@ class AlpacaExecutionBridge:
             latency_ms = (time.perf_counter() - start) * 1000.0
             error_message = f"network error: {e}"
             status_code = 0
-            logger.error("%s %s failed after %.1fms: %s", method.upper(), endpoint, latency_ms, error_message)
+            logger.error("%s %s failed after %.1fms: %s",
+                         method.upper(), endpoint, latency_ms, error_message)
             parsed_data = {"error": error_message}
 
         self.ledger.record_api_call(ApiAuditEntry(
@@ -166,7 +172,9 @@ class AlpacaExecutionBridge:
         status_code, data, x_req, err = self._request("GET", "/v2/account")
         if status_code == 200:
             return data
-        raise RuntimeError(f"account fetch failed (HTTP {status_code}, x-request-id={x_req}): {err}")
+        raise RuntimeError(
+            f"account fetch failed "
+            f"(HTTP {status_code}, x-request-id={x_req}): {err}")
 
     def get_positions(self) -> List[Dict[str, Any]]:
         status_code, data, x_req, err = self._request("GET", "/v2/positions")
@@ -174,21 +182,28 @@ class AlpacaExecutionBridge:
             return data
         if status_code == 200 and isinstance(data, dict):
             return [data]
-        raise RuntimeError(f"positions fetch failed (HTTP {status_code}, x-request-id={x_req}): {err}")
+        raise RuntimeError(
+            f"positions fetch failed "
+            f"(HTTP {status_code}, x-request-id={x_req}): {err}")
 
     def get_position(self, symbol: str) -> Optional[Dict[str, Any]]:
-        status_code, data, x_req, err = self._request("GET", f"/v2/positions/{symbol.upper()}")
+        status_code, data, x_req, err = self._request(
+            "GET", f"/v2/positions/{symbol.upper()}")
         if status_code == 200:
             return data
         if status_code == 404:
             return None
-        raise RuntimeError(f"position {symbol} failed (HTTP {status_code}, x-request-id={x_req}): {err}")
+        raise RuntimeError(
+            f"position {symbol} failed "
+            f"(HTTP {status_code}, x-request-id={x_req}): {err}")
 
     def get_clock(self) -> Dict[str, Any]:
         status_code, data, x_req, err = self._request("GET", "/v2/clock")
         if status_code == 200:
             return data
-        raise RuntimeError(f"clock fetch failed (HTTP {status_code}, x-request-id={x_req}): {err}")
+        raise RuntimeError(
+            f"clock fetch failed "
+            f"(HTTP {status_code}, x-request-id={x_req}): {err}")
 
     def submit_order(self, directive: TradeDirective) -> ExecutionResult:
         symbol = directive.symbol.upper().strip()
@@ -196,7 +211,9 @@ class AlpacaExecutionBridge:
         order_type = directive.order_type.lower().strip()
         time_in_force = directive.time_in_force.lower().strip()
 
-        client_order_id = directive.client_order_id or f"agent_{uuid.uuid4().hex[:12]}_{int(time.time())}"
+        client_order_id = (directive.client_order_id
+                           or f"agent_{uuid.uuid4().hex[:12]}"
+                           f"_{int(time.time())}")
         directive.client_order_id = client_order_id
 
         payload: Dict[str, Any] = {
@@ -209,7 +226,8 @@ class AlpacaExecutionBridge:
 
         if directive.qty > 0:
             qty = directive.qty
-            payload["qty"] = str(round(qty, 4) if qty != int(qty) else int(qty))
+            payload["qty"] = str(round(qty, 4) if qty !=
+                                 int(qty) else int(qty))
         elif directive.notional and directive.notional > 0:
             payload["notional"] = str(round(directive.notional, 2))
         else:
@@ -249,12 +267,16 @@ class AlpacaExecutionBridge:
         )
 
         success = status_code in (200, 201)
-        alpaca_order_id = resp_data.get("id") if isinstance(resp_data, dict) else None
-        order_status = resp_data.get("status", "rejected" if not success else "accepted")
-        filled_qty = float(resp_data.get("filled_qty", 0.0)) if isinstance(resp_data, dict) else 0.0
+        alpaca_order_id = resp_data.get(
+            "id") if isinstance(resp_data, dict) else None
+        order_status = resp_data.get(
+            "status", "rejected" if not success else "accepted")
+        filled_qty = float(resp_data.get("filled_qty", 0.0)
+                           ) if isinstance(resp_data, dict) else 0.0
         filled_avg_price = (
             float(resp_data["filled_avg_price"])
-            if isinstance(resp_data, dict) and resp_data.get("filled_avg_price") is not None
+            if isinstance(resp_data, dict)
+            and resp_data.get("filled_avg_price") is not None
             else None
         )
 
@@ -295,14 +317,16 @@ class AlpacaExecutionBridge:
         )
 
     def cancel_order(self, order_id: str) -> Tuple[bool, Optional[str]]:
-        status_code, _data, x_req, _err = self._request("DELETE", f"/v2/orders/{order_id}")
+        status_code, _data, x_req, _err = self._request(
+            "DELETE", f"/v2/orders/{order_id}")
         return status_code in (200, 204), x_req
 
     def cancel_all_orders(self) -> Tuple[bool, Optional[str]]:
         status_code, _data, x_req, _err = self._request("DELETE", "/v2/orders")
         return status_code in (200, 207), x_req
 
-    def get_orders(self, status: str = "open", limit: int = 50) -> List[Dict[str, Any]]:
+    def get_orders(self, status: str = "open",
+                   limit: int = 50) -> List[Dict[str, Any]]:
         status_code, data, _x_req, _err = self._request(
             "GET", "/v2/orders", params={"status": status, "limit": limit},
         )

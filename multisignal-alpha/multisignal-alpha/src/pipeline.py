@@ -24,9 +24,10 @@ import pandas as pd
 import yaml
 
 from .backtest.engine import comparison_table, run_model_backtest
-from .data.panel import demonstrate_lookahead, leak_report, staleness_experiment
+from .data.panel import (demonstrate_lookahead, leak_report,
+                         staleness_experiment)
 from .data.synthetic import make_synthetic_panel
-from .evaluation.decay import decay_table, segment_performance
+from .evaluation.decay import decay_table
 from .evaluation.deflated_sharpe import deflated_sharpe
 from .evaluation.fama_macbeth import fama_macbeth
 from .evaluation.ic import mean_ic, rolling_ic
@@ -42,7 +43,7 @@ from .utils.stats import rank_normalize_cross_section
 
 
 def load_config(path: str) -> dict:
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
@@ -72,6 +73,10 @@ def build_data(cfg: dict):
 
 
 def main(config_path: str = "configs/config.yaml") -> dict:
+    # One linear pass over the numbered stages of the run. Splitting it
+    # would hide the order the stages must execute in, which is the
+    # point of the file.
+    # pylint: disable=too-many-locals, too-many-statements
     cfg = load_config(config_path)
     out = Path(cfg["run"]["output_dir"])
     tables, figures = out / "tables", out / "figures"
@@ -87,17 +92,18 @@ def main(config_path: str = "configs/config.yaml") -> dict:
         for m in ("icnet", "pulse"):
             cfg["models"].setdefault(m, {}).setdefault("min_names", int(mn))
 
-    # ---- 1. data -------------------------------------------------------------
+    # ---- 1. data ----------------------------------------------------
     panel, factors, meta = build_data(cfg)
     signal_cols = list(meta.index)
     panel = rank_normalize_cross_section(panel, signal_cols)
     print(f"[data] panel: {panel['date'].nunique()} months x "
           f"{panel['ticker'].nunique()} names, signals={signal_cols}")
 
-    # ---- 2. leak checks --------------------------------------------------------
+    # ---- 2. leak checks ---------------------------------------------
     leaks = leak_report(panel, signal_cols, nw_lags=nw, **mn_kw)
     leaks.to_csv(tables / "leak_report.csv")
-    demo = demonstrate_lookahead(panel, seed=int(cfg["run"]["seed"]), nw_lags=nw,
+    demo = demonstrate_lookahead(panel, seed=int(cfg["run"]["seed"]),
+                                 nw_lags=nw,
                                  **mn_kw)
     demo.to_csv(tables / "lookahead_demonstration.csv")
     stale = staleness_experiment(panel, signal_cols, max_lag=6, nw_lags=nw,
@@ -107,7 +113,7 @@ def main(config_path: str = "configs/config.yaml") -> dict:
           f"{demo.loc['leaky_feature', 'IC']:.3f} vs honest noise "
           f"{demo.loc['honest_noise', 'IC']:.3f} (leaky must look absurd)")
 
-    # ---- 3. per-signal evaluation ---------------------------------------------
+    # ---- 3. per-signal evaluation -----------------------------------
     rows, ls_gross, roll = [], {}, {}
     for c in signal_cols:
         res = evaluate_signal_portfolio(
@@ -123,7 +129,8 @@ def main(config_path: str = "configs/config.yaml") -> dict:
         roll[c] = rolling_ic(panel, c, window=int(ecfg["rolling_ic_window"]),
                              **mn_kw)
     sig_table = pd.DataFrame(rows).set_index("signal")
-    order = ["IC", "IC_t", "ICIR", "ann_ret_gross", "sharpe_gross", "nw_t_gross",
+    order = ["IC", "IC_t", "ICIR", "ann_ret_gross", "sharpe_gross",
+             "nw_t_gross",
              "ann_ret_net", "sharpe_net", "nw_t_net", "one_way_turnover",
              "n_months"]
     sig_table = sig_table[order]
@@ -137,7 +144,7 @@ def main(config_path: str = "configs/config.yaml") -> dict:
     plot_rolling_ic(roll, str(figures / "rolling_ic.png"),
                     window=int(ecfg["rolling_ic_window"]))
 
-    # ---- 4. decay ----------------------------------------------------------------
+    # ---- 4. decay ---------------------------------------------------
     # Only meaningful when features have publication dates (synthetic planted
     # signals, or firm-level OSAP anomalies). Derived features -- e.g. the
     # factor-momentum columns of panel_csv mode -- carry no pub dates, and
@@ -162,7 +169,7 @@ def main(config_path: str = "configs/config.yaml") -> dict:
                       "McLean-Pontiff exhibit)"]})
         print("[decay] skipped -- features carry no publication dates")
 
-    # ---- 5. models: linear benchmark vs LightGBM ---------------------------------
+    # ---- 5. models: linear benchmark vs LightGBM --------------------
     results = {
         "elasticnet": run_model_backtest(
             panel, signal_cols, lambda: make_linear(cfg["models"]["linear"]),
@@ -187,18 +194,18 @@ def main(config_path: str = "configs/config.yaml") -> dict:
     plot_model_comparison({k: v["series"]["net"] for k, v in results.items()},
                           str(figures / "model_comparison_net.png"))
 
-    # ---- 5b. PULSE efficacy-path diagnostic (in-sample exhibit) -------------------
+    # ---- 5b. PULSE efficacy-path diagnostic (in-sample exhibit) -----
     # Full-panel filter fit, saved so filtered efficacy paths can be inspected
     # against known events (synthetic: the planted decay steps). This is a
     # diagnostic of STATE TRACKING, not a performance claim.
-    import pandas as _pd
     import matplotlib.pyplot as _plt
     dfit = panel.dropna(subset=[*signal_cols, "fwd_ret"])
     pdiag = make_pulse(cfg["models"]["pulse"]).fit(
-        dfit[signal_cols], dfit["fwd_ret"].to_numpy(), dates=dfit["date"].to_numpy())
-    eff = _pd.DataFrame(pdiag.filter_history_,
-                        index=_pd.DatetimeIndex(pdiag.filter_dates_),
-                        columns=pdiag.feature_names_)
+        dfit[signal_cols], dfit["fwd_ret"].to_numpy(),
+        dates=dfit["date"].to_numpy())
+    eff = pd.DataFrame(pdiag.filter_history_,
+                       index=pd.DatetimeIndex(pdiag.filter_dates_),
+                       columns=pdiag.feature_names_)
     eff.to_csv(tables / "pulse_efficacy_path.csv")
     fig, ax = _plt.subplots(figsize=(9, 5))
     for c in signal_cols:
@@ -206,51 +213,56 @@ def main(config_path: str = "configs/config.yaml") -> dict:
     ax.axhline(0, color="k", lw=0.6)
     ax.set_title(f"PULSE filtered efficacy paths (chosen a={pdiag.a_:.3f})")
     ax.legend(fontsize=8)
-    fig.tight_layout(); fig.savefig(figures / "pulse_efficacy_paths.png", dpi=140)
+    fig.tight_layout()
+    fig.savefig(figures / "pulse_efficacy_paths.png", dpi=140)
     _plt.close(fig)
     print(f"[pulse] chosen dynamics: a={pdiag.a_}, q_scale={pdiag.q_scale_}")
 
-    # ---- 5c. trading agent: differentiable cost-aware policy ----------------------
+    # ---- 5c. trading agent: differentiable cost-aware policy --------
     agent_monthly_sharpe = None
     if not cfg["agent"].get("enabled", True):
-        # stage skipped (e.g., partial runs); reuse existing table for DSR if present
+        # stage skipped (e.g. partial runs); reuse existing table for
+        # the DSR if one is present
         try:
             prev = pd.read_csv(tables / "agent_vs_myopic.csv", index_col=0)
             agent_monthly_sharpe = float(
                 prev.loc["agent (learned gamma)", "sharpe_net"]) / np.sqrt(12)
-            print("[agent] stage disabled; reusing existing agent_vs_myopic.csv")
-        except Exception:
+            print("[agent] stage disabled; reusing existing",
+                  "agent_vs_myopic.csv")
+        except Exception:  # pylint: disable=broad-exception-caught
             print("[agent] stage disabled; no prior agent table found")
     else:
-      agent_res = backtest_agent(panel, signal_cols, wcfg, ecfg, cfg["agent"])
-      myopic_res = backtest_agent(panel, signal_cols, wcfg, ecfg, cfg["agent"],
-                                  gamma_override=1.0,
-                                  params_by_fold=agent_res["params_by_fold"])
-      agent_tbl = pd.DataFrame([
-          {"policy": "agent (learned gamma)",
-           "ann_ret_net": agent_res["net"]["ann_return"],
-           "sharpe_net": agent_res["net"]["sharpe"],
-           "nw_t_net": agent_res["net"]["nw_tstat"],
-           "one_way_turnover": agent_res["avg_one_way_turnover"],
-           "mean_gamma": agent_res["params_by_fold"]["gamma"].mean()},
-          {"policy": "myopic (gamma=1)",
-           "ann_ret_net": myopic_res["net"]["ann_return"],
-           "sharpe_net": myopic_res["net"]["sharpe"],
-           "nw_t_net": myopic_res["net"]["nw_tstat"],
-           "one_way_turnover": myopic_res["avg_one_way_turnover"],
-           "mean_gamma": 1.0},
-      ]).set_index("policy")
-      agent_tbl.to_csv(tables / "agent_vs_myopic.csv")
-      agent_res["params_by_fold"].to_csv(tables / "agent_params_by_fold.csv")
-      plot_model_comparison(
-          {"agent": agent_res["series"]["net"],
-           "myopic": myopic_res["series"]["net"],
-           "pulse (model)": results["pulse"]["series"]["net"]},
-          str(figures / "agent_vs_myopic_net.png"))
-      agent_monthly_sharpe = agent_res["net"]["monthly_sharpe"]
-      print("[agent]\n" + agent_tbl.round(3).to_string())
+        agent_res = backtest_agent(
+            panel, signal_cols, wcfg, ecfg, cfg["agent"])
+        myopic_res = backtest_agent(panel, signal_cols, wcfg, ecfg,
+                                    cfg["agent"],
+                                    gamma_override=1.0,
+                                    params_by_fold=agent_res["params_by_fold"])
+        agent_tbl = pd.DataFrame([
+            {"policy": "agent (learned gamma)",
+             "ann_ret_net": agent_res["net"]["ann_return"],
+             "sharpe_net": agent_res["net"]["sharpe"],
+             "nw_t_net": agent_res["net"]["nw_tstat"],
+             "one_way_turnover": agent_res["avg_one_way_turnover"],
+             "mean_gamma": agent_res["params_by_fold"]["gamma"].mean()},
+            {"policy": "myopic (gamma=1)",
+             "ann_ret_net": myopic_res["net"]["ann_return"],
+             "sharpe_net": myopic_res["net"]["sharpe"],
+             "nw_t_net": myopic_res["net"]["nw_tstat"],
+             "one_way_turnover": myopic_res["avg_one_way_turnover"],
+             "mean_gamma": 1.0},
+        ]).set_index("policy")
+        agent_tbl.to_csv(tables / "agent_vs_myopic.csv")
+        agent_res["params_by_fold"].to_csv(tables / "agent_params_by_fold.csv")
+        plot_model_comparison(
+            {"agent": agent_res["series"]["net"],
+             "myopic": myopic_res["series"]["net"],
+             "pulse (model)": results["pulse"]["series"]["net"]},
+            str(figures / "agent_vs_myopic_net.png"))
+        agent_monthly_sharpe = agent_res["net"]["monthly_sharpe"]
+        print("[agent]\n" + agent_tbl.round(3).to_string())
 
-    # ---- 6. factor controls + deflated Sharpe -------------------------------------
+    # ---- 6. factor controls + deflated Sharpe -----------------------
     ctrl_rows = []
     for name, r in results.items():
         a = alpha_regression(r["series"]["net"], factors, nw_lags=nw)
@@ -263,7 +275,7 @@ def main(config_path: str = "configs/config.yaml") -> dict:
     # trials for DSR: every single-signal book examined + both models (honest
     # accounting of the selection surface -- see config note). Monthly
     # Sharpe = annualized Sharpe / sqrt(12).
-    trials = [results[m]["net"]["monthly_sharpe"] for m in results]
+    trials = [r["net"]["monthly_sharpe"] for r in results.values()]
     if agent_monthly_sharpe is not None and np.isfinite(agent_monthly_sharpe):
         trials.append(agent_monthly_sharpe)
     if cfg["deflated_sharpe"]["count_single_signal_trials"]:
@@ -279,17 +291,19 @@ def main(config_path: str = "configs/config.yaml") -> dict:
           f"(SR*={dsr['sr_star_monthly']:.3f} monthly, "
           f"n_trials={dsr['n_trials']})")
 
-    # ---- summary.md -----------------------------------------------------------------
+    # ---- summary.md -------------------------------------------------
     lines = [
         "# Pipeline summary\n",
-        f"Panel: {panel['date'].nunique()} months x {panel['ticker'].nunique()} names; "
+        f"Panel: {panel['date'].nunique()} months x "
+        f"{panel['ticker'].nunique()} names; "
         f"signals: {', '.join(signal_cols)}\n",
         "## Lookahead demonstration (should look absurd)\n",
         demo.round(3).to_markdown(), "\n",
         "## Per-signal evaluation\n", sig_table.round(3).to_markdown(), "\n",
         "## Fama-MacBeth (multivariate marginal power)\n",
         fm.round(4).to_markdown(), "\n",
-        "## Decay (McLean-Pontiff pattern)\n", dec.round(3).to_markdown(), "\n",
+        "## Decay (McLean-Pontiff pattern)\n",
+        dec.round(3).to_markdown(), "\n",
         "## Model comparison (purged walk-forward, out-of-sample)\n",
         comp.round(3).to_markdown(), "\n",
         "## Factor-controlled alpha (net strategies)\n",

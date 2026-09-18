@@ -83,6 +83,24 @@ make test        # or: python -m pytest -q tests/
 
 Expect **53 passed**. These are not unit tests in the trivial sense — they are the statistical-correctness gate: the placebo signal must evaluate to noise, a deliberately leaked feature must produce an absurd IC, purged walk-forward splits must not overlap, the deflated Sharpe must penalize trial count, the agent's zero-cost limit must recover the MSRR closed form. If any of these fail after a change you made, the change broke the *science*, not just the code.
 
+### Linting
+
+```bash
+make lint        # or: pylint --rcfile=../../.pylintrc src scripts tests
+```
+
+Code is PEP 8 (79-column lines) and pylint-clean at 10.00/10 under the
+repository's `.pylintrc`. That file turns off a handful of checks, each with
+its reason written next to it — the significant ones being short
+mathematical variable names (`Z`, `LAM`, `R` — the symbols the derivations in
+`docs/math/` use), scikit-learn's convention of defining fitted attributes in
+`fit()`, and deliberate lazy imports of optional dependencies. Docstring
+checks for functions and classes are off (that is PEP 257, not PEP 8);
+module docstrings are still required.
+
+GitHub Actions runs both gates — `pylint` and `pytest` — on every pull
+request, from `.github/workflows/ci.yml` at the repository root.
+
 ## 5. Running the synthetic demo
 
 ```bash

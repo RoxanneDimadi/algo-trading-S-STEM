@@ -11,7 +11,8 @@ from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, Optional
 
 from src.execution.alpaca_bridge import AlpacaExecutionBridge
-from src.execution.ledger import AgentDecisionEntry, ExecutionLedger, TradeDirective
+from src.execution.ledger import (AgentDecisionEntry, ExecutionLedger,
+                                  TradeDirective)
 
 logger = logging.getLogger("execution.agent_evaluator")
 
@@ -58,37 +59,55 @@ class CostAwareAgentEvaluator:
         self.ledger = ledger or bridge.ledger
 
     def evaluate_signal(self, raw_signal: Dict[str, Any]) -> AgentDecision:
-        symbol = str(raw_signal.get("ticker") or raw_signal.get("symbol", "")).upper().strip()
+        # A gauntlet of independent rejection gates; each one returns
+        # early with its own reason, which is clearer than nesting.
+        # pylint: disable=too-many-locals, too-many-return-statements
+        symbol = str(raw_signal.get("ticker") or raw_signal.get(
+            "symbol", "")).upper().strip()
         if not symbol:
-            return self._reject(raw_signal, symbol, "Missing ticker/symbol in signal payload")
+            return self._reject(
+                raw_signal, symbol, "Missing ticker/symbol in signal payload")
 
-        action = str(raw_signal.get("action") or raw_signal.get("side", "")).lower().strip()
-        if action not in ("buy", "sell", "long", "short", "flat", "close", "hold"):
-            return self._reject(raw_signal, symbol, f"Unknown action/side: {action}")
+        action = str(raw_signal.get("action")
+                     or raw_signal.get("side", "")).lower().strip()
+        if action not in ("buy", "sell", "long", "short", "flat", "close",
+                          "hold"):
+            return self._reject(
+                raw_signal, symbol, f"Unknown action/side: {action}")
 
-        signal_strength = float(raw_signal.get("signal_strength", raw_signal.get("strength", 1.0)))
+        signal_strength = float(raw_signal.get(
+            "signal_strength", raw_signal.get("strength", 1.0)))
         signal_strength = max(-1.0, min(1.0, signal_strength))
 
-        requested_qty = float(raw_signal.get("quantity") or raw_signal.get("qty") or 0.0)
+        requested_qty = float(raw_signal.get("quantity")
+                              or raw_signal.get("qty") or 0.0)
         requested_notional = float(raw_signal.get("notional") or 0.0)
-        signal_price = float(raw_signal.get("price") or raw_signal.get("close") or 0.0)
-        order_type = str(raw_signal.get("order_type", "market")).lower().strip()
-        limit_price = float(raw_signal["limit_price"]) if raw_signal.get("limit_price") else None
-        stop_price = float(raw_signal["stop_price"]) if raw_signal.get("stop_price") else None
-        time_in_force = str(raw_signal.get("time_in_force", "day")).lower().strip()
+        signal_price = float(raw_signal.get(
+            "price") or raw_signal.get("close") or 0.0)
+        order_type = str(raw_signal.get(
+            "order_type", "market")).lower().strip()
+        limit_price = float(raw_signal["limit_price"]) if raw_signal.get(
+            "limit_price") else None
+        stop_price = float(raw_signal["stop_price"]) if raw_signal.get(
+            "stop_price") else None
+        time_in_force = str(raw_signal.get(
+            "time_in_force", "day")).lower().strip()
 
         try:
             account = self.bridge.get_account()
-            portfolio_value = float(account.get("portfolio_value", account.get("equity", 100000.0)))
+            portfolio_value = float(account.get(
+                "portfolio_value", account.get("equity", 100000.0)))
             cash = float(account.get("cash", 100000.0))
             buying_power = float(account.get("buying_power", cash))
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             logger.warning("account lookup failed (%s); using defaults", e)
             portfolio_value = 100000.0
             buying_power = 100000.0
 
         if portfolio_value <= 0:
-            return self._reject(raw_signal, symbol, f"Portfolio value is non-positive: {portfolio_value}")
+            return self._reject(
+                raw_signal, symbol,
+                f"Portfolio value is non-positive: {portfolio_value}")
 
         current_shares = 0.0
         current_price = signal_price
@@ -97,21 +116,28 @@ class CostAwareAgentEvaluator:
             position = self.bridge.get_position(symbol)
             if position:
                 current_shares = float(position.get("qty", 0.0))
-                current_price = float(position.get("current_price", signal_price or 1.0))
-                current_market_value = float(position.get("market_value", current_shares * current_price))
-        except Exception as e:
+                current_price = float(position.get(
+                    "current_price", signal_price or 1.0))
+                current_market_value = float(position.get(
+                    "market_value", current_shares * current_price))
+        except Exception as e:  # pylint: disable=broad-exception-caught
             logger.warning("position lookup failed for %s: %s", symbol, e)
 
         if current_price <= 0:
             if signal_price > 0:
                 current_price = signal_price
             else:
-                return self._reject(raw_signal, symbol, "Unable to determine current price for asset")
+                return self._reject(
+                    raw_signal, symbol,
+                    "Unable to determine current price for asset")
 
         current_weight = current_market_value / portfolio_value
 
-        if action in ("sell", "short") and not self.config.allow_short and current_shares <= 0:
-            return self._reject(raw_signal, symbol, "Short selling is disabled by policy configuration")
+        if (action in ("sell", "short") and not self.config.allow_short
+                and current_shares <= 0):
+            return self._reject(
+                raw_signal, symbol,
+                "Short selling is disabled by policy configuration")
 
         aim_weight = self._compute_aim_weight(
             action, signal_strength, requested_qty, requested_notional,
@@ -130,10 +156,12 @@ class CostAwareAgentEvaluator:
         order_shares = round(delta_shares)
         order_notional = abs(order_shares * current_price)
 
-        if order_shares == 0 or order_notional < self.config.min_trade_notional:
+        if (order_shares == 0
+                or order_notional < self.config.min_trade_notional):
             reason = (
                 f"trade too small ({abs(delta_shares):.2f} shares / "
-                f"${order_notional:.2f} < ${self.config.min_trade_notional:.2f})"
+                f"${order_notional:.2f} < "
+                f"${self.config.min_trade_notional:.2f})"
             )
             return self._skip(
                 raw_signal, symbol, reason, current_shares, current_price,
@@ -144,11 +172,14 @@ class CostAwareAgentEvaluator:
         abs_order_shares = abs(order_shares)
 
         dw = abs(target_weight - current_weight)
-        total_cost_bps = self.config.cost_bps + self.config.impact_bps * (dw ** 0.5)
-        gross_alpha_bps = abs(signal_strength) * self.config.default_base_alpha_bps
+        total_cost_bps = self.config.cost_bps + \
+            self.config.impact_bps * (dw ** 0.5)
+        gross_alpha_bps = abs(signal_strength) * \
+            self.config.default_base_alpha_bps
         net_benefit_bps = gross_alpha_bps - total_cost_bps
 
-        if net_benefit_bps < self.config.alpha_hurdle_bps and action not in ("flat", "close"):
+        if (net_benefit_bps < self.config.alpha_hurdle_bps
+                and action not in ("flat", "close")):
             reason = (
                 f"net benefit {net_benefit_bps:.1f} bps below hurdle "
                 f"{self.config.alpha_hurdle_bps:.1f} bps "
@@ -157,7 +188,8 @@ class CostAwareAgentEvaluator:
             return self._skip(
                 raw_signal, symbol, reason, current_shares, current_price,
                 target_shares, portfolio_value, current_weight, target_weight,
-                cost_bps=total_cost_bps, alpha_bps=gross_alpha_bps, net_benefit=net_benefit_bps,
+                cost_bps=total_cost_bps, alpha_bps=gross_alpha_bps,
+                net_benefit=net_benefit_bps,
             )
 
         if order_notional > self.config.max_order_notional:
@@ -172,21 +204,28 @@ class CostAwareAgentEvaluator:
             if affordable <= 0:
                 return self._reject(
                     raw_signal, symbol,
-                    f"Insufficient buying power: need ${order_notional:.2f}, have ${buying_power:.2f}",
+                    f"Insufficient buying power: "
+                    f"need ${order_notional:.2f}, "
+                    f"have ${buying_power:.2f}",
                 )
             logger.info("%s buy sized down for buying power: %d -> %d",
                         symbol, abs_order_shares, affordable)
             abs_order_shares = affordable
 
-        if order_side == "sell" and not self.config.allow_short and current_shares <= 0:
-            return self._reject(raw_signal, symbol, "Short selling is disabled by policy configuration")
+        if (order_side == "sell" and not self.config.allow_short
+                and current_shares <= 0):
+            return self._reject(
+                raw_signal, symbol,
+                "Short selling is disabled by policy configuration")
 
-        if order_side == "sell" and not self.config.allow_short and abs_order_shares > current_shares:
+        if (order_side == "sell" and not self.config.allow_short
+                and abs_order_shares > current_shares):
             abs_order_shares = int(current_shares)
             if abs_order_shares <= 0:
                 return self._skip(
-                    raw_signal, symbol, "already flat", current_shares, current_price,
-                    target_shares, portfolio_value, current_weight, target_weight,
+                    raw_signal, symbol, "already flat", current_shares,
+                    current_price, target_shares, portfolio_value,
+                    current_weight, target_weight,
                 )
 
         directive = TradeDirective(
@@ -271,7 +310,8 @@ class CostAwareAgentEvaluator:
         direction = -1.0 if action in ("sell", "short") else 1.0
         return direction * abs(signal_strength) * self.config.max_position_pct
 
-    def _reject(self, raw_signal: Dict[str, Any], symbol: str, reason: str) -> AgentDecision:
+    def _reject(self, raw_signal: Dict[str, Any], symbol: str,
+                reason: str) -> AgentDecision:
         logger.warning("reject %s: %s", symbol or "UNKNOWN", reason)
         tagged = f"REJECTED: {reason}"
         self.ledger.record_agent_decision(AgentDecisionEntry(
@@ -280,7 +320,8 @@ class CostAwareAgentEvaluator:
             approved=False,
             reason=tagged,
         ))
-        return AgentDecision(approved=False, reason=tagged, symbol=symbol, raw_signal=raw_signal)
+        return AgentDecision(approved=False, reason=tagged, symbol=symbol,
+                             raw_signal=raw_signal)
 
     def _skip(
         self,

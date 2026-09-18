@@ -26,7 +26,7 @@ def backtest_agent(panel, signal_cols, wf_cfg: dict, eval_cfg: dict,
     gamma_override=1.0 reruns the identical experiment with the myopic
     full-rebalance policy on each fold's learned aim -- the control.
     """
-    Z, Y, dates, tickers = panel_to_matrices(panel, signal_cols)
+    Z, Y, dates, _tickers = panel_to_matrices(panel, signal_cols)
     folds = walkforward_splits(
         dates,
         min_train=int(wf_cfg.get("min_train", 120)),
@@ -38,7 +38,8 @@ def backtest_agent(panel, signal_cols, wf_cfg: dict, eval_cfg: dict,
     pos = {d: i for i, d in enumerate(dates)}
     cost = float(eval_cfg.get("cost_bps_per_side", 10.0))
 
-    net_parts, gross_parts, traded_parts, idx_parts, fold_rows = [], [], [], [], []
+    net_parts, gross_parts, traded_parts = [], [], []
+    idx_parts, fold_rows = [], []
     w_carry = None
     for f in folds:
         tr = [pos[d] for d in f.train_dates if d in pos]
@@ -54,7 +55,8 @@ def backtest_agent(panel, signal_cols, wf_cfg: dict, eval_cfg: dict,
         if params_by_fold is not None and f.fold_id in params_by_fold.index:
             # reuse previously learned parameters (control runs): no refit
             row = params_by_fold.loc[f.fold_id]
-            agent.theta_ = row[[f"theta_{c}" for c in signal_cols]].to_numpy(float)
+            agent.theta_ = row[[
+                f"theta_{c}" for c in signal_cols]].to_numpy(float)
             agent.gamma_ = float(row["gamma"])
         else:
             agent.fit(Z[:, tr, :], Y[tr])
@@ -70,7 +72,8 @@ def backtest_agent(panel, signal_cols, wf_cfg: dict, eval_cfg: dict,
 
     idx = pd.DatetimeIndex(np.concatenate(idx_parts))
     net = pd.Series(np.concatenate(net_parts), index=idx, name="agent_net")
-    gross = pd.Series(np.concatenate(gross_parts), index=idx, name="agent_gross")
+    gross = pd.Series(np.concatenate(gross_parts),
+                      index=idx, name="agent_gross")
     traded = pd.Series(np.concatenate(traded_parts), index=idx)
     nw = int(eval_cfg.get("nw_lags", 6))
     return {

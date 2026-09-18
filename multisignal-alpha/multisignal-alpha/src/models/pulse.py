@@ -100,7 +100,7 @@ class PulseModel:
         stops = np.append(starts[1:], len(dates))
         P = Z.shape[1]
         lam_rows, r_rows, used_dates = [], [], []
-        I = np.eye(P)
+        eye = np.eye(P)
         for (a, b), dt in zip(zip(starts, stops), uniq[order]):
             n = b - a
             floor = (max(self.min_names, P + self.obs_margin)
@@ -108,7 +108,7 @@ class PulseModel:
             if n < floor:
                 continue
             Zi, yi = Z[a:b], y[a:b]
-            G = Zi.T @ Zi + self.ridge * n * I
+            G = Zi.T @ Zi + self.ridge * n * eye
             Ginv = np.linalg.inv(G)
             beta = Ginv @ (Zi.T @ yi)
             resid = yi - Zi @ beta
@@ -150,7 +150,8 @@ class PulseModel:
     # ---------------------------------------------------------------- fit
     def fit(self, X, y, dates=None):
         if dates is None:
-            raise ValueError("PULSE requires formation dates: fit(X, y, dates=...)")
+            raise ValueError(
+                "PULSE requires formation dates: fit(X, y, dates=...)")
         Xa = np.asarray(X, dtype=float)
         base_names = (list(X.columns) if hasattr(X, "columns")
                       else [f"x{i}" for i in range(Xa.shape[1])])
@@ -176,8 +177,9 @@ class PulseModel:
             for qs in self.q_scale_grid:
                 ll = 0.0
                 for k in range(Pdim):
-                    _, _, l = self._filter_1d(LAM[:, k], R[:, k], a, qs * med_r[k])
-                    ll += l
+                    _, _, loglik = self._filter_1d(
+                        LAM[:, k], R[:, k], a, qs * med_r[k])
+                    ll += loglik
                 if ll > best[2]:
                     best = (a, qs, ll)
         self.a_, self.q_scale_ = best[0], best[1]
@@ -213,7 +215,8 @@ class PulseModel:
             return Z @ (self.a_ * self.state_mean_)
         dates = np.asarray(dates)
         uniq = np.sort(np.unique(dates))
-        step = {dt: h + 1 for h, dt in enumerate(uniq)}   # months past train end
+        # months past train end
+        step = {dt: h + 1 for h, dt in enumerate(uniq)}
         out = np.empty(len(Z))
         for dt in uniq:
             mask = dates == dt

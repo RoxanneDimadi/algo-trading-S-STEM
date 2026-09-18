@@ -8,7 +8,8 @@ from typing import Any, Dict, Optional, Tuple
 
 from flask import Flask, jsonify, request
 
-from src.execution.agent_evaluator import AgentDecision, CostAwareAgentEvaluator
+from src.execution.agent_evaluator import (AgentDecision,
+                                           CostAwareAgentEvaluator)
 from src.execution.alpaca_bridge import AlpacaExecutionBridge
 from src.execution.ledger import ExecutionLedger
 
@@ -25,21 +26,24 @@ def create_webhook_app(
 
     app_ledger = ledger or (bridge.ledger if bridge else ExecutionLedger())
     app_bridge = bridge or AlpacaExecutionBridge(ledger=app_ledger)
-    app_evaluator = evaluator or CostAwareAgentEvaluator(bridge=app_bridge, ledger=app_ledger)
+    app_evaluator = evaluator or CostAwareAgentEvaluator(
+        bridge=app_bridge, ledger=app_ledger)
     passphrase = webhook_passphrase
 
     def _verify_auth(req, data: Dict[str, Any]) -> Tuple[bool, str]:
         if not passphrase:
             return True, "no passphrase configured"
 
-        token = data.get("passphrase") or data.get("secret") or data.get("token")
+        token = data.get("passphrase") or data.get(
+            "secret") or data.get("token")
         if token and hmac.compare_digest(str(token), passphrase):
             return True, "ok"
 
         header = (
             req.headers.get("X-Webhook-Secret")
             or req.headers.get("X-Passphrase")
-            or req.headers.get("Authorization", "").replace("Bearer ", "").strip()
+            or req.headers.get("Authorization", "").replace(
+                "Bearer ", "").strip()
         )
         if header and hmac.compare_digest(header, passphrase):
             return True, "ok"
@@ -53,25 +57,29 @@ def create_webhook_app(
             raw_data = request.get_json(force=True, silent=True)
             if not raw_data:
                 raw_data = json.loads(request.data.decode("utf-8"))
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             logger.error("bad webhook body: %s", e)
-            return jsonify({"status": "error", "error": f"Invalid JSON payload: {e}"}), 400
+            return jsonify({"status": "error",
+                            "error": f"Invalid JSON payload: {e}"}), 400
 
         if not isinstance(raw_data, dict):
-            return jsonify({"status": "error", "error": "Payload must be a JSON object"}), 400
+            return jsonify({"status": "error",
+                            "error": "Payload must be a JSON object"}), 400
 
         ok, auth_msg = _verify_auth(request, raw_data)
         if not ok:
             logger.warning("unauthorized webhook: %s", auth_msg)
             return jsonify({"status": "unauthorized", "error": auth_msg}), 401
 
-        logger.info("webhook for %s", raw_data.get("ticker") or raw_data.get("symbol"))
+        logger.info("webhook for %s", raw_data.get(
+            "ticker") or raw_data.get("symbol"))
 
         try:
             decision: AgentDecision = app_evaluator.evaluate_signal(raw_data)
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             logger.exception("evaluate_signal failed: %s", e)
-            return jsonify({"status": "error", "error": f"Agent evaluation failed: {e}"}), 500
+            return jsonify({"status": "error",
+                            "error": f"Agent evaluation failed: {e}"}), 500
 
         if not decision.approved:
             code = 200 if "SKIPPED" in decision.reason else 422
@@ -120,14 +128,18 @@ def create_webhook_app(
         market_clock = None
         x_request_id = None
         try:
-            status_code, clock_data, x_req, err = app_bridge._request("GET", "/v2/clock")
+            # the listener owns this bridge; the audited request path
+            # is deliberately reused here
+            # pylint: disable=protected-access
+            status_code, clock_data, x_req, err = app_bridge._request(
+                "GET", "/v2/clock")
             x_request_id = x_req
             if status_code == 200:
                 market_clock = clock_data
             else:
                 alpaca_status = "error"
                 alpaca_error = err
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             alpaca_status = "unreachable"
             alpaca_error = str(e)
 
@@ -148,8 +160,10 @@ def create_webhook_app(
     def get_account_status():
         try:
             account = app_bridge.get_account()
-            return jsonify({"status": "success", "paper": app_bridge.config.paper, "account": account}), 200
-        except Exception as e:
+            return jsonify({"status": "success",
+                            "paper": app_bridge.config.paper,
+                            "account": account}), 200
+        except Exception as e:  # pylint: disable=broad-exception-caught
             return jsonify({"status": "error", "error": str(e)}), 500
 
     @app.route("/positions", methods=["GET"])
@@ -157,8 +171,9 @@ def create_webhook_app(
     def get_positions():
         try:
             positions = app_bridge.get_positions()
-            return jsonify({"status": "success", "count": len(positions), "positions": positions}), 200
-        except Exception as e:
+            return jsonify({"status": "success", "count": len(positions),
+                            "positions": positions}), 200
+        except Exception as e:  # pylint: disable=broad-exception-caught
             return jsonify({"status": "error", "error": str(e)}), 500
 
     @app.route("/orders", methods=["GET"])
@@ -166,26 +181,30 @@ def create_webhook_app(
     def get_orders():
         limit = int(request.args.get("limit", 50))
         orders = app_ledger.get_recent_orders(limit=limit)
-        return jsonify({"status": "success", "count": len(orders), "orders": orders}), 200
+        return jsonify({"status": "success", "count": len(orders),
+                        "orders": orders}), 200
 
     @app.route("/audit", methods=["GET"])
     @app.route("/api/v1/audit", methods=["GET"])
     def get_audit_trail():
         limit = int(request.args.get("limit", 50))
         audits = app_ledger.get_recent_api_audits(limit=limit)
-        return jsonify({"status": "success", "count": len(audits), "audit_trail": audits}), 200
+        return jsonify({"status": "success", "count": len(audits),
+                        "audit_trail": audits}), 200
 
     @app.route("/decisions", methods=["GET"])
     @app.route("/api/v1/decisions", methods=["GET"])
     def get_agent_decisions():
         limit = int(request.args.get("limit", 50))
         decisions = app_ledger.get_recent_decisions(limit=limit)
-        return jsonify({"status": "success", "count": len(decisions), "decisions": decisions}), 200
+        return jsonify({"status": "success", "count": len(decisions),
+                        "decisions": decisions}), 200
 
     @app.route("/cancel_all", methods=["POST"])
     @app.route("/api/v1/cancel_all", methods=["POST"])
     def cancel_all_orders():
-        ok, auth_msg = _verify_auth(request, request.get_json(force=True, silent=True) or {})
+        ok, auth_msg = _verify_auth(
+            request, request.get_json(force=True, silent=True) or {})
         if not ok:
             return jsonify({"status": "unauthorized", "error": auth_msg}), 401
         success, x_req = app_bridge.cancel_all_orders()

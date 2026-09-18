@@ -16,24 +16,29 @@ trains per purged walk-forward fold as always.
 
     python3 scripts/compose_pulse_agent.py
 """
-import sys, pathlib
+import sys
+import pathlib
+
+import pandas as pd
+import numpy as np
+import yaml
+
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-import yaml
-import numpy as np
-import pandas as pd
-
-from src.data.synthetic import make_synthetic_panel
-from src.utils.stats import rank_normalize_cross_section
-from src.models.pulse import PulseModel, make_pulse, expand_interactions
+# The project package lives one level up; the bootstrap above
+# has to run before these imports resolve.
+# pylint: disable=wrong-import-position
 from src.agent.backtest import backtest_agent
+from src.models.pulse import make_pulse, expand_interactions
+from src.utils.stats import rank_normalize_cross_section
+from src.data.synthetic import make_synthetic_panel
 
 
 def pulse_forecast_column(panel, feats, cfg):
     """Point-in-time PULSE forecasts for every (date, ticker)."""
-    d = panel.dropna(subset=[*feats, "fwd_ret"]).sort_values(["date", "ticker"],
-                                                             kind="stable")
+    d = panel.dropna(subset=[*feats, "fwd_ret"]).sort_values(
+        ["date", "ticker"], kind="stable")
     dates_all = np.sort(d["date"].unique())
     min_train = int(cfg["walkforward"]["min_train"])
 
@@ -44,7 +49,9 @@ def pulse_forecast_column(panel, feats, cfg):
     a, qs = m0.a_, m0.q_scale_
 
     # one online filtering pass over the full history
-    Zl, names = expand_interactions(d[feats].to_numpy(float), feats)
+    Zl, _names = expand_interactions(d[feats].to_numpy(float), feats)
+    # this diagnostic deliberately drives PULSE's internals
+    # pylint: disable=protected-access
     dts, LAM, R = m0._per_date_coefs(Zl, d["fwd_ret"].to_numpy(float),
                                      d["date"].to_numpy())
     med_r = np.median(R, axis=0)
@@ -71,7 +78,8 @@ def pulse_forecast_column(panel, feats, cfg):
 
 
 def main():
-    cfg = yaml.safe_load(open(ROOT / "configs/config.yaml"))
+    with open(ROOT / "configs/config.yaml", encoding="utf-8") as fh:
+        cfg = yaml.safe_load(fh)
     panel, _, meta = make_synthetic_panel(cfg, seed=cfg["run"]["seed"])
     feats = list(meta.index)
     panel = rank_normalize_cross_section(panel, feats)
@@ -84,12 +92,16 @@ def main():
     baseline = backtest_agent(panel, feats, wcfg, ecfg, acfg)
 
     tbl = pd.DataFrame([
-        {"agent": "composed (PULSE aim)", "ann_ret_net": composed["net"]["ann_return"],
-         "sharpe_net": composed["net"]["sharpe"], "nw_t_net": composed["net"]["nw_tstat"],
+        {"agent": "composed (PULSE aim)",
+         "ann_ret_net": composed["net"]["ann_return"],
+         "sharpe_net": composed["net"]["sharpe"],
+         "nw_t_net": composed["net"]["nw_tstat"],
          "one_way_turnover": composed["avg_one_way_turnover"],
          "mean_gamma": composed["params_by_fold"]["gamma"].mean()},
-        {"agent": "baseline (static theta)", "ann_ret_net": baseline["net"]["ann_return"],
-         "sharpe_net": baseline["net"]["sharpe"], "nw_t_net": baseline["net"]["nw_tstat"],
+        {"agent": "baseline (static theta)",
+         "ann_ret_net": baseline["net"]["ann_return"],
+         "sharpe_net": baseline["net"]["sharpe"],
+         "nw_t_net": baseline["net"]["nw_tstat"],
          "one_way_turnover": baseline["avg_one_way_turnover"],
          "mean_gamma": baseline["params_by_fold"]["gamma"].mean()},
     ]).set_index("agent")

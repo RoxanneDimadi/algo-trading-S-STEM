@@ -65,8 +65,10 @@ def run_model_backtest(panel: pd.DataFrame, feature_cols: list[str],
         preds.append(out)
         fold_rows.append({
             "fold": fold.fold_id,
-            "train_start": fold.train_dates.min(), "train_end": fold.train_dates.max(),
-            "test_start": fold.test_dates.min(), "test_end": fold.test_dates.max(),
+            "train_start": fold.train_dates.min(),
+            "train_end": fold.train_dates.max(),
+            "test_start": fold.test_dates.min(),
+            "test_end": fold.test_dates.max(),
             "n_train": len(tr), "n_test": len(te),
         })
         if collect_importance and hasattr(model, "feature_importances_"):
@@ -102,7 +104,8 @@ def run_model_backtest(panel: pd.DataFrame, feature_cols: list[str],
         "gross": annualized_stats(gross, nw_lags),
         "net": annualized_stats(net, nw_lags),
         "oos_ic": oos_ic,
-        "avg_one_way_turnover": float(traded.mean() / 2.0) if len(traded) else np.nan,
+        "avg_one_way_turnover": (float(traded.mean() / 2.0)
+                                 if len(traded) else np.nan),
         "folds": pd.DataFrame(fold_rows),
     }
     if importances:

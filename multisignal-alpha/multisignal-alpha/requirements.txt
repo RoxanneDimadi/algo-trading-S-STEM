@@ -6,8 +6,13 @@ statsmodels>=0.14
 scikit-learn>=1.4
 lightgbm>=4.3
 matplotlib>=3.8
+tabulate>=0.9          # pandas .to_markdown() in the summary writer
 PyYAML>=6.0
 pytest>=8.0
+
+# Execution bridge (src/execution) and its tests
+requests>=2.31
+flask>=3.0
 
 # Hyperparameter tuning (optional; used only if models.lgbm.tune = true)
 optuna>=3.6

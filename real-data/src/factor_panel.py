@@ -1,4 +1,6 @@
-"""Factor-timing panel from OSAP long-short portfolio returns (the no-WRDS path).
+"""Factor-timing panel from OSAP long-short portfolio returns.
+
+This is the no-WRDS path.
 
 Firm-level CRSP returns are license-blocked without WRDS, which makes
 ``data.mode: osap`` unreachable. But OSAP *does* freely publish each
@@ -34,7 +36,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -45,8 +47,9 @@ logger = logging.getLogger("real_data.factor_panel")
 # loading + units
 # ---------------------------------------------------------------------------
 
+
 def load_ls_returns(portfolios_csv: Path, units: str = "auto") -> pd.DataFrame:
-    """Long-short series per signal -> tidy [date, ticker, ret] in DECIMAL units.
+    """Long-short series per signal -> tidy [date, ticker, ret], DECIMAL.
 
     OSAP ships portfolio returns in PERCENT while the agent (and the French
     factor file) works in decimals; ``units`` may be 'auto', 'percent', or
@@ -74,7 +77,8 @@ def load_ls_returns(portfolios_csv: Path, units: str = "auto") -> pd.DataFrame:
     med = float(ls["ret"].abs().median())
     if units == "auto":
         units = "percent" if med > 0.2 else "decimal"
-        logger.info("units auto-detected as %s (median |ret| = %.3f)", units, med)
+        logger.info(
+            "units auto-detected as %s (median |ret| = %.3f)", units, med)
     if units == "percent":
         ls["ret"] = ls["ret"] / 100.0
     elif units != "decimal":
@@ -91,10 +95,11 @@ def load_ls_returns(portfolios_csv: Path, units: str = "auto") -> pd.DataFrame:
 
 
 def load_pub_dates(signal_doc_csv: Path) -> pd.DataFrame:
-    """[ticker, sample_end, pub_date] from SignalDoc (Dec-31 of the stated years)."""
+    """[ticker, sample_end, pub_date] from SignalDoc (Dec-31 of the years)."""
     doc = pd.read_csv(signal_doc_csv)
     cols = {c.lower(): c for c in doc.columns}
-    acr, se, py = cols.get("acronym"), cols.get("sampleendyear"), cols.get("year")
+    acr, se, py = cols.get("acronym"), cols.get(
+        "sampleendyear"), cols.get("year")
     if not (acr and se and py):
         raise ValueError(f"Unexpected SignalDoc schema: {list(doc.columns)}")
     out = pd.DataFrame({
@@ -109,6 +114,7 @@ def load_pub_dates(signal_doc_csv: Path) -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 # feature construction
 # ---------------------------------------------------------------------------
+
 
 def _add_history_features(panel: pd.DataFrame, lookback: int) -> pd.DataFrame:
     """Return-history features per factor. All windows end AT month t.
@@ -152,7 +158,8 @@ def build_factor_panel(
         pub = load_pub_dates(Path(signal_doc_csv))
         panel = panel.merge(pub, on="ticker", how="left")
         yrs = (panel["date"] - panel["pub_date"]).dt.days / 365.25
-        # point-in-time: nothing is known before publication (see module docstring)
+        # point-in-time: nothing is known before publication
+        # (see the module docstring)
         panel["post_pub"] = ((panel["date"] > panel["pub_date"])
                              .fillna(False).astype(float))
         panel["years_since_pub"] = yrs.clip(lower=0.0).fillna(0.0)
@@ -178,6 +185,7 @@ def build_factor_panel(
 # ---------------------------------------------------------------------------
 # real McLean-Pontiff decay on the downloaded factors (descriptive exhibit)
 # ---------------------------------------------------------------------------
+
 
 def factor_decay_table(
     portfolios_csv: Path,
@@ -217,7 +225,8 @@ def factor_decay_table(
         for name in ("post_sample", "post_pub"):
             row[f"{name}_retention"] = (
                 row[f"{name}_ann_ret"] / base
-                if base and np.isfinite(base) and abs(base) > 1e-12 else np.nan)
+                if base and np.isfinite(base) and abs(base) > 1e-12
+                else np.nan)
         rows.append(row)
     out = pd.DataFrame(rows).set_index("signal").sort_index()
     logger.info("factor decay table: %d signals", len(out))

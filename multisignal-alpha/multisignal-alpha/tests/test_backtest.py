@@ -1,4 +1,7 @@
 """Walk-forward and engine correctness: the anti-leak structural tests."""
+# Requesting a pytest fixture shadows the fixture function's name by
+# design -- that is how pytest injects it.
+# pylint: disable=redefined-outer-name
 import numpy as np
 import pandas as pd
 import pytest
@@ -76,8 +79,6 @@ def test_pulse_tracks_planted_decay_and_predicts_oos(world_cfg, cfg, world):
     must TRACK the planted time-varying betas (correlate with the true path,
     register the post-publication step-down, and keep the placebo near zero),
     and its forecasts must carry OOS power through the identical harness."""
-    import numpy as np
-    import pandas as pd
     from src.models.pulse import make_pulse
 
     panel, wcfg, ecfg = world_cfg
@@ -102,12 +103,17 @@ def test_pulse_tracks_planted_decay_and_predicts_oos(world_cfg, cfg, world):
         # positive rescaling of beta (docs/math/04, check 3) -- so we test
         # SHAPE (correlation and step-down), which rescaling preserves.
         corr = np.corrcoef(eff[sig], true)[0, 1]
-        assert corr > 0.4, f"{sig}: filtered path fails to track planted decay (corr={corr:.2f})"
-        pre = eff[sig][eff.index <= pd.Timestamp(scfg["signals"][sig]["sample_end"])].mean()
-        post = eff[sig][eff.index > pd.Timestamp(scfg["signals"][sig]["pub_date"])].mean()
+        assert corr > 0.4, (
+            f"{sig}: filtered path fails to track planted decay "
+            f"(corr={corr:.2f})")
+        pre = eff[sig][eff.index <= pd.Timestamp(
+            scfg["signals"][sig]["sample_end"])].mean()
+        post = eff[sig][eff.index > pd.Timestamp(
+            scfg["signals"][sig]["pub_date"])].mean()
         assert post < pre, f"{sig}: no post-publication efficacy step-down"
 
-    assert eff["sig_dead"].abs().mean() < 0.5 * eff["sig_momentum"].abs().mean()
+    assert eff["sig_dead"].abs().mean() < 0.5 * \
+        eff["sig_momentum"].abs().mean()
 
     res = run_model_backtest(panel, feats,
                              lambda: make_pulse(cfg["models"]["pulse"]),
@@ -122,20 +128,23 @@ def test_agent_learns_garleanu_pedersen_comparative_statics(world):
     blend tilts toward the persistent signal (sig_value, rho=.98) relative
     to the fast one (sig_momentum, rho=.90) as costs rise; (3) under high
     costs the agent beats the myopic full-rebalance policy on its own aim."""
-    import numpy as np
     from src.agent.policy import DiffPolicyAgent, panel_to_matrices
 
     panel, _, meta = world
     feats = list(meta.index)
-    Z, Y, dates, _ = panel_to_matrices(panel, feats)
+    Z, Y, _dates, _ = panel_to_matrices(panel, feats)
     Ztr, Ytr = Z[:, :180, :], Y[:180]
 
-    free = DiffPolicyAgent(cost_bps_per_side=0.0, epochs=250, seed=3).fit(Ztr, Ytr)
-    mid = DiffPolicyAgent(cost_bps_per_side=40.0, epochs=250, seed=3).fit(Ztr, Ytr)
-    dear = DiffPolicyAgent(cost_bps_per_side=100.0, epochs=250, seed=3).fit(Ztr, Ytr)
+    free = DiffPolicyAgent(cost_bps_per_side=0.0,
+                           epochs=250, seed=3).fit(Ztr, Ytr)
+    mid = DiffPolicyAgent(cost_bps_per_side=40.0,
+                          epochs=250, seed=3).fit(Ztr, Ytr)
+    dear = DiffPolicyAgent(cost_bps_per_side=100.0,
+                           epochs=250, seed=3).fit(Ztr, Ytr)
 
     # (1) GP comparative static: trading speed falls MONOTONICALLY in cost
-    assert free.gamma_ > mid.gamma_ > dear.gamma_,         (free.gamma_, mid.gamma_, dear.gamma_)
+    assert free.gamma_ > mid.gamma_ > dear.gamma_, (
+        free.gamma_, mid.gamma_, dear.gamma_)
 
     # (2) DOCUMENTED NULL RESULT (docs/06 §5): in this single-shared-speed
     # policy class the learned blend does NOT tilt toward the persistent
@@ -149,9 +158,12 @@ def test_agent_learns_garleanu_pedersen_comparative_statics(world):
     # out of sample, on the identical learned aim
     test_out = mid.roll(Z[:, 180:, :], Y[180:])
     myop_out = mid.roll(Z[:, 180:, :], Y[180:], gamma=1.0)
+
     def sharpe(x):
         return x.mean() / (x.std() + 1e-12)
-    assert sharpe(test_out["net"]) > sharpe(myop_out["net"]),         (sharpe(test_out["net"]), sharpe(myop_out["net"]))
+    assert sharpe(test_out["net"]) > sharpe(
+        myop_out["net"]), (sharpe(test_out["net"]),
+                           sharpe(myop_out["net"]))
 
 
 def test_multispeed_agent_cost_protection_and_speed_response(world):
@@ -167,15 +179,20 @@ def test_multispeed_agent_cost_protection_and_speed_response(world):
     Z, Y, _, _ = panel_to_matrices(panel, feats)
     Ztr, Ytr = Z[:, :180, :], Y[:180]
 
-    free = MultiSpeedPolicyAgent(cost_bps_per_side=0.0, epochs=200, seed=3).fit(Ztr, Ytr)
-    dear = MultiSpeedPolicyAgent(cost_bps_per_side=60.0, epochs=200, seed=3).fit(Ztr, Ytr)
+    free = MultiSpeedPolicyAgent(
+        cost_bps_per_side=0.0, epochs=200, seed=3).fit(Ztr, Ytr)
+    dear = MultiSpeedPolicyAgent(
+        cost_bps_per_side=60.0, epochs=200, seed=3).fit(Ztr, Ytr)
 
     im = feats.index("sig_momentum")
-    assert dear.gamma_[im] < free.gamma_[im], (free.gamma_[im], dear.gamma_[im])
+    assert dear.gamma_[im] < free.gamma_[
+        im], (free.gamma_[im], dear.gamma_[im])
 
     ag = dear.roll(Z[:, 180:, :], Y[180:])
     my = dear.roll(Z[:, 180:, :], Y[180:], gamma=1.0)
-    s = lambda x: x.mean() / (x.std() + 1e-12)
+
+    def s(x):
+        return x.mean() / (x.std() + 1e-12)
     assert s(ag["net"]) > s(my["net"]) + 0.05, (s(ag["net"]), s(my["net"]))
 
 
@@ -184,7 +201,6 @@ def test_msrr_closed_form_recovered_by_zero_cost_agent(world):
     FORM: max-Sharpe over factor returns (MSRR). Validates both the
     optimizer and the theory in one shot; also checks MSRR zeroes the
     placebo."""
-    import numpy as np
     from src.agent.policy import DiffPolicyAgent, panel_to_matrices
     from src.agent.msrr import msrr_theta
 
@@ -194,12 +210,15 @@ def test_msrr_closed_form_recovered_by_zero_cost_agent(world):
     Ztr, Ytr = Z[:, :180, :], Y[:180]
 
     th_msrr, _ = msrr_theta(Ztr, Ytr)
-    agent = DiffPolicyAgent(cost_bps_per_side=0.0, epochs=250, seed=3).fit(Ztr, Ytr)
+    agent = DiffPolicyAgent(cost_bps_per_side=0.0,
+                            epochs=250, seed=3).fit(Ztr, Ytr)
     th_a = agent.theta_ / np.abs(agent.theta_).sum()
     cos = th_a @ th_msrr / (np.linalg.norm(th_a) * np.linalg.norm(th_msrr))
     assert cos > 0.98, cos
     assert abs(th_msrr[feats.index("sig_dead")]) < 0.05
-    s = lambda x: x.mean() / (x.std() + 1e-12)
+
+    def s(x):
+        return x.mean() / (x.std() + 1e-12)
     S_a = s(agent.roll(Ztr, Ytr, gamma=1.0)["gross"])
     S_m = s(agent.roll(Ztr, Ytr, gamma=1.0, theta=th_msrr)["gross"])
     assert abs(S_a - S_m) / max(S_m, 1e-9) < 0.05, (S_a, S_m)
@@ -213,7 +232,8 @@ def test_sqrt_impact_slows_trading(world):
     panel, _, meta = world
     Z, Y, _, _ = panel_to_matrices(panel, list(meta.index))
     Ztr, Ytr = Z[:, :180, :], Y[:180]
-    lin = DiffPolicyAgent(cost_bps_per_side=10.0, epochs=200, seed=3).fit(Ztr, Ytr)
+    lin = DiffPolicyAgent(cost_bps_per_side=10.0,
+                          epochs=200, seed=3).fit(Ztr, Ytr)
     imp = DiffPolicyAgent(cost_bps_per_side=10.0, impact_bps=60.0,
                           epochs=200, seed=3).fit(Ztr, Ytr)
     assert imp.gamma_ < lin.gamma_, (lin.gamma_, imp.gamma_)

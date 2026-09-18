@@ -20,13 +20,14 @@ logger = logging.getLogger("real_data.french")
 FRENCH_FTP = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp"
 # Monthly CSV zips on the French site
 DATASET_ZIPS = {
-    "F-F_Research_Data_5_Factors_2x3": "F-F_Research_Data_5_Factors_2x3_CSV.zip",
+    "F-F_Research_Data_5_Factors_2x3":
+        "F-F_Research_Data_5_Factors_2x3_CSV.zip",
     "F-F_Momentum_Factor": "F-F_Momentum_Factor_CSV.zip",
 }
 
 
 def _month_end_index(idx: pd.Index) -> pd.DatetimeIndex:
-    """French files use YYYYMM integers (or PeriodIndex). Normalize to month-end."""
+    """French files use YYYYMM integers (or PeriodIndex) -> month-end."""
     if isinstance(idx, pd.PeriodIndex):
         return (idx.to_timestamp("M") + pd.offsets.MonthEnd(0))
     # integer YYYYMM
@@ -35,13 +36,17 @@ def _month_end_index(idx: pd.Index) -> pd.DatetimeIndex:
 
 
 def _parse_french_csv(text: str) -> pd.DataFrame:
-    """Parse the quirky Ken French monthly CSV (skip header prose, stop at annual block)."""
+    """Parse the quirky Ken French monthly CSV.
+
+    Skips the header prose and stops at the annual block.
+    """
     lines = text.splitlines()
     # Find first line that looks like a header with factor names
     start = None
     for i, line in enumerate(lines):
         low = line.lower()
-        if "mkt-rf" in low or "mom" in low and "rf" not in low.split(",")[0].lower():
+        if "mkt-rf" in low or ("mom" in low
+                               and "rf" not in low.split(",")[0].lower()):
             # momentum file header is often just ",Mom"
             start = i
             break
@@ -70,7 +75,8 @@ def _parse_french_csv(text: str) -> pd.DataFrame:
                 nxt = lines[j].strip()
                 if not nxt:
                     continue
-                if nxt.lower().startswith("annual") or "copyright" in nxt.lower():
+                if (nxt.lower().startswith("annual")
+                        or "copyright" in nxt.lower()):
                     end = i
                     break
                 # annual rows are YYYY (4 digits) not YYYYMM
@@ -80,7 +86,8 @@ def _parse_french_csv(text: str) -> pd.DataFrame:
                 break
             if end != len(lines):
                 break
-        if stripped.lower().startswith("annual") or "copyright" in stripped.lower():
+        if (stripped.lower().startswith("annual")
+                or "copyright" in stripped.lower()):
             end = i
             break
 
@@ -137,8 +144,9 @@ def load_french_factors(
         if prefer_direct:
             try:
                 df = download_zip_dataset(name, cache / "french")
-            except Exception as e:
-                logger.warning("direct French download failed for %s: %s", name, e)
+            except Exception as e:  # pylint: disable=broad-exception-caught
+                logger.warning(
+                    "direct French download failed for %s: %s", name, e)
         if df is None:
             logger.info("falling back to pandas_datareader for %s", name)
             df = download_via_datareader(name, start=start)
@@ -148,7 +156,8 @@ def load_french_factors(
     mom = frames["F-F_Momentum_Factor"]
     # momentum column naming varies (mom / mom   )
     mom_col = [c for c in mom.columns if "mom" in c][0]
-    out = ff5.join(mom[[mom_col]].rename(columns={mom_col: "mom"}), how="inner")
+    out = ff5.join(mom[[mom_col]].rename(
+        columns={mom_col: "mom"}), how="inner")
     # drop rf for controls (kept in file if needed)
     start_ts = pd.Timestamp(start) + pd.offsets.MonthEnd(0)
     out = out.loc[out.index >= start_ts]

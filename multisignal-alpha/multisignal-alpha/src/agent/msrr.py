@@ -64,6 +64,7 @@ def msrr_theta(Z: np.ndarray, Y: np.ndarray, ridge: float = 1e-4):
     s = np.abs(theta).sum()
     theta = theta / (s if s > 0 else 1.0)
     port = F @ theta
-    info = {"monthly_sharpe_factor_space": float(port.mean() / (port.std() + 1e-12)),
+    info = {"monthly_sharpe_factor_space":
+            float(port.mean() / (port.std() + 1e-12)),
             "mu": mu, "n_periods": len(F)}
     return theta, info

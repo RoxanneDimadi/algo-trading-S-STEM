@@ -1,4 +1,7 @@
-"""Run the full real-data ingest: OSAP -> French -> returns -> sync to agent."""
+"""Run the full real-data ingest.
+
+OSAP -> French -> returns -> sync to agent.
+"""
 from __future__ import annotations
 
 import argparse
@@ -9,10 +12,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from src import agent_raw_dir, agent_root, load_config, processed_dir, raw_dir, signal_list
-from src.factor_panel import build_factor_panel, factor_decay_table
-from src.french_download import run_french_download
-from src.osap_download import run_osap_download
+# The project package lives one level up; the bootstrap above
+# has to run before these imports resolve.
+# pylint: disable=wrong-import-position
+from src.returns import resolve_returns
 from src.panel_build import (
     augment_osap_with_streversal,
     build_panel,
@@ -20,7 +23,11 @@ from src.panel_build import (
     write_agent_config_snippet,
     write_agent_factor_config,
 )
-from src.returns import resolve_returns
+from src.osap_download import run_osap_download
+from src.french_download import run_french_download
+from src.factor_panel import build_factor_panel, factor_decay_table
+from src import (agent_raw_dir, agent_root, load_config, processed_dir,
+                 raw_dir, signal_list)
 
 
 def main():
@@ -63,10 +70,13 @@ def main():
                 pristine = raw / "signed_predictors_osap_only.csv"
                 if not pristine.exists():
                     pristine.write_bytes(signals_csv.read_bytes())
-                augment_osap_with_streversal(pristine, returns_path, signals_csv)
+                augment_osap_with_streversal(
+                    pristine, returns_path, signals_csv)
         except FileNotFoundError as e:
             log.error("%s", e)
-            log.error("continuing without returns - sync will omit returns.csv / STreversal")
+            log.error(
+                "continuing without returns - sync will omit "
+                "returns.csv / STreversal")
 
     if not args.skip_sync:
         log.info("=== sync to agent ===")
@@ -85,7 +95,8 @@ def main():
             fcfg = cfg.get("factor_panel", {})
             panel, meta = build_factor_panel(
                 ports,
-                raw / "SignalDoc.csv" if (raw / "SignalDoc.csv").exists() else None,
+                raw / "SignalDoc.csv" if (raw /
+                                          "SignalDoc.csv").exists() else None,
                 lookback=int(fcfg.get("lookback_months", 12)),
                 min_names_per_month=int(fcfg.get("min_names_per_month", 3)),
                 units=str(fcfg.get("units", "auto")),
@@ -103,8 +114,9 @@ def main():
                 write_agent_factor_config(agent_root(cfg),
                                           n_factors=panel["ticker"].nunique())
         else:
-            log.warning("no %s -- skipping factor panel (run download_osap first)",
-                        ports.name)
+            log.warning(
+                "no %s -- skipping factor panel (run download_osap first)",
+                ports.name)
 
     if args.build_panel and (raw / "returns.csv").exists():
         log.info("=== panel ===")
@@ -115,7 +127,8 @@ def main():
             raw / "signed_predictors_dl_wide.csv",
             raw / "returns.csv",
             signals,
-            min_names_per_month=int(cfg.get("panel", {}).get("min_names_per_month", 50)),
+            min_names_per_month=int(
+                cfg.get("panel", {}).get("min_names_per_month", 50)),
         )
         out = processed_dir(cfg) / "panel.csv"
         panel.to_csv(out, index=False)

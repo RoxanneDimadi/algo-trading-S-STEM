@@ -46,7 +46,8 @@ def score_to_weights(panel: pd.DataFrame, score_col: str, n_q: int = 5,
         w = pd.Series(0.0, index=g.index)
         w[q == top] = 1.0 / (q == top).sum()
         w[q == bot] = -1.0 / (q == bot).sum()
-        frames.append(pd.DataFrame({"date": dt, "ticker": g["ticker"], "weight": w}))
+        frames.append(pd.DataFrame(
+            {"date": dt, "ticker": g["ticker"], "weight": w}))
     if not frames:
         return pd.DataFrame(columns=["date", "ticker", "weight"])
     return pd.concat(frames, ignore_index=True)
@@ -60,7 +61,8 @@ def portfolio_returns(weights: pd.DataFrame, panel: pd.DataFrame,
     from the panel's fwd_ret construction, so there is no way to accidentally
     trade on contemporaneous information here.
     """
-    m = weights.merge(panel[["date", "ticker", fwd_col]], on=["date", "ticker"],
+    m = weights.merge(panel[["date", "ticker", fwd_col]],
+                      on=["date", "ticker"],
                       how="left")
     ls = (m["weight"] * m[fwd_col]).groupby(m["date"]).sum(min_count=1)
     ls.name = "ls_gross"
@@ -113,7 +115,8 @@ def evaluate_signal_portfolio(panel: pd.DataFrame, score_col: str,
         "signal": score_col,
         "gross": g,
         "net": n,
-        "avg_one_way_turnover": float(traded.mean() / 2.0) if len(traded) else np.nan,
+        "avg_one_way_turnover": (float(traded.mean() / 2.0)
+                                 if len(traded) else np.nan),
         "series": {"gross": gross, "net": net, "traded": traded, "weights": w},
     }
 

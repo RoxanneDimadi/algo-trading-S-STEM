@@ -5,7 +5,9 @@ the truth is KNOWN before pointing it at real data. A harness that cannot
 (a) find a planted signal, (b) clear a placebo, and (c) scream at a leak is
 not a harness.
 """
-import numpy as np
+# Requesting a pytest fixture shadows the fixture function's name by
+# design -- that is how pytest injects it.
+# pylint: disable=redefined-outer-name
 
 from src.data.panel import demonstrate_lookahead
 from src.evaluation.decay import segment_performance
@@ -19,7 +21,8 @@ def test_planted_signal_detected(world):
     panel, _, _ = world
     r = mean_ic(panel, "sig_momentum")
     assert r["ic_mean"] > 0.01
-    assert r["ic_tstat"] > 2.0, "harness failed to detect a real planted signal"
+    assert r["ic_tstat"] > 2.0, \
+        "harness failed to detect a real planted signal"
 
 
 def test_placebo_signal_not_detected(world):
@@ -39,7 +42,7 @@ def test_lookahead_demonstration_is_absurd(world):
 
 
 def test_longshort_monotone_with_planted_beta(world):
-    panel, _, meta = world
+    panel, _, _meta = world
     res_big = evaluate_signal_portfolio(panel, "sig_momentum")
     res_zero = evaluate_signal_portfolio(panel, "sig_dead")
     assert res_big["gross"]["sharpe"] > res_zero["gross"]["sharpe"]
@@ -49,7 +52,8 @@ def test_longshort_monotone_with_planted_beta(world):
 
 def test_costs_reduce_returns(world):
     panel, _, _ = world
-    res = evaluate_signal_portfolio(panel, "sig_momentum", cost_bps_per_side=25)
+    res = evaluate_signal_portfolio(
+        panel, "sig_momentum", cost_bps_per_side=25)
     assert res["net"]["ann_return"] < res["gross"]["ann_return"]
     assert res["avg_one_way_turnover"] > 0
 
@@ -61,7 +65,8 @@ def test_fama_macbeth_recovers_planted_betas(world):
     assert fm.loc["sig_momentum", "nw_tstat"] > 2.0
     assert abs(fm.loc["sig_dead", "nw_tstat"]) < 2.0
     # coefficient ordering should follow planted beta ordering (roughly)
-    assert fm.loc["sig_momentum", "mean_coef"] > fm.loc["sig_value", "mean_coef"]
+    assert fm.loc["sig_momentum",
+                  "mean_coef"] > fm.loc["sig_value", "mean_coef"]
 
 
 def test_decay_pattern_recovered(world):
@@ -70,7 +75,8 @@ def test_decay_pattern_recovered(world):
     seg = segment_performance(res["series"]["gross"],
                               meta.loc["sig_momentum", "sample_end"],
                               meta.loc["sig_momentum", "pub_date"])
-    assert seg.loc["in_sample", "sharpe"] > seg.loc["post_publication", "sharpe"], \
+    assert (seg.loc["in_sample", "sharpe"]
+            > seg.loc["post_publication", "sharpe"]), \
         "generator plants decay; the decay module must recover it"
 
 

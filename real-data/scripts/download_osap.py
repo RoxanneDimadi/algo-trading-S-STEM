@@ -9,8 +9,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from src import load_config, raw_dir
+# The project package lives one level up; the bootstrap above
+# has to run before these imports resolve.
+# pylint: disable=wrong-import-position
 from src.osap_download import run_osap_download
+from src import load_config, raw_dir
 
 
 def main():

@@ -23,7 +23,6 @@ reproduces exactly that: signal at t joined to fwd_ret over (t, t+1].
 """
 from __future__ import annotations
 
-import numpy as np
 import pandas as pd
 
 
@@ -51,7 +50,7 @@ def load_osap_wide_csv(path: str, signals: list[str]) -> pd.DataFrame:
 
 
 def load_returns_csv(path: str) -> pd.DataFrame:
-    """CRSP-style returns file: (permno, yyyymm, ret) -> [date, ticker, ret]."""
+    """CRSP-style returns: (permno, yyyymm, ret) -> [date, ticker, ret]."""
     df = pd.read_csv(path)
     df["date"] = _yyyymm_to_date(df["yyyymm"])
     df["ticker"] = df["permno"].astype(int).astype(str)
@@ -84,13 +83,16 @@ def load_signal_doc(path: str) -> pd.DataFrame:
     se = cols.get("sampleendyear")
     py = cols.get("year")
     if not (acr and se and py):
-        raise ValueError(f"Unexpected SignalDoc schema; columns = {list(doc.columns)}")
+        raise ValueError(
+            f"Unexpected SignalDoc schema; columns = {list(doc.columns)}")
     out = pd.DataFrame({
         "signal": doc[acr],
-        "sample_end": pd.to_datetime(doc[se].astype("Int64").astype(str) + "-12-31",
-                                     errors="coerce"),
-        "pub_date": pd.to_datetime(doc[py].astype("Int64").astype(str) + "-12-31",
-                                   errors="coerce"),
+        "sample_end": pd.to_datetime(
+            doc[se].astype("Int64").astype(str) + "-12-31",
+            errors="coerce"),
+        "pub_date": pd.to_datetime(
+            doc[py].astype("Int64").astype(str) + "-12-31",
+            errors="coerce"),
     }).dropna(subset=["signal"]).set_index("signal")
     return out
 
@@ -114,15 +116,18 @@ def load_french_factors(start: str = "1963-07-01",
             f = pd.read_csv(path, index_col=0, parse_dates=True)
             f.index = pd.to_datetime(f.index) + pd.offsets.MonthEnd(0)
             f.index.name = "date"
-            f.columns = [c.strip().lower().replace("-", "_") for c in f.columns]
+            f.columns = [c.strip().lower().replace("-", "_")
+                         for c in f.columns]
             start_ts = pd.Timestamp(start) + pd.offsets.MonthEnd(0)
             f = f.loc[f.index >= start_ts]
-            return f.drop(columns=[c for c in ["rf"] if c in f.columns], errors="ignore")
+            return f.drop(columns=[c for c in ["rf"] if c in f.columns],
+                          errors="ignore")
 
     from pandas_datareader import data as pdr  # lazy optional import
     ff5 = pdr.DataReader("F-F_Research_Data_5_Factors_2x3", "famafrench",
                          start=start)[0] / 100.0
-    mom = pdr.DataReader("F-F_Momentum_Factor", "famafrench", start=start)[0] / 100.0
+    mom = pdr.DataReader("F-F_Momentum_Factor",
+                         "famafrench", start=start)[0] / 100.0
     f = ff5.join(mom, how="inner")
     f.index = f.index.to_timestamp("M") + pd.offsets.MonthEnd(0)
     f.columns = [c.strip().lower().replace("-", "_") for c in f.columns]
@@ -161,11 +166,13 @@ def load_prebuilt_panel(panel_csv: str, meta_csv: str):
     if "signal" not in meta.columns:
         raise ValueError(f"{meta_csv} must contain a 'signal' column")
     for c in ("sample_end", "pub_date"):
-        meta[c] = pd.to_datetime(meta[c], errors="coerce") if c in meta.columns else pd.NaT
+        meta[c] = pd.to_datetime(
+            meta[c], errors="coerce") if c in meta.columns else pd.NaT
     meta = meta.set_index("signal")
 
     missing = [s for s in meta.index if s not in panel.columns]
     if missing:
-        raise ValueError(f"meta lists features absent from the panel: {missing}")
+        raise ValueError(
+            f"meta lists features absent from the panel: {missing}")
     panel = panel.sort_values(["ticker", "date"]).reset_index(drop=True)
     return panel, meta

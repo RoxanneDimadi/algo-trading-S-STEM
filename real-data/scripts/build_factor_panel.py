@@ -1,7 +1,8 @@
 """Build the factor-timing panel (the no-WRDS real-data path) and sync it.
 
 Outputs:
-  data/processed/factor_panel.csv   -- [date, ticker, features..., ret, fwd_ret]
+  data/processed/factor_panel.csv
+      -- [date, ticker, features..., ret, fwd_ret]
   data/processed/factor_meta.csv    -- feature meta for the agent's decay guard
   data/processed/factor_decay.csv   -- REAL McLean-Pontiff decay per factor
   <agent>/data/raw/factor_panel.csv, factor_meta.csv (synced)
@@ -20,9 +21,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from src import agent_raw_dir, agent_root, load_config, processed_dir, raw_dir
-from src.factor_panel import build_factor_panel, factor_decay_table
+# The project package lives one level up; the bootstrap above
+# has to run before these imports resolve.
+# pylint: disable=wrong-import-position
 from src.panel_build import sync_to_agent, write_agent_factor_config
+from src.factor_panel import build_factor_panel, factor_decay_table
+from src import agent_raw_dir, agent_root, load_config, processed_dir, raw_dir
 
 
 def main():
@@ -47,7 +51,8 @@ def main():
     portfolios_csv = raw / f"osap_portfolios_{form}.csv"
     signal_doc_csv = raw / "SignalDoc.csv"
     if not portfolios_csv.exists():
-        sys.exit(f"missing {portfolios_csv} -- run scripts/download_osap.py first")
+        sys.exit(
+            f"missing {portfolios_csv} -- run scripts/download_osap.py first")
 
     panel, meta = build_factor_panel(
         portfolios_csv,
@@ -78,7 +83,8 @@ def main():
         sync_to_agent(processed, agent_raw,
                       files=["factor_panel.csv", "factor_meta.csv"])
         n_factors = panel["ticker"].nunique()
-        out_cfg = write_agent_factor_config(agent_root(cfg), n_factors=n_factors)
+        out_cfg = write_agent_factor_config(
+            agent_root(cfg), n_factors=n_factors)
         print(f"\nNext: cd {agent_root(cfg)} && "
               f"python -m src.pipeline --config configs/{out_cfg.name}")
 
