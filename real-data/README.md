@@ -2,9 +2,9 @@
 
 Separate ingest repo for wiring **multisignal-alpha** to real market data:
 
-1. **Open Source Asset Pricing (OSAP)** — Chen & Zimmermann firm characteristics via `pip install openassetpricing`
-2. **Kenneth French Data Library** — FF5 + momentum from [Ken French's site](https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/data_library.html)
-3. **Monthly equity returns** — your `returns.csv`, or WRDS/CRSP if you have credentials
+1. **Open Source Asset Pricing (OSAP)**: Chen & Zimmermann firm characteristics, via `pip install openassetpricing`
+2. **Kenneth French Data Library**: FF5 + momentum from [Ken French's site](https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/data_library.html)
+3. **Monthly equity returns**: your own `returns.csv`, or WRDS/CRSP if you have credentials
 
 This directory does **not** mix download logic into the research package. It writes files under `data/raw/`, then copies them into `../multisignal-alpha/multisignal-alpha/data/raw/`.
 
@@ -20,8 +20,8 @@ copy .env.example .env   # or: cp .env.example .env
 
 Edit `.env`:
 
-- `OSAP_SIGNALS` — default matches the agent config (`Mom12m,Illiquidity,IdioVol3F,BM,GP`)
-- `RETURNS_CSV` — path to a CRSP-style file with `permno,yyyymm,ret` (optional `dlret`)
+- `OSAP_SIGNALS`: defaults to the agent config's list (`Mom12m,Illiquidity,IdioVol3F,BM,GP`)
+- `RETURNS_CSV`: path to a CRSP-style file with `permno,yyyymm,ret` (optional `dlret`)
 - **or** `WRDS_USERNAME` / `WRDS_PASSWORD` and `pip install wrds`
 
 `STreversal` is not in the public OSAP dump (CRSP license). Once returns exist, we build it as `-ret_{t-1}` and merge it into the wide signal file.

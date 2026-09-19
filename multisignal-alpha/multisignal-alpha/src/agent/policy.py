@@ -219,7 +219,7 @@ def panel_to_matrices(panel, signal_cols, fwd_col: str = "fwd_ret"):
 
 
 class MultiSpeedPolicyAgent(DiffPolicyAgent):
-    """Gârleanu–Pedersen's FULL structure: a trading speed PER SIGNAL.
+    """Garleanu-Pedersen's FULL structure: a trading speed PER SIGNAL.
 
     The single-speed agent smooths the combined aim with one gamma, which
     (documented null, docs/06 §4) makes the slow-signal aim tilt cancel.

@@ -38,7 +38,7 @@ def download_signals(
 ) -> pd.DataFrame:
     """Download selected firm predictors as a wide (permno, yyyymm, ...) CSV.
 
-    Pass signals as a list — openassetpricing rejects a bare string.
+    Pass signals as a list; openassetpricing rejects a bare string.
     """
     if not signals:
         raise ValueError("signals list is empty")

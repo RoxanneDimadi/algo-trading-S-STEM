@@ -1,16 +1,15 @@
 # pylint configuration for algo-trading-S-STEM.
 #
-# The gate is PEP 8 conformance plus real defects. Everything switched off
-# below is switched off for a stated reason, not to make the score look
-# better. Run it from either sub-project:
+# The gate is PEP 8 plus real defects. Each check switched off below has a
+# reason next to it. Run it from either sub-project:
 #
 #   cd multisignal-alpha/multisignal-alpha && pylint --rcfile=../../.pylintrc src scripts tests
 #   cd real-data && pylint --rcfile=../.pylintrc src scripts
 
 [MAIN]
-# Optional real-data dependencies. They are commented out of
-# requirements.txt on purpose (openassetpricing pulls a large stack; wrds
-# needs licensed credentials), so pylint cannot import them in CI.
+# Optional real-data dependencies, commented out of requirements.txt on
+# purpose: openassetpricing pulls in a large stack and wrds needs licensed
+# credentials. Neither can be imported in CI.
 ignored-modules=openassetpricing,wrds
 
 [FORMAT]
@@ -18,12 +17,12 @@ ignored-modules=openassetpricing,wrds
 max-line-length=79
 
 [BASIC]
-# This is numerical research code whose variables are the symbols of the
-# derivations in docs/math: Z is the feature matrix, LAM the coefficient
-# path, R the observation-noise series, G a Gram matrix, and so on.
-# Renaming them to satisfy snake_case would sever the correspondence
-# between the code and the proofs it implements, so short and capitalized
-# names are allowed for locals, arguments and attributes.
+# The variables in this code are the symbols used in the derivations under
+# docs/math: Z is the feature matrix, LAM the coefficient path, R the
+# observation-noise series, G a Gram matrix, and so on. Renaming them to
+# fit snake_case would break the link between the code and the proofs, so
+# short and capitalised names are allowed for locals, arguments and
+# attributes.
 variable-rgx=[a-zA-Z_][a-zA-Z0-9_]{0,30}$
 argument-rgx=[a-zA-Z_][a-zA-Z0-9_]{0,30}$
 attr-rgx=[a-zA-Z_][a-zA-Z0-9_]{0,30}$
@@ -32,9 +31,9 @@ inlinevar-rgx=[a-zA-Z_][a-zA-Z0-9_]{0,30}$
 good-names=i,j,k,n,m,p,q,r,s,t,w,x,y,z,a,b,c,d,e,f,g,h,v,_
 
 [DESIGN]
-# Estimator fits and the pipeline stages carry a lot of state by nature.
-# Splitting them to hit pylint's defaults would spread one derivation
-# across several functions for no gain in clarity.
+# Estimator fits and pipeline stages carry a lot of state. Splitting them
+# to reach pylint's defaults would spread one derivation over several
+# functions without making it clearer.
 max-locals=40
 max-args=15
 max-positional-arguments=15
@@ -46,18 +45,18 @@ min-public-methods=0
 
 [MESSAGES CONTROL]
 disable=
-# PEP 257, not PEP 8. The substantive functions carry docstrings already;
-# requiring one on every dataclass, thin HTTP wrapper and main() would add
-# filler, so only module docstrings stay mandatory.
+# These are PEP 257 rather than PEP 8. The functions that need docstrings
+# already have them; demanding one on every dataclass, thin HTTP wrapper
+# and main() only adds filler. Module docstrings stay required.
     missing-function-docstring,
     missing-class-docstring,
 # scikit-learn's estimator convention: fit() defines the fitted attributes
 # (ending in _), __init__ only stores hyper-parameters.
     attribute-defined-outside-init,
-# Deliberate lazy imports of optional/slow dependencies (matplotlib,
-# pandas_datareader, openassetpricing, optuna) inside the one function
-# that needs them.
+# Lazy imports of optional or slow dependencies (matplotlib,
+# pandas_datareader, openassetpricing, optuna), done inside the one
+# function that needs them.
     import-outside-toplevel,
-# Fires on the config-plumbing shapes repeated across evaluation modules,
-# where the repetition is the readable form.
+# Fires on the config plumbing repeated across the evaluation modules,
+# where repeating it is the readable option.
     duplicate-code,

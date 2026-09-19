@@ -42,8 +42,8 @@ from .utils.plotting import (plot_cumulative_ls, plot_decay,
 from .utils.stats import rank_normalize_cross_section
 
 
-# Below this many names in the cross-section, a run is a plumbing check
-# rather than evidence, and summary.md says so.
+# With fewer names than this in the cross-section, a run only checks the
+# plumbing, and summary.md says so at the top.
 SMOKE_TEST_MIN_NAMES = 25
 
 
@@ -300,16 +300,17 @@ def main(config_path: str = "configs/config.yaml") -> dict:
     n_names = panel["ticker"].nunique()
     banner = []
     if n_names < SMOKE_TEST_MIN_NAMES:
-        # Same threshold real-data/src/panel_build.py uses to decide it is
-        # generating a smoke-test config. Say so on the artifact a reader
-        # actually opens, not only in the config header.
+        # Same threshold real-data/src/panel_build.py uses when it
+        # decides to generate a smoke-test config. The warning belongs on
+        # the file people open, not only in the config header.
         banner = [
-            f"> **SMOKE TEST -- NOT EVIDENCE.** Only {n_names} names in the\n"
+            f"> **SMOKE TEST, NOT EVIDENCE.** Only {n_names} names in the\n"
             "> cross-section, so the statistical thresholds are relaxed to\n"
-            "> their structural minimum and the sorts are coarse. Every\n"
-            "> number below is a plumbing check. Rebuild with the full\n"
-            "> universe (`osap.portfolio_signals: all` in real-data) for a\n"
-            "> result worth citing.\n",
+            "> their structural minimum and the sorts are coarse. Treat\n"
+            "> every number below as a check that the plumbing works.\n"
+            "> Rebuild with the full universe\n"
+            "> (`osap.portfolio_signals: all` in real-data) before quoting\n"
+            "> anything.\n",
         ]
     lines = [
         "# Pipeline summary\n",
