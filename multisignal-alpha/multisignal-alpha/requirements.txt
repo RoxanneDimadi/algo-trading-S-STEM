@@ -13,6 +13,7 @@ pytest>=8.0
 # Execution bridge (src/execution) and its tests
 requests>=2.31
 flask>=3.0
+python-dotenv>=1.0    # run_execution_server.py reads .env
 
 # Hyperparameter tuning (optional; used only if models.lgbm.tune = true)
 optuna>=3.6

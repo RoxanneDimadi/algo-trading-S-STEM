@@ -1,5 +1,9 @@
-# Paper/live Alpaca + webhook listener. Prefer env vars for secrets:
-# ALPACA_API_KEY, ALPACA_SECRET_KEY, WEBHOOK_PASSPHRASE
+# Paper/live Alpaca + webhook listener.
+#
+# This file is COMMITTED, so never put a real credential in it. Secrets go in
+# environment variables, or in the gitignored .env beside this package:
+# ALPACA_API_KEY, ALPACA_SECRET_KEY, WEBHOOK_PASSPHRASE. Those override
+# anything set here.
 
 broker:
   provider: alpaca
@@ -14,7 +18,11 @@ broker:
 webhook:
   host: "0.0.0.0"
   port: 8000
-  passphrase: "change_this_secret_passphrase"
+  # Deliberately empty. A placeholder here would be a real, working
+  # passphrase published in the repository, and it would suppress the
+  # "no passphrase" warning the listener logs at startup. Set
+  # WEBHOOK_PASSPHRASE instead.
+  passphrase: ""
   debug: false
 
 agent_policy:

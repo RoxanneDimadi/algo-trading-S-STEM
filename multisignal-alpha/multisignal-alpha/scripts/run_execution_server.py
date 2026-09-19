@@ -7,9 +7,15 @@ import os
 import sys
 
 import yaml
+from dotenv import load_dotenv
 
-sys.path.insert(0, os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..")))
+PACKAGE_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, PACKAGE_ROOT)
+
+# Read .env next to this package, if there is one, so the credentials in it
+# reach os.environ before load_config() looks for them. override=False, so a
+# variable already exported in the shell still wins over the file.
+load_dotenv(os.path.join(PACKAGE_ROOT, ".env"), override=False)
 
 # The package lives one level up; the bootstrap above has to run
 # before these imports resolve.
@@ -22,6 +28,12 @@ from src.execution.agent_evaluator import (AgentPolicyConfig,
 
 
 def load_config(config_path: str = "configs/execution_config.yaml") -> dict:
+    """Merge configs/execution_config.yaml with the environment.
+
+    Environment variables win over the YAML file, and .env has already been
+    folded into the environment at import time, so the precedence is:
+    exported shell variable, then .env, then the YAML file.
+    """
     cfg = {}
     if os.path.exists(config_path):
         with open(config_path, "r", encoding="utf-8") as f:

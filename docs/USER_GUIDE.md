@@ -294,22 +294,21 @@ Key ingest knobs: `osap.portfolio_signals` (`all` recommended), `factor_panel.lo
   when `WEBHOOK_PASSPHRASE` is unset, so anyone who can reach the port can
   submit trade signals. It logs a warning at startup when that happens. Set a
   passphrase, or bind it to localhost, before exposing it anywhere.
-- Unlike the ingest package, the agent does **not** read `.env` by itself. It
-  reads plain environment variables, so copying
-  `multisignal-alpha/multisignal-alpha/.env.example` to `.env` has no effect
-  on its own. Either export the values (`set -a; source .env; set +a`) or
-  attach them to the conda environment, which survives across shells:
+- Credentials come from `multisignal-alpha/multisignal-alpha/.env`. Copy
+  `.env.example` to `.env`, fill it in, and
+  `scripts/run_execution_server.py` picks it up on startup. A variable
+  exported in your shell overrides the file. `.env` is gitignored at the
+  repository root, so it cannot be committed from anywhere in the tree, and
+  CI fails if one ever is.
 
-  ```bash
-  conda activate msa-agent
-  conda env config vars set ALPACA_API_KEY=... ALPACA_SECRET_KEY=... \
-      WEBHOOK_PASSPHRASE=...
-  conda activate msa-agent    # re-activate so the new vars load
-  ```
+  Do not put credentials in `configs/execution_config.yaml`. That file is
+  committed, so anything in it is published. Its `passphrase` ships empty on
+  purpose: a placeholder there would be a working password that everyone who
+  can read the repo also knows, and it would silence the no-passphrase
+  warning above.
 
-  `conda env config vars list` shows what is attached. None of this matters
-  for `make test`, `make demo` or the factor run, which read no credentials
-  at all.
+  None of this matters for `make test`, `make demo` or the factor run, which
+  read no credentials at all.
 
 ## 12. What the results mean, and what they don't
 
