@@ -12,11 +12,13 @@ This directory does **not** mix download logic into the research package. It wri
 
 ```bash
 cd real-data
-python -m venv .venv
-# Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-copy .env.example .env   # or: cp .env.example .env
+conda env create -f environment.yml
+conda activate msa-ingest
+cp .env.example .env     # Windows: copy .env.example .env
 ```
+
+Needs Miniconda or Anaconda. After a change to `requirements.txt`, refresh
+the environment with `conda env update -f environment.yml --prune`.
 
 Edit `.env`:
 

@@ -9,7 +9,8 @@ The claim is deliberately *not* "I found alpha." The claim is: **here is a real,
 ## Quickstart
 
 ```bash
-pip install -r requirements.txt
+conda env create -f environment.yml    # needs Miniconda or Anaconda
+conda activate msa-agent
 make test     # 53 statistical-correctness tests (placebo, leak, purge, ...)
 make lint     # pylint: PEP 8 + defect gate (same command CI runs)
 make demo     # full pipeline on synthetic data with PLANTED signals

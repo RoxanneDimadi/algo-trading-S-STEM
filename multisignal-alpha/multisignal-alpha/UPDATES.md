@@ -91,8 +91,9 @@ skips constant cross-sections cleanly instead of spraying scipy warnings.
 
 - `real-data/.venv/`, **534 MB**, was shipped inside the project archive. It
   was already gitignored; the zip simply included it. Deleted from the
-  working copy. Recreate it locally with `python -m venv .venv`, and on your
-  machine it is safe to delete and recreate the same way.
+  working copy. Environments are conda now, so there is nothing to recreate
+  in the tree: `conda env create -f environment.yml`. Any leftover `.venv/`
+  on your machine is safe to delete.
 - All `__pycache__/` and `.pytest_cache/` directories removed.
 - The 443 MB OSAP wide CSV is duplicated by design (one ingest copy, one
   agent copy) so the agent repo stays self-contained. The sync-skip change

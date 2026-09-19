@@ -33,25 +33,52 @@ Three run modes, in order of evidential weight:
 
 ## 2. Setup
 
-```bash
-# agent repo
-cd multisignal-alpha/multisignal-alpha
-python -m venv .venv && source .venv/bin/activate    # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+Environments are managed with conda, so you need Miniconda or Anaconda
+installed first. Each sub-project ships an `environment.yml`, and they are
+deliberately two separate environments: the download dependencies never end
+up in the environment that produces results.
 
-# data ingest repo (separate venv keeps download deps out of the research env)
+```bash
+# research agent
+cd multisignal-alpha/multisignal-alpha
+conda env create -f environment.yml
+conda activate msa-agent
+
+# data ingest
 cd ../../real-data
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+conda env create -f environment.yml
+conda activate msa-ingest
 cp .env.example .env    # Windows: copy .env.example .env
 ```
 
-You do **not** need to edit `.env` for the no-WRDS path; the defaults work.
+Activate whichever one matches what you are about to run: `msa-agent` for
+`make test`, `make demo` and the pipeline, `msa-ingest` for anything under
+`real-data/`. Switching is just `conda activate <name>`, and
+`conda env list` shows both.
+
+Both environment files install Python 3.11, which is the version CI runs,
+then hand the package list to pip from `requirements.txt`. That keeps one
+copy of the dependencies rather than two that can drift apart. If you would
+rather build the environment by hand, this is the same thing:
+
+```bash
+conda create -n msa-agent python=3.11
+conda activate msa-agent
+pip install -r requirements.txt
+```
+
+After pulling changes that touch `requirements.txt`, refresh with
+`conda env update -f environment.yml --prune`.
+
+You do **not** need to edit `real-data/.env` for the no-WRDS path; the
+defaults work. The agent's own `.env.example` covers live trading only, and
+nothing in the research pipeline reads it.
 
 ## 3. The two repositories
 
 ```
 multisignal-alpha/multisignal-alpha/   the research agent (models, stats, agent)
+  environment.yml                      conda env msa-agent
   configs/config.yaml                  every tunable number, one source of truth
   configs/config_factor.yaml           GENERATED runnable config for real factor data
   src/                                 pipeline, models, evaluation, agent
@@ -60,6 +87,8 @@ multisignal-alpha/multisignal-alpha/   the research agent (models, stats, agent)
   results_factor/   (real-data runs)   same layout
 
 real-data/                             ingest only; downloads never touch research code
+  environment.yml                      conda env msa-ingest
+  .env.example                         copy to .env; paths, OSAP release, WRDS
   configs/data_config.yaml             what to download and how to build panels
   scripts/run_all.py                   one-shot: OSAP + French + factor panel + sync
   scripts/build_factor_panel.py        the no-WRDS panel builder (+ real decay exhibit)
@@ -257,7 +286,7 @@ Key ingest knobs: `osap.portfolio_signals` (`all` recommended), `factor_panel.lo
 
 ### A warning about the execution bridge
 
-`src/execution/` places real orders. Two defaults matter:
+`src/execution/` places real orders. Three things to know:
 
 - `AlpacaConfig.paper` is `True`, so you hit the paper endpoint unless you
   deliberately set it false.
@@ -265,6 +294,22 @@ Key ingest knobs: `osap.portfolio_signals` (`all` recommended), `factor_panel.lo
   when `WEBHOOK_PASSPHRASE` is unset, so anyone who can reach the port can
   submit trade signals. It logs a warning at startup when that happens. Set a
   passphrase, or bind it to localhost, before exposing it anywhere.
+- Unlike the ingest package, the agent does **not** read `.env` by itself. It
+  reads plain environment variables, so copying
+  `multisignal-alpha/multisignal-alpha/.env.example` to `.env` has no effect
+  on its own. Either export the values (`set -a; source .env; set +a`) or
+  attach them to the conda environment, which survives across shells:
+
+  ```bash
+  conda activate msa-agent
+  conda env config vars set ALPACA_API_KEY=... ALPACA_SECRET_KEY=... \
+      WEBHOOK_PASSPHRASE=...
+  conda activate msa-agent    # re-activate so the new vars load
+  ```
+
+  `conda env config vars list` shows what is attached. None of this matters
+  for `make test`, `make demo` or the factor run, which read no credentials
+  at all.
 
 ## 12. What the results mean, and what they don't
 
