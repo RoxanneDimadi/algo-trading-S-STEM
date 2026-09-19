@@ -301,9 +301,13 @@ Key ingest knobs: `osap.portfolio_signals` (`all` recommended), `factor_panel.lo
   repository root, so it cannot be committed from anywhere in the tree, and
   CI fails if one ever is.
 
-  Do not put credentials in `configs/execution_config.yaml`. That file is
-  committed, so anything in it is published. Its `passphrase` ships empty on
-  purpose: a placeholder there would be a working password that everyone who
+  `configs/execution_config.yaml` has **no** `api_key` or `secret_key`
+  entries, deliberately. That file is committed, so a value in it would be
+  published, and removing the fields means there is no slot to fill in by
+  mistake. The server reads those two from the environment only, and it
+  exits with an explanatory message if they are missing rather than failing
+  later with a confusing 401. The `passphrase` field is still there but
+  ships empty: a placeholder would be a working password that everyone who
   can read the repo also knows, and it would silence the no-passphrase
   warning above.
 

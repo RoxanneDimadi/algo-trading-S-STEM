@@ -40,15 +40,18 @@ def load_config(config_path: str = "configs/execution_config.yaml") -> dict:
             cfg = yaml.safe_load(f) or {}
 
     broker = cfg.setdefault("broker", {})
+    # Credentials come from the environment only. The committed YAML has no
+    # api_key/secret_key entries, so there is nowhere to leak them from, and
+    # anything the file does happen to carry is ignored here.
     broker["api_key"] = (
         os.environ.get("ALPACA_API_KEY")
         or os.environ.get("APCA_API_KEY_ID")
-        or broker.get("api_key", "")
+        or ""
     )
     broker["secret_key"] = (
         os.environ.get("ALPACA_SECRET_KEY")
         or os.environ.get("APCA_API_SECRET_KEY")
-        or broker.get("secret_key", "")
+        or ""
     )
     paper_env = os.environ.get("ALPACA_PAPER")
     if paper_env is not None:
@@ -83,6 +86,18 @@ def main():
     log = logging.getLogger("execution.server")
 
     cfg = load_config(args.config)
+    missing = [name for name, key in
+               (("ALPACA_API_KEY", "api_key"),
+                ("ALPACA_SECRET_KEY", "secret_key"))
+               if not cfg["broker"].get(key)]
+    if missing:
+        parser.error(
+            f"missing {' and '.join(missing)}. The server reads Alpaca "
+            f"credentials from the environment only. Copy .env.example to "
+            f"'{os.path.join(PACKAGE_ROOT, '.env')}' and fill it in, or "
+            f"export the variables in your shell. Do not put them in "
+            f"{args.config}, which is committed.")
+
     if args.live:
         cfg["broker"]["paper"] = False
         log.warning("live trading mode enabled")
