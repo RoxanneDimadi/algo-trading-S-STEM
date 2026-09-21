@@ -63,13 +63,13 @@ The ingest side *pushes* panels and a factor config into the agent tree; the age
 
 ## User guide
 
-You need [Miniconda](https://docs.conda.io/en/latest/miniconda.html) or Anaconda installed first.
+You need [Miniconda](https://docs.conda.io/en/latest/miniconda.html) or Anaconda installed first. Commands below are **PowerShell** (Windows default). Lines marked `# unix:` are macOS/Linux alternatives.
 
 ### 1. Create the conda environments
 
 There are **two** environment YAML files, on purpose: ingest dependencies stay out of the results environment.
 
-```bash
+```powershell
 # Research agent (tests, demo, models, agent pipeline)
 cd multisignal-alpha/multisignal-alpha
 conda env create -f environment.yml
@@ -79,7 +79,8 @@ conda activate msa-agent
 cd ../../real-data
 conda env create -f environment.yml
 conda activate msa-ingest
-cp .env.example .env    # Windows: copy .env.example .env
+copy .env.example .env
+# unix: cp .env.example .env
 ```
 
 | YAML path | Env name | Use for |
@@ -97,7 +98,7 @@ Models run inside the research agent environment via the end-to-end pipeline (si
 
 **Synthetic demo** (planted signals; several minutes):
 
-```bash
+```powershell
 conda activate msa-agent
 cd multisignal-alpha/multisignal-alpha
 make demo
@@ -108,7 +109,7 @@ Outputs: `results/tables/`, `results/figures/`, `results/summary.md`.
 
 **Real factor data** (after ingest below):
 
-```bash
+```powershell
 conda activate msa-agent
 cd multisignal-alpha/multisignal-alpha
 python -m src.pipeline --config configs/config_factor.yaml
@@ -118,14 +119,16 @@ Outputs: `results_factor/` (same layout as synthetic).
 
 **Optional checks before a research run:**
 
-```bash
+```powershell
 make test    # statistical-correctness suite
 make lint    # same pylint gate CI runs
+# unix (no make): python -m pytest -q tests/
+# unix (no make): pylint --rcfile=../../.pylintrc src scripts tests
 ```
 
 **Ingest real factor data** (no WRDS), from the ingest env:
 
-```bash
+```powershell
 conda activate msa-ingest
 cd real-data
 python scripts/run_all.py --skip-returns
@@ -138,7 +141,7 @@ The trading agent is part of the same pipeline as the models. When you run `make
 
 Extra agent-focused scripts (still under `msa-agent`, from `multisignal-alpha/multisignal-alpha/`):
 
-```bash
+```powershell
 python scripts/agent_cost_sweep.py      # how learned γ changes with cost
 python scripts/compose_pulse_agent.py   # PULSE forecasts as the agent's aim
 ```

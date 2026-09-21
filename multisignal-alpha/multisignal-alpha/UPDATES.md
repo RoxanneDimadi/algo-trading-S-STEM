@@ -122,10 +122,13 @@ The archive `msa_improvements.zip` contains only new and changed files, in
 their correct relative paths. From the directory that contains
 `multisignal-alpha/` and `real-data/`:
 
-```bash
-unzip -o msa_improvements.zip     # overwrites the ~15 touched files in place
-cd real-data && python scripts/validate_data.py
-cd ../multisignal-alpha/multisignal-alpha && make test    # expect 53 passed
+```powershell
+Expand-Archive -Path msa_improvements.zip -DestinationPath . -Force
+# unix: unzip -o msa_improvements.zip
+cd real-data; python scripts/validate_data.py
+# unix: cd real-data && python scripts/validate_data.py
+cd ../multisignal-alpha/multisignal-alpha; make test    # expect 53 passed
+# unix: cd ../multisignal-alpha/multisignal-alpha && make test
 ```
 
 Then re-download with the full universe when convenient

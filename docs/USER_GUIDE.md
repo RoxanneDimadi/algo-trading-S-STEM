@@ -36,9 +36,10 @@ Three run modes, in order of evidential weight:
 Environments are managed with conda, so you need Miniconda or Anaconda
 installed first. Each sub-project ships an `environment.yml`, and they are
 deliberately two separate environments: the download dependencies never end
-up in the environment that produces results.
+up in the environment that produces results. Commands below are **PowerShell**
+(Windows default). Lines marked `# unix:` are macOS/Linux alternatives.
 
-```bash
+```powershell
 # research agent
 cd multisignal-alpha/multisignal-alpha
 conda env create -f environment.yml
@@ -48,7 +49,8 @@ conda activate msa-agent
 cd ../../real-data
 conda env create -f environment.yml
 conda activate msa-ingest
-cp .env.example .env    # Windows: copy .env.example .env
+copy .env.example .env
+# unix: cp .env.example .env
 ```
 
 Activate whichever one matches what you are about to run: `msa-agent` for
@@ -61,7 +63,7 @@ then hand the package list to pip from `requirements.txt`. That keeps one
 copy of the dependencies rather than two that can drift apart. If you would
 rather build the environment by hand, this is the same thing:
 
-```bash
+```powershell
 conda create -n msa-agent python=3.11
 conda activate msa-agent
 pip install -r requirements.txt
@@ -105,17 +107,19 @@ The ingest repo *pushes* files into the agent's `data/raw/` and writes the agent
 
 ## 4. Running the test suite
 
-```bash
+```powershell
 cd multisignal-alpha/multisignal-alpha
-make test        # or: python -m pytest -q tests/
+make test
+# unix (or without make): python -m pytest -q tests/
 ```
 
 Expect **53 passed**. These are not unit tests in the trivial sense. They are the statistical-correctness gate: the placebo signal must evaluate to noise, a deliberately leaked feature must produce an absurd IC, purged walk-forward splits must not overlap, the deflated Sharpe must penalize trial count, the agent's zero-cost limit must recover the MSRR closed form. If any of these fail after a change you made, the change broke the *science*, not just the code.
 
 ### Linting
 
-```bash
-make lint        # or: pylint --rcfile=../../.pylintrc src scripts tests
+```powershell
+make lint
+# unix (or without make): pylint --rcfile=../../.pylintrc src scripts tests
 ```
 
 Code is PEP 8 (79-column lines) and pylint-clean at 10.00/10 under the
@@ -132,8 +136,9 @@ from `.github/workflows/ci.yml` at the repository root.
 
 ## 5. Running the synthetic demo
 
-```bash
-make demo        # = python -m src.pipeline --config configs/config.yaml
+```powershell
+make demo
+# same as: python -m src.pipeline --config configs/config.yaml
 ```
 
 Runtime: several minutes. Outputs go to `results/`. What to check, in order:
@@ -175,7 +180,7 @@ This is not a consolation prize. Factor timing over the published-anomaly univer
 
 ### Commands
 
-```bash
+```powershell
 cd real-data
 python scripts/run_all.py --skip-returns    # download OSAP + French, build panel, sync
 python scripts/validate_data.py             # confirm: factor RUNNABLE
@@ -194,7 +199,7 @@ Nothing WRDS-shaped was removed. Drop a `permno,yyyymm,ret[,dlret]` CSV anywhere
 
 ## 7. Running the models on real data
 
-```bash
+```powershell
 cd multisignal-alpha/multisignal-alpha
 python -m src.pipeline --config configs/config_factor.yaml
 ```
@@ -295,9 +300,11 @@ Key ingest knobs: `osap.portfolio_signals` (`all` recommended), `factor_panel.lo
   submit trade signals. It logs a warning at startup when that happens. Set a
   passphrase, or bind it to localhost, before exposing it anywhere.
 - Credentials come from `multisignal-alpha/multisignal-alpha/.env`. Copy
-  `.env.example` to `.env`, fill it in, and
+  `.env.example` to `.env` (`copy .env.example .env` in PowerShell;
+  `# unix: cp .env.example .env`), fill it in, and
   `scripts/run_execution_server.py` picks it up on startup. A variable
-  exported in your shell overrides the file. `.env` is gitignored at the
+  set in your shell overrides the file (`$env:NAME = "value"` in PowerShell;
+  `# unix: export NAME=value`). `.env` is gitignored at the
   repository root, so it cannot be committed from anywhere in the tree, and
   CI fails if one ever is.
 
