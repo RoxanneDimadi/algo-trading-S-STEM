@@ -89,7 +89,7 @@ cp .env.example .env    # Windows: copy .env.example .env
 
 Switch with `conda activate <name>`. After dependency changes: `conda env update -f environment.yml --prune`.
 
-You do **not** need to edit `real-data/.env` for the no-WRDS factor path; defaults work. The agent's `.env.example` is for optional live/paper execution only—the research pipeline does not read it.
+You do **not** need to edit `real-data/.env` for the no-WRDS factor path; defaults work. The agent's `.env.example` is for optional live/paper execution only; the research pipeline does not read it.
 
 ### 2. Run the models
 
@@ -155,7 +155,7 @@ Think of two jobs in a row:
    They turn signals into forecasts (scores or predicted returns). Elastic net, LightGBM, IC-Net, and PULSE all do this job in different ways, on the same walk-forward folds.
 
 2. **The agent answers:** "Given those forecasts, what do I hold *this* month, knowing what I held last month and that trading costs money?"  
-   A forecast is memoryless. Positions are not: buying or selling today changes tomorrow's costs. The agent learns a trading speed (how much of the gap toward an "aim" portfolio to close each period) by optimizing **net** Sharpe—returns after costs—not just forecast accuracy.
+   A forecast is memoryless. Positions are not: buying or selling today changes tomorrow's costs. The agent learns a trading speed (how much of the gap toward an "aim" portfolio to close each period) by optimizing **net** Sharpe (returns after costs) not just forecast accuracy.
 
 So: **models produce the map; the agent decides how to drive on that map when every turn has a toll.** You can evaluate models on IC and portfolio Sharpe alone; the agent is the step that turns a forecast into a cost-aware position path. In the default pipeline they run together so you see both the forecast quality and the traded result.
 
@@ -166,6 +166,6 @@ So: **models produce the map; the agent decides how to drive on that map when ev
 | Doc | Start here if you want… |
 |---|---|
 | [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) | Full setup, every output table, troubleshooting |
-| [`docs/math/00_index.md`](docs/math/00_index.md) | Formula-by-formula math lesson plan |
+| [`docs/math/00_index.md`](docs/math/00_index.md) | Formula-by-formula math proofs |
 | [`multisignal-alpha/multisignal-alpha/README.md`](multisignal-alpha/multisignal-alpha/README.md) | Research-agent quickstart and repo map |
 | [`real-data/README.md`](real-data/README.md) | Ingest details and factor-panel construction |
