@@ -8,12 +8,17 @@ The claim is deliberately *not* "I found alpha." The claim is: **here is a real,
 
 ## Quickstart
 
-```bash
+Commands below are **PowerShell** (Windows default). Lines marked `# unix:` are macOS/Linux alternatives.
+
+```powershell
 conda env create -f environment.yml    # needs Miniconda or Anaconda
 conda activate msa-agent
 make test     # 53 statistical-correctness tests (placebo, leak, purge, ...)
 make lint     # pylint: PEP 8 + defect gate (same command CI runs)
 make demo     # full pipeline on synthetic data with PLANTED signals
+# unix (no make): python -m pytest -q tests/
+# unix (no make): pylint --rcfile=../../.pylintrc src scripts tests
+# unix (no make): python -m src.pipeline --config configs/config.yaml
 ```
 
 `make demo` writes tables to `results/tables/`, figures to `results/figures/`, and a digest to `results/summary.md`. The four notebooks in `notebooks/` walk the same pipeline interactively (regenerate them anytime with `make notebooks`).
@@ -64,7 +69,7 @@ publication-status features (the McLean-Pontiff angle, point-in-time safe).
 This is the factor-timing setting of Ehsani-Linnainmaa / Gupta-Kelly -- and
 PULSE's natural habitat on real data.
 
-```bash
+```powershell
 cd ../real-data
 python scripts/run_all.py --skip-returns   # OSAP + French + factor panel
 python scripts/validate_data.py            # readiness report per data mode
@@ -142,10 +147,11 @@ predictions checked against `make demo` output).
 
 Ingest lives in the sibling **`real-data/`** directory (not in this package):
 
-```bash
+```powershell
 cd ../real-data          # from repo root: real-data/
 pip install -r requirements.txt
 copy .env.example .env   # set RETURNS_CSV or WRDS_* as needed
+# unix: cp .env.example .env
 python scripts/run_all.py
 python scripts/sync_to_agent.py
 ```

@@ -10,11 +10,14 @@ This directory does **not** mix download logic into the research package. It wri
 
 ## Setup
 
-```bash
+Commands below are **PowerShell** (Windows default). Lines marked `# unix:` are macOS/Linux alternatives.
+
+```powershell
 cd real-data
 conda env create -f environment.yml
 conda activate msa-ingest
-cp .env.example .env     # Windows: copy .env.example .env
+copy .env.example .env
+# unix: cp .env.example .env
 ```
 
 Needs Miniconda or Anaconda. After a change to `requirements.txt`, refresh
@@ -30,7 +33,7 @@ Edit `.env`:
 
 ## Run
 
-```bash
+```powershell
 # everything that can run without WRDS: OSAP + French + the FACTOR PANEL
 # (the supported real-data path -- OSAP long-short portfolios as assets)
 python scripts/run_all.py --skip-returns
@@ -54,7 +57,7 @@ features are its own trailing momentum/vol plus publication-status flags --
 plus `factor_decay.csv`, the REAL McLean-Pontiff decay measured per factor.
 It syncs both into the agent and writes a complete runnable config:
 
-```bash
+```powershell
 cd ../multisignal-alpha/multisignal-alpha
 python -m src.pipeline --config configs/config_factor.yaml
 ```
