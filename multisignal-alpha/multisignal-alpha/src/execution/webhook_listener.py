@@ -31,8 +31,8 @@ def create_webhook_app(
     passphrase = webhook_passphrase
     if not passphrase:
         logger.warning(
-            "webhook listener started with NO passphrase: every caller who "
-            "can reach this port can submit trade signals. Set "
+            "webhook listener started with NO passphrase set: any caller "
+            "that can reach this port can submit trade signals. Set "
             "WEBHOOK_PASSPHRASE unless this is bound to localhost.")
 
     def _verify_auth(req, data: Dict[str, Any]) -> Tuple[bool, str]:

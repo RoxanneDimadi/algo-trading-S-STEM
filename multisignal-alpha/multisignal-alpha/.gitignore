@@ -12,6 +12,9 @@ data/processed/*
 models/*.pkl
 models/*.txt
 .venv/
+# conda envs created in-tree with `conda create -p ./envs`
+envs/
+.conda/
 .coverage
 .coverage.*
 coverage.xml

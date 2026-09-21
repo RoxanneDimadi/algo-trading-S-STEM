@@ -2,8 +2,8 @@
 
 The design and research notes that used to sit here were byte-identical
 copies of the ones in `multisignal-alpha/multisignal-alpha/docs/`. Two
-copies of the same file drift the moment someone edits one, so the copies
-are gone and that directory is canonical:
+copies of a file drift as soon as anyone edits one of them, so the copies
+here are gone and that directory is now the only one:
 
 | Document | Now at |
 |---|---|

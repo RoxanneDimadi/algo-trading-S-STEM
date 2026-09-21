@@ -1,0 +1,22 @@
+# Data ingest environment, kept separate from the research agent so the
+# download dependencies never end up in the environment that produces results.
+#
+#   conda env create -f environment.yml
+#   conda activate msa-ingest
+#
+# Later, after requirements.txt changes:
+#
+#   conda env update -f environment.yml --prune
+#
+# The package list itself stays in requirements.txt so there is only one copy
+# of it. Conda provides the interpreter and hands the rest to pip.
+name: msa-ingest
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3.11        # the version CI runs
+  - pip
+  - pip:
+      - -r requirements.txt

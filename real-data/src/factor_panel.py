@@ -13,12 +13,12 @@ design treats **each factor as the tradable asset**:
               (factor momentum / vol) plus publication-status features
               (the McLean-Pontiff angle)
 
-Note that ``fmom_1m`` IS the ``ret`` column: last month's realized factor
-return, used as this month's signal. Both are emitted, so the agent's
-leak report sees a signal perfectly correlated with the contemporaneous
-return. That is legitimate -- ``ret_t`` is known at the end of month t and
-predicts ``ret_{t+1}`` -- and leak_report() annotates the case rather than
-raising a false alarm.
+``fmom_1m`` IS the ``ret`` column: last month's realized factor return,
+used as this month's signal. Both are emitted, so the agent's leak report
+sees a signal perfectly correlated with the contemporaneous return. That is
+legitimate, since ``ret_t`` is known at the end of month t and predicts
+``ret_{t+1}``, and leak_report() annotates the case instead of raising a
+false alarm.
 
 This is the factor-momentum / factor-timing setting (Ehsani-Linnainmaa;
 Gupta-Kelly), and it is PULSE's home turf on *real* data: the Kalman filter
@@ -32,13 +32,13 @@ Point-in-time discipline (why the features are shaped this way):
     publication you could not have known the paper was coming.
   * ``years_since_pub`` is clamped at 0 pre-publication for the same reason:
     a negative value would leak the future publication date backwards.
-  * KNOWN LIMITATION: a factor with no SignalDoc entry gets post_pub = 0 and
-    years_since_pub = 0 for its whole history, which is indistinguishable
-    from a published factor before its publication date. A missing-date
-    indicator would separate the two, but it would be constant (and so
-    useless as a signal) whenever every factor has dates, which is the
-    usual case. build_factor_panel() logs how many factors are affected --
-    if that count is not zero, read the publication features with care.
+  * KNOWN LIMITATION: a factor with no SignalDoc entry gets post_pub = 0
+    and years_since_pub = 0 for its whole history, which looks the same as
+    a published factor before its publication date. A missing-date
+    indicator would separate the two, but it would be constant, and so
+    useless as a signal, whenever every factor has dates. That is the usual
+    case. build_factor_panel() logs how many factors are affected; if that
+    count is not zero, read the publication features with care.
   * A post-SAMPLE-end flag is deliberately NOT a feature: the sample end
     only becomes public knowledge at publication, so conditioning on it
     pre-publication is lookahead. (It remains fine for the retrospective

@@ -1,11 +1,12 @@
 # Pipeline summary
 
-> **SMOKE TEST -- NOT EVIDENCE.** Only 5 names in the
+> **SMOKE TEST, NOT EVIDENCE.** Only 5 names in the
 > cross-section, so the statistical thresholds are relaxed to
-> their structural minimum and the sorts are coarse. Every
-> number below is a plumbing check. Rebuild with the full
-> universe (`osap.portfolio_signals: all` in real-data) for a
-> result worth citing.
+> their structural minimum and the sorts are coarse. Treat
+> every number below as a check that the plumbing works.
+> Rebuild with the full universe
+> (`osap.portfolio_signals: all` in real-data) before quoting
+> anything.
 
 Panel: 1158 months x 5 names; signals: fmom_1m, fmom_12_2, fmom_12m, fvol_12m, post_pub, years_since_pub
 

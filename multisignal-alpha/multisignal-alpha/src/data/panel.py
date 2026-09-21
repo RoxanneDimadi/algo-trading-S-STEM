@@ -59,12 +59,12 @@ def leak_report(panel: pd.DataFrame, signal_cols: list[str], *,
     explicit and auditable.
 
     The ``note`` column separates the two ways a correlation of 1.0 can
-    arise. A feature that simply IS the contemporaneous return (factor
-    mode's ``fmom_1m`` is ``ret_t``) correlates perfectly with it by
-    construction -- that is not lookahead, because ``ret_t`` is known at the
-    end of month t, and its t-statistic is meaningless, so it is dropped.
-    Any OTHER signal sitting at |corr| > 0.999 is the alarm this table
-    exists to raise.
+    arise. A feature that simply IS the contemporaneous return correlates
+    perfectly with it by construction; factor mode's ``fmom_1m`` is
+    ``ret_t``. That is not lookahead, since ``ret_t`` is known at the end of
+    month t, and the t-statistic means nothing there, so it is dropped. Any
+    OTHER signal sitting above |corr| > 0.999 is what this table is
+    watching for.
     """
     rows = []
     for c in signal_cols:

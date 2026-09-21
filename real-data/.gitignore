@@ -12,4 +12,7 @@ __pycache__/
 .pytest_cache/
 .venv/
 venv/
+# conda envs created in-tree with `conda create -p ./envs`
+envs/
+.conda/
 *.zip

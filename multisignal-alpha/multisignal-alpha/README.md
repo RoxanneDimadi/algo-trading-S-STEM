@@ -1,6 +1,6 @@
 # multisignal-alpha
 
-**A cross-sectional equity return-prediction project built to demonstrate quantitative-research discipline** — replicable signals, correct statistics, honest decay characterization, and an ML-vs-linear comparison in the Gu–Kelly–Xiu tradition.
+**A cross-sectional equity return-prediction project built to demonstrate quantitative-research discipline:** replicable signals, correct statistics, honest decay characterization, and an ML-vs-linear comparison in the Gu-Kelly-Xiu tradition.
 
 The claim is deliberately *not* "I found alpha." The claim is: **here is a real, partially-decayed set of documented signals; here is exactly how much has been arbitraged away; here is what a nonlinear model recovers over a linear benchmark on identical inputs; and here is what survives factor controls, transaction costs, and multiple-testing deflation.** That framing is the job.
 
@@ -9,7 +9,8 @@ The claim is deliberately *not* "I found alpha." The claim is: **here is a real,
 ## Quickstart
 
 ```bash
-pip install -r requirements.txt
+conda env create -f environment.yml    # needs Miniconda or Anaconda
+conda activate msa-agent
 make test     # 53 statistical-correctness tests (placebo, leak, purge, ...)
 make lint     # pylint: PEP 8 + defect gate (same command CI runs)
 make demo     # full pipeline on synthetic data with PLANTED signals
@@ -17,12 +18,12 @@ make demo     # full pipeline on synthetic data with PLANTED signals
 
 `make demo` writes tables to `results/tables/`, figures to `results/figures/`, and a digest to `results/summary.md`. The four notebooks in `notebooks/` walk the same pipeline interactively (regenerate them anytime with `make notebooks`).
 
-## Why the demo data is synthetic — and why that's a feature
+## Why the demo data is synthetic, and why that's a feature
 
 The repo ships with a simulator (`src/data/synthetic.py`) that plants:
 
-- five signals with **known monthly betas** (momentum-, liquidity-, volatility-, value-, quality-like), with McLean–Pontiff-style decay applied after each signal's synthetic sample-end and publication dates;
-- one signal with **beta exactly zero** (`sig_dead`) — the placebo;
+- five signals with **known monthly betas** (momentum-, liquidity-, volatility-, value-, quality-like), with McLean-Pontiff-style decay applied after each signal's synthetic sample-end and publication dates;
+- one signal with **beta exactly zero** (`sig_dead`), the placebo;
 - one **nonlinear interaction** (momentum × value) that a linear model cannot capture and gradient-boosted trees should.
 
 This is the validation step most projects skip: *prove the harness on data where the truth is known before pointing it at real data.* A harness that can't find a planted signal, can't clear a placebo, or doesn't scream at a deliberate leak is not a harness. The test suite (`tests/`) makes those checks permanent.
@@ -32,7 +33,7 @@ the placebo evaluates to noise (|t| < 2, net Sharpe ≈ 0); per-signal ICs order
 exactly by planted beta; the deliberate-leak feature produces an absurd IC
 (~0.40 vs ~0.03 for honest signals); the decay module recovers the planted
 post-publication haircut; and LightGBM beats the elastic net out-of-sample
-because — per its feature importances — it exploits the planted interaction;
+because, per its feature importances, it exploits the planted interaction;
 and IC-Net, a from-scratch NumPy model trained on a per-date cross-sectional
 correlation objective (`docs/04_custom_model_proposal.md`), leads the
 comparison with roughly half LightGBM's turnover; and PULSE, a from-scratch
@@ -50,7 +51,7 @@ Sharpe over the static blend (5.35 vs 2.96; scripts/compose_pulse_agent.py).
 
 > **Caveat that belongs in every conversation about this repo:** synthetic
 > Sharpes are pedagogically inflated (the betas are planted and known). On
-> real data expect numbers an order of magnitude humbler — reporting those
+> real data expect numbers an order of magnitude humbler, and reporting those
 > honestly is the point of the project.
 
 ## Real data without WRDS: factor mode
@@ -87,7 +88,7 @@ src/
   evaluation/fama_macbeth.py
   evaluation/decay.py      # in-sample vs post-sample vs post-publication
   evaluation/factor_controls.py  # alpha regression, NW errors, R²
-  evaluation/deflated_sharpe.py  # Bailey–López de Prado DSR
+  evaluation/deflated_sharpe.py  # Bailey-López de Prado DSR
   models/models.py         # elastic-net benchmark, LightGBM, optional optuna
   models/icnet.py          # from-scratch NumPy net, per-date IC objective (docs/04)
   models/pulse.py          # Kalman-filtered time-varying signal efficacy (docs/05)
@@ -109,16 +110,16 @@ predictions checked against `make demo` output).
 ## Methodology (the defensible core)
 
 - **Predictive, lagged tests only.** Signal at *t* against the return over
-  (*t*, *t*+1] — never contemporaneous. `leak_report` makes the comparison
+  (*t*, *t*+1], never contemporaneous. `leak_report` makes the comparison
   explicit; `demonstrate_lookahead` shows what a leak looks like so you
   recognize one.
 - **Point-in-time in both directions.** No forward leakage, and no stale
-  information either — the *Anomaly Time* (JF 2024) lesson; the staleness
+  information either, which is the *Anomaly Time* (JF 2024) lesson; the staleness
   experiment measures IC as information ages.
-- **Fama–MacBeth** for marginal cross-sectional power; **quintile long-short**
+- **Fama-MacBeth** for marginal cross-sectional power; **quintile long-short**
   (±$1, equal-weighted legs) for the economic test, gross **and net** of a
   per-side cost on traded notional.
-- **Newey–West everywhere** a time-series mean is tested (returns, ICs, alphas).
+- **Newey-West everywhere** a time-series mean is tested (returns, ICs, alphas).
 - **Purged, embargoed walk-forward** (purge ≥ label horizon, enforced with a
   `ValueError`); all tuning inside the train window.
 - **Factor-controlled alpha** with formation-aligned factor timing.
@@ -131,7 +132,7 @@ predictions checked against `make demo` output).
 - [x] Predictive, lagged tests everywhere
 - [x] Purged/embargoed walk-forward; tuning inside train only
 - [x] Realistic transaction costs; results reported net
-- [x] Factor-controlled alpha with Newey–West errors
+- [x] Factor-controlled alpha with Newey-West errors
 - [x] Deflated Sharpe over the full set of configurations tried
 - [x] Decay quantified per signal (in-sample / post-sample / post-publication)
 - [x] ML gain attributed (feature importances), not just asserted
@@ -152,13 +153,13 @@ python scripts/sync_to_agent.py
 That writes OSAP signals, SignalDoc, Ken French FF5+Mom, and (if available)
 returns into `data/raw/`, and drops `configs/config_osap_overlay.yaml`.
 
-1. **Signals** — `openassetpricing` subset matching config (Mom12m, Illiquidity,
+1. **Signals**: the `openassetpricing` subset matching config (Mom12m, Illiquidity,
    IdioVol3F, BM, GP). Or place `signed_predictors_dl_wide.csv` + `SignalDoc.csv`
    under `data/raw/` yourself.
-2. **Returns** — `data/raw/returns.csv` with columns `permno, yyyymm, ret`
+2. **Returns**: `data/raw/returns.csv`, with columns `permno, yyyymm, ret`
    (CRSP via WRDS or your own CSV). **Price, Size, and STreversal are not in
    the public OSAP file**; `real-data` builds STreversal as `-ret_{t-1}`.
-3. **Factors** — prefer local `data/raw/french_factors.csv` from `real-data`;
+3. **Factors**: prefer a local `data/raw/french_factors.csv` written by `real-data`;
    `load_french_factors()` falls back to `pandas-datareader` if missing.
 4. Set `data.mode: osap` in `configs/config.yaml` (or merge the overlay) and
    re-run `make demo` / `python -m src.pipeline`.
@@ -193,7 +194,7 @@ McLean & Pontiff (2016) JF · Bowles, Reed, Ringgenberg & Thornock (2024)
 Ratio* · López de Prado (2018) *Advances in Financial Machine Learning* ·
 Kelly & Xiu (2023) *Financial Machine Learning* · Jensen, Kelly & Pedersen
 (2023) JF. See `docs/01_research_findings.md` for the annotated shelf,
-including the 2023–2026 frontier (virtue-of-complexity debate, LLM signals).
+including the 2023-2026 frontier (virtue-of-complexity debate, LLM signals).
 
 ## License
 

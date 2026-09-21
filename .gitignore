@@ -1,0 +1,35 @@
+# Repository-wide ignores. Each sub-project keeps its own .gitignore for
+# files specific to it; this one covers anything that must never be
+# committed no matter where in the tree it turns up.
+
+# Secrets. Once you fill in a .env it holds real credentials, so it never
+# goes in git. The .env.example templates are committed on purpose, hence
+# the exception. Patterns without a slash match at every depth, so this
+# covers a .env in any directory, including ones that do not exist yet.
+.env
+.env.*
+!.env.example
+
+# Anything that looks like a key file.
+*.pem
+*.key
+credentials.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Environments
+.venv/
+venv/
+envs/
+.conda/
+
+# Coverage and build artifacts
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
