@@ -7,6 +7,7 @@ configuration live in `multisignal-alpha/` (research agent) and `real-data/`
 | File | What it is |
 |---|---|
 | `USER_GUIDE.md` | The complete use guide: setup, both sub-projects, the test suite, the synthetic demo, getting real data without WRDS, running on real data, how to read every output table and figure, the four models, the trading agent, the config reference, what the results do and don't claim, troubleshooting. **Start here.** |
+| `figure_explanation.md` | Plain-language walkthrough of one complete pipeline run: what every block of `results/summary.md` means, which numbers are the controls working, and which are artifacts of the synthetic generator. Read alongside `USER_GUIDE.md` section 8. |
 | `math/` | Proof-driven lesson plan, one chapter per file. Every formula in the repository is derived from first principles, assuming no finance background. Start at `math/00_index.md`. |
 | `mathematical_foundations_lesson_plan.md` | The same lesson plan as one continuous document, for reading or printing end-to-end. |
 
