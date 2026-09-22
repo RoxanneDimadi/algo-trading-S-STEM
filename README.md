@@ -169,6 +169,7 @@ So: **models produce the map; the agent decides how to drive on that map when ev
 | Doc | Start here if you want… |
 |---|---|
 | [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) | Full setup, every output table, troubleshooting |
+| [`docs/figure_explanation.md`](docs/figure_explanation.md) | What a finished run's numbers actually mean, in plain language |
 | [`docs/math/00_index.md`](docs/math/00_index.md) | Formula-by-formula math proofs |
 | [`multisignal-alpha/multisignal-alpha/README.md`](multisignal-alpha/multisignal-alpha/README.md) | Research-agent quickstart and repo map |
 | [`real-data/README.md`](real-data/README.md) | Ingest details and factor-panel construction |

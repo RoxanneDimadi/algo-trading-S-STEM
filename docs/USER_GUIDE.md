@@ -220,6 +220,9 @@ Runtime: a few minutes on the 5-factor panel; longer with the full universe. Out
 
 All tables in `results*/tables/`, figures in `results*/figures/`, digest in `results*/summary.md`.
 
+This section defines every column. For a narrative walkthrough of one complete run, with the numbers interpreted, see
+[`figure_explanation.md`](figure_explanation.md).
+
 ### signal_evaluation.csv
 One row per feature. Columns and how to read them:
 
