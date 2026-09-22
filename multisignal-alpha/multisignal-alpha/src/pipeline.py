@@ -297,6 +297,18 @@ def main(config_path: str = "configs/config.yaml") -> dict:
           f"n_trials={dsr['n_trials']})")
 
     # ---- summary.md -------------------------------------------------
+    pulse_grid = cfg["models"]["pulse"]
+    pulse_dyn = pd.DataFrame([
+        {"parameter": "a", "chosen": pdiag.a_,
+         "grid": ", ".join(str(v) for v in pulse_grid["a_grid"]),
+         "at_grid_edge": pdiag.a_ in (min(pulse_grid["a_grid"]),
+                                      max(pulse_grid["a_grid"]))},
+        {"parameter": "q_scale", "chosen": pdiag.q_scale_,
+         "grid": ", ".join(str(v) for v in pulse_grid["q_scale_grid"]),
+         "at_grid_edge": pdiag.q_scale_ in (min(pulse_grid["q_scale_grid"]),
+                                            max(pulse_grid["q_scale_grid"]))},
+    ])
+
     n_names = panel["ticker"].nunique()
     banner = []
     if n_names < SMOKE_TEST_MIN_NAMES:
@@ -327,6 +339,11 @@ def main(config_path: str = "configs/config.yaml") -> dict:
         dec.round(3).to_markdown(), "\n",
         "## Model comparison (purged walk-forward, out-of-sample)\n",
         comp.round(3).to_markdown(), "\n",
+        "## PULSE chosen dynamics\n",
+        # Selected by the grid search in 5b. Recorded here because a value
+        # sitting at the EDGE of its grid means the optimum may lie outside
+        # it -- readers cannot judge that from the performance table alone.
+        pulse_dyn.to_markdown(index=False), "\n",
         "## Factor-controlled alpha (net strategies)\n",
         ctrl.round(3).to_markdown(), "\n",
         f"## Deflated Sharpe ({best})\n", dsr_row.round(3).to_markdown(), "\n",
