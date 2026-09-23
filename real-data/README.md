@@ -20,7 +20,7 @@ copy .env.example .env
 # unix: cp .env.example .env
 ```
 
-Needs Miniconda or Anaconda. After a change to `requirements.txt`, refresh
+After a change to `requirements.txt`, refresh
 the environment with `conda env update -f environment.yml --prune`.
 
 Edit `.env`:
