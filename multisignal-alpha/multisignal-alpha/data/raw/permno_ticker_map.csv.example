@@ -1,0 +1,14 @@
+permno,symbol
+# Required by scripts/run_agent_signals.py when configs/config.yaml has
+# data.mode: osap. OSAP/CRSP files key every signal by permno (a CRSP
+# identifier), never by a tradable ticker (CRSP license) -- so there is no
+# way to derive this mapping from the data already in the repo.
+#
+# Fill in one row per permno you actually want the agent allowed to trade,
+# e.g. from CRSP's stocknames table, your broker's symbol master, or by
+# hand for a short list. Copy this file to permno_ticker_map.csv (drop the
+# comment lines) and point --permno-ticker-map / signal_generator.
+# permno_ticker_map_csv in configs/execution_config.yaml at it.
+#
+# 10107,MSFT
+# 14593,AAPL

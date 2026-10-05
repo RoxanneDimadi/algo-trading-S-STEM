@@ -9,6 +9,10 @@ matplotlib>=3.8
 PyYAML>=6.0
 pytest>=8.0
 
+# Live execution bridge (src/execution/): webhook listener + Alpaca REST client
+flask>=3.0
+requests>=2.31
+
 # Hyperparameter tuning (optional; used only if models.lgbm.tune = true)
 optuna>=3.6
 

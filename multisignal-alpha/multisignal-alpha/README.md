@@ -75,6 +75,10 @@ src/
   backtest/walkforward.py  # purged/embargoed splits with self-checks
   backtest/engine.py       # walk-forward train/predict → portfolio → costs
   pipeline.py              # end-to-end orchestrator (python -m src.pipeline)
+  execution/alpaca_bridge.py     # Alpaca REST client, audited
+  execution/agent_evaluator.py   # live risk gate: GP sizing + cost hurdle
+  execution/webhook_listener.py  # inbound signals (e.g. TradingView) -> bridge
+  execution/signal_generator.py  # the agent/models -> bridge, for real data
 notebooks/                 # 01 data+leaks, 02 eval+decay, 03 ML-vs-linear, 04 controls+DSR
 tests/                     # the statistical-correctness gate
 docs/                      # research findings + roadmap + backlog + model proposal
@@ -130,6 +134,33 @@ The loaders (`src/data/loaders.py`) implement this path with the correct
 signal-at-*t* → return-over-(*t*, *t*+1] alignment; they require network/WRDS
 access and are the one part of the repo not exercised by the offline test
 suite — validate the join row-counts and date ranges when you first run them.
+
+## Connecting the agent and models to the broker
+
+`src/execution/` already has a tested, risk-gated Alpaca paper-trading bridge
+(`scripts/run_execution_server.py`), but by default it only *receives*
+signals from an external source that already names a real symbol (e.g. a
+TradingView alert). `scripts/run_agent_signals.py` is the other half: it
+fits the agent's learned signal blend (`src/agent/policy.py`) on the OSAP
+panel, scores the latest available cross-section, and feeds the resulting
+buy/sell signals into the same risk gate and bridge — same sizing, same cost
+hurdle, same audit trail.
+
+```bash
+python scripts/run_agent_signals.py \
+  --permno-ticker-map data/raw/permno_ticker_map.csv \
+  --dry-run   # drop --dry-run once you've checked the output
+```
+
+Two things this does **not** paper over:
+
+- OSAP/CRSP files key signals by `permno`, not a tradable ticker (CRSP
+  license) — you must supply a `permno,symbol` CSV mapping the names you
+  actually want traded; unmapped names are skipped and reported, never
+  silently sent as garbage symbols.
+- OSAP signals are monthly and published with a real lag. "Live" here means
+  "the most recently available complete month," not intraday — the same
+  honest-limits caveat as the rest of the real-data story (docs/06 §6).
 
 Tooling note: the original Quantopian libraries (alphalens/pyfolio/zipline)
 are unmaintained; if you want tear sheets, install Stefan Jansen's

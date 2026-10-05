@@ -6,6 +6,7 @@ data/raw/*
 data/processed/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
+!data/raw/permno_ticker_map.csv.example
 models/*.pkl
 models/*.txt
 .venv/

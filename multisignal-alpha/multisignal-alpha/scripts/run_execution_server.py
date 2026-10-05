@@ -6,43 +6,13 @@ import logging
 import os
 import sys
 
-import yaml
-
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from src.execution.agent_evaluator import AgentPolicyConfig, CostAwareAgentEvaluator
 from src.execution.alpaca_bridge import AlpacaConfig, AlpacaExecutionBridge
+from src.execution.config import load_execution_config as load_config
 from src.execution.ledger import ExecutionLedger
 from src.execution.webhook_listener import create_webhook_app
-
-
-def load_config(config_path: str = "configs/execution_config.yaml") -> dict:
-    cfg = {}
-    if os.path.exists(config_path):
-        with open(config_path, "r", encoding="utf-8") as f:
-            cfg = yaml.safe_load(f) or {}
-
-    broker = cfg.setdefault("broker", {})
-    broker["api_key"] = (
-        os.environ.get("ALPACA_API_KEY")
-        or os.environ.get("APCA_API_KEY_ID")
-        or broker.get("api_key", "")
-    )
-    broker["secret_key"] = (
-        os.environ.get("ALPACA_SECRET_KEY")
-        or os.environ.get("APCA_API_SECRET_KEY")
-        or broker.get("secret_key", "")
-    )
-    paper_env = os.environ.get("ALPACA_PAPER")
-    if paper_env is not None:
-        broker["paper"] = paper_env.lower() in ("true", "1", "yes")
-    else:
-        broker.setdefault("paper", True)
-    broker["base_url"] = os.environ.get("ALPACA_BASE_URL") or broker.get("base_url")
-
-    webhook = cfg.setdefault("webhook", {})
-    webhook["passphrase"] = os.environ.get("WEBHOOK_PASSPHRASE") or webhook.get("passphrase", "")
-    return cfg
 
 
 def main():
