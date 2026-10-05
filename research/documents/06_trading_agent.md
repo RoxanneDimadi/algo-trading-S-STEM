@@ -2,7 +2,8 @@
 ## Replacing ML4T's RL chapter with the modern consensus
 
 *Implementation: `src/agent/policy.py` + `src/agent/backtest.py` (pure NumPy).
-Math: `docs/math/11_differentiable_trading.md`. Validation:
+Live deployment: `src/execution/signal_generator.py` (§10). Math:
+`docs/math/11_differentiable_trading.md`. Validation:
 `tests/test_backtest.py::test_agent_learns_garleanu_pedersen_comparative_statics`.*
 
 ---
@@ -209,3 +210,33 @@ drift-adjusted inventory; plugging PULSE's filtered efficacies in as the
 score (composing the two custom models: time-varying alpha *and*
 cost-aware execution); a factor-risk penalty in the objective; and daily
 frequency, where the speed dial has far more room to matter.
+
+## 10. From backtest to broker
+
+Everything above is evaluated inside a purged walk-forward backtest; it is
+never deployed there. `src/execution/signal_generator.py` is the deployment
+path: it fits $\theta$ (not $\gamma$ — see below) on every month with a
+realized forward return, scores the latest cross-section into a
+dollar-neutral aim via `aim_weights()` (the same score $\to$ demean
+$\to$ normalize map as `_roll`'s aim step, §3, minus the recursion since no
+forward return exists yet for a live date), and hands that aim to
+`src/execution/agent_evaluator.py`'s `CostAwareAgentEvaluator` — the
+partial-adjustment step actually used in production, sized against the
+*live* Alpaca position rather than a backtest's running inventory.
+
+Deliberately not reused: the backtest's fit $\gamma$. It is whatever was
+Sharpe-optimal in-sample over the fit window; live execution speed is the
+evaluator's own `gamma_speed` (`configs/execution_config.yaml`), an
+operator-set risk knob reviewed independently of the research fit. The
+aim/execution split this preserves is the same one §8b already
+established (aim = model, speed = execution) — here the "model" is the
+simpler raw-signal $\theta$ rather than MSRR or PULSE, and the "execution"
+is a live risk gate rather than a backtest roll.
+
+Run it with `python scripts/run_agent_signals.py --dry-run` (drop
+`--dry-run` to submit real paper orders). Honest limit carried over
+unchanged from §6: OSAP signals are monthly with a real publication lag,
+so "live" means "the most recently complete month," not intraday — and
+OSAP/CRSP's `permno` is not a tradable symbol (CRSP license), so a
+`permno -> ticker` map is a required input, not something this repo can
+derive on its own.
