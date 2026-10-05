@@ -75,12 +75,6 @@ def main():
             "testing the mechanism only -- synthetic tickers are not real symbols)."
         )
 
-    panel, _factors, meta = build_data(research_cfg)
-    signal_cols = list(meta.index)
-    panel = rank_normalize_cross_section(panel, signal_cols)
-    log.info("panel: %d months x %d names, signals=%s",
-             panel["date"].nunique(), panel["ticker"].nunique(), signal_cols)
-
     exec_cfg = load_execution_config(args.execution_config)
     if args.live:
         exec_cfg["broker"]["paper"] = False
@@ -132,9 +126,19 @@ def main():
 
     map_path = args.permno_ticker_map or sg.get("permno_ticker_map_csv")
     permno_ticker_map = None
-    if map_path:
+    if map_path and os.path.exists(map_path):
         permno_ticker_map = load_permno_ticker_map(map_path)
         log.info("loaded %d permno->ticker mappings from %s", len(permno_ticker_map), map_path)
+    elif map_path and data_mode != "osap":
+        log.warning("permno->ticker map %r not found; ignoring it for data.mode=%s "
+                    "(fine for synthetic demo wiring, not for real orders)", map_path, data_mode)
+    elif map_path:
+        raise SystemExit(
+            f"permno->ticker map {map_path!r} (from --permno-ticker-map or "
+            "signal_generator.permno_ticker_map_csv) does not exist. Copy "
+            "data/raw/permno_ticker_map.csv.example to that path and fill in "
+            "the permnos you actually want traded."
+        )
     elif data_mode == "osap":
         raise SystemExit(
             "data.mode=osap but no permno->ticker map was given (--permno-ticker-map "
@@ -148,6 +152,14 @@ def main():
 
     mode = "paper" if alpaca.paper else "live"
     log.info("mode=%s dry_run=%s broker=%s", mode, args.dry_run, alpaca.get_effective_base_url())
+
+    # Validated broker/map config above; only now pay for the (possibly
+    # slow, network/WRDS-dependent) real-data load.
+    panel, _factors, meta = build_data(research_cfg)
+    signal_cols = list(meta.index)
+    panel = rank_normalize_cross_section(panel, signal_cols)
+    log.info("panel: %d months x %d names, signals=%s",
+             panel["date"].nunique(), panel["ticker"].nunique(), signal_cols)
 
     report = run_live_signals(
         panel, signal_cols, evaluator, bridge,

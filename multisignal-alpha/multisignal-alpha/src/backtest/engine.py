@@ -84,7 +84,7 @@ def run_model_backtest(panel: pd.DataFrame, feature_cols: list[str],
 
     # --- portfolio on the OOS forecast --------------------------------------
     w = score_to_weights(pred_panel, "prediction",
-                         n_q=int(eval_cfg.get("n_quantiles", 5)))
+                         n_q=int(eval_cfg.get("n_quantiles", 5)), fwd_col=label_col)
     gross = portfolio_returns(w, pred_panel, fwd_col=label_col)
     traded = turnover_series(w)
     net = apply_costs(gross, traded,

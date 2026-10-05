@@ -74,6 +74,41 @@ def test_decay_pattern_recovered(world):
         "generator plants decay; the decay module must recover it"
 
 
+def test_score_to_weights_excludes_names_missing_fwd_ret():
+    """A name with a non-null score but a null forward return (delisting,
+    a coverage gap) must be excluded BEFORE quantile formation, so it never
+    occupies a leg slot, and so each leg's surviving names are renormalized
+    to still sum to $1 -- not silently left short because pandas' sum()
+    skips the NaN term (which is what happens if the name leaks through to
+    portfolio_returns instead of being excluded here)."""
+    import pandas as pd
+    from src.evaluation.portfolio import portfolio_returns, score_to_weights
+
+    dt = pd.Timestamp("2020-01-31")
+    panel = pd.DataFrame({
+        "date": [dt] * 10,
+        "ticker": [f"T{i}" for i in range(10)],
+        "score": list(range(1, 11)),
+        # T9 has the single highest score (would anchor the top quintile)
+        # but no realized return at all.
+        "fwd_ret": [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, np.nan],
+    })
+
+    w = score_to_weights(panel, "score", n_q=5, min_names=5)
+    assert "T9" not in set(w["ticker"]), "null-fwd_ret name must not enter any leg"
+
+    top_leg, bottom_leg = w[w["weight"] > 0], w[w["weight"] < 0]
+    assert np.isclose(top_leg["weight"].sum(), 1.0)
+    assert np.isclose(bottom_leg["weight"].sum(), -1.0)
+
+    # portfolio_returns must reproduce exactly what's recoverable from the
+    # (already NaN-free) surviving weights -- no NaN leaks through either.
+    gross = portfolio_returns(w, panel)
+    m = w.merge(panel[["date", "ticker", "fwd_ret"]], on=["date", "ticker"])
+    assert np.isfinite(gross.loc[dt])
+    assert np.isclose(gross.loc[dt], (m["weight"] * m["fwd_ret"]).sum())
+
+
 def test_deflated_sharpe_sanity():
     # more trials => bigger hurdle => lower DSR for the same observed SR
     few = deflated_sharpe(0.15, 240, 0.0, 3.0, [0.15, 0.05])

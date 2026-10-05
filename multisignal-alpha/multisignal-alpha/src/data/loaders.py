@@ -66,9 +66,22 @@ def build_panel_from_osap(signals_csv: str, returns_csv: str,
     sig = load_osap_wide_csv(signals_csv, signals)
     ret = load_returns_csv(returns_csv)
     panel = sig.merge(ret, on=["date", "ticker"], how="inner")
-    panel = panel.sort_values(["ticker", "date"])
+    panel = panel.drop_duplicates(subset=["ticker", "date"])
+    panel = panel.sort_values(["ticker", "date"]).reset_index(drop=True)
+    # shift(-1) is POSITIONAL: it pairs each row with whatever the next row
+    # in its ticker group happens to be, not with next calendar month's
+    # return. A missing month for a ticker (a trading halt, a signal not
+    # computed that month, delisting/relisting, or either source file
+    # simply lacking that month -- all common in real CRSP/OSAP data) makes
+    # the "next" row two or more months ahead, silently mislabeling that
+    # longer return as a 1-month fwd_ret and corrupting every downstream IC,
+    # fit, and backtest. Null out fwd_ret wherever the next row isn't
+    # actually next calendar month.
+    next_date = panel.groupby("ticker")["date"].shift(-1)
+    expected_next = panel["date"] + pd.offsets.MonthEnd(1)
     panel["fwd_ret"] = panel.groupby("ticker")["ret"].shift(-1)
-    return panel.reset_index(drop=True)
+    panel.loc[next_date != expected_next, "fwd_ret"] = np.nan
+    return panel
 
 
 def load_signal_doc(path: str) -> pd.DataFrame:

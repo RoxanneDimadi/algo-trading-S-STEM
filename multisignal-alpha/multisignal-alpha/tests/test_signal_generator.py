@@ -103,6 +103,21 @@ def test_build_signals_skips_unmapped_permno():
     assert any(s["reason"] == "no permno->ticker mapping" for s in skipped)
 
 
+def test_build_signals_dedupes_symbol_collisions():
+    # T0 (aim +1.0) and T1 (aim -1.0) both map to AAPL: a bad/stale mapping,
+    # or a CRSP permno change. Only the larger |aim weight| name should
+    # reach the evaluator -- never both, which could double-trade AAPL.
+    panel = _toy_panel()
+    theta = np.array([1.0])
+    cfg = SignalGeneratorConfig(min_abs_aim_weight=0.0, max_names=None)
+    perm_map = {"T0": "AAPL", "T1": "AAPL"}
+    _as_of, signals, skipped = build_signals(panel, ["sig"], theta, cfg, perm_map, 0.5)
+    assert len(signals) == 1
+    assert signals[0]["ticker"] == "AAPL"
+    assert signals[0]["permno"] == "T0"   # |aim|=1.0 for both; T0 kept (inserted first)
+    assert any("duplicate symbol" in s["reason"] for s in skipped)
+
+
 def test_build_signals_without_map_uses_raw_ticker():
     panel = _toy_panel()
     theta = np.array([1.0])

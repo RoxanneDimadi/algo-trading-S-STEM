@@ -4,7 +4,7 @@
 demo:
 	python -m src.pipeline --config configs/config.yaml
 
-# Run the statistical-correctness test suite
+# Run the full test suite (statistical-correctness + execution bridge)
 test:
 	python -m pytest -q tests/
 

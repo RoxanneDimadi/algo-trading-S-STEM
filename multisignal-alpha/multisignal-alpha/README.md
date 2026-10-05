@@ -10,7 +10,8 @@ The claim is deliberately *not* "I found alpha." The claim is: **here is a real,
 
 ```bash
 pip install -r requirements.txt
-make test     # 17 statistical-correctness tests (placebo, leak, purge, ...)
+make test     # 65 tests: 17 statistical-correctness (placebo, leak, purge, ...)
+              # + the execution-bridge / live-signal-generator suites
 make demo     # full pipeline on synthetic data with PLANTED signals
 ```
 
@@ -80,7 +81,7 @@ src/
   execution/webhook_listener.py  # inbound signals (e.g. TradingView) -> bridge
   execution/signal_generator.py  # the agent/models -> bridge, for real data
 notebooks/                 # 01 data+leaks, 02 eval+decay, 03 ML-vs-linear, 04 controls+DSR
-tests/                     # the statistical-correctness gate
+tests/                     # statistical-correctness gate + execution-bridge checks
 docs/                      # research findings + roadmap + backlog + model proposal
 docs/math/                 # proof-driven lesson plan: every formula derived,
                            #   with predictions checked against `make demo` output

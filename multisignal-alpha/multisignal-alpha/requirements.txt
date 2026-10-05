@@ -8,6 +8,7 @@ lightgbm>=4.3
 matplotlib>=3.8
 PyYAML>=6.0
 pytest>=8.0
+tabulate>=0.9    # pandas DataFrame.to_markdown(), used by src/pipeline.py's summary.md
 
 # Live execution bridge (src/execution/): webhook listener + Alpaca REST client
 flask>=3.0

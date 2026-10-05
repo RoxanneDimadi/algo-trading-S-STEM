@@ -153,8 +153,19 @@ class ICNet:
         # chronological train/validation split BY DATE (inside-train only;
         # the walk-forward guarantees none of this touches a test fold)
         uniq = np.unique(dates)
-        n_val = max(6, int(round(len(uniq) * self.val_fraction)))
-        val_dates = set(uniq[-n_val:])
+        # The val_fraction floor of 6 dates is sized for realistic walk-forward
+        # windows (min_train ~ 100+); on a short window (small min_train, or a
+        # short initial fold) that floor can consume the ENTIRE training set,
+        # leaving none to train on and crashing fit(). Cap validation at 1/3
+        # of the available dates so training always keeps the majority, and
+        # skip validation altogether (train on everything, no early stopping)
+        # when there are too few dates for a meaningful split either way.
+        if len(uniq) < 3:
+            n_val = 0
+        else:
+            n_val = min(max(6, int(round(len(uniq) * self.val_fraction))),
+                        max(1, len(uniq) // 3))
+        val_dates = set(uniq[-n_val:]) if n_val > 0 else set()
         is_val = np.isin(dates, list(val_dates))
         Xtr, ytr, dtr = X[~is_val], y[~is_val], dates[~is_val]
         Xva, yva, dva = X[is_val], y[is_val], dates[is_val]

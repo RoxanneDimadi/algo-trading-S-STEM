@@ -52,6 +52,13 @@ filter, the likelihood, the grid search. ~150 lines of auditable math.
 from __future__ import annotations
 
 import numpy as np
+import pandas as pd
+
+
+def _months_between(d0: "pd.Timestamp", d1: "pd.Timestamp") -> int:
+    """Calendar months from d0 to d1 (assumes both are month-end dates, as
+    every date in this repo's panels is -- see src/data/loaders.py)."""
+    return (d1.year - d0.year) * 12 + (d1.month - d0.month)
 
 
 def expand_interactions(X: np.ndarray, names: list[str]):
@@ -196,6 +203,15 @@ class PulseModel:
         the decay prior gently shrinks efficacy toward zero the longer the
         filter goes without evidence, which is exactly the McLean-Pontiff
         prior in action. If dates are not supplied, one step is assumed.
+
+        h is the actual CALENDAR distance (in months) from the last fitted
+        date to each prediction date -- not the position of that date within
+        whatever `dates` happens to be passed. A walk-forward fold's test
+        dates start `purge + embargo` months after the last training date
+        (src/backtest/walkforward.py), so enumerating test dates from 0 would
+        silently undercount every h by that gap (e.g. h=1 instead of h=2 at
+        purge=1), under-decaying the state relative to what "months past
+        training end" actually means.
         """
         Xa = np.asarray(X, dtype=float)
         Z, _ = (expand_interactions(Xa, self._base_names) if self.interactions
@@ -204,7 +220,8 @@ class PulseModel:
             return Z @ (self.a_ * self.state_mean_)
         dates = np.asarray(dates)
         uniq = np.sort(np.unique(dates))
-        step = {dt: h + 1 for h, dt in enumerate(uniq)}   # months past train end
+        last_train = pd.Timestamp(self.filter_dates_[-1])
+        step = {dt: _months_between(last_train, pd.Timestamp(dt)) for dt in uniq}
         out = np.empty(len(Z))
         for dt in uniq:
             mask = dates == dt

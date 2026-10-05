@@ -160,6 +160,25 @@ def build_signals(
             symbol = str(permno)
         rows.append({"permno": permno, "symbol": symbol, "aim_weight": float(aim)})
 
+    # Two permnos can map to the same real symbol (a stale/duplicate map
+    # entry, or a CRSP permno change), or the panel can carry a duplicate
+    # ticker row. Either way, letting both through would evaluate_signal()
+    # and submit_order() the SAME symbol twice in one run; each call reads
+    # live broker state independently, so the second call would not yet see
+    # the first (unfilled) order and could double the intended exposure.
+    # Keep only the larger |aim weight| per symbol.
+    by_symbol: Dict[str, Dict[str, Any]] = {}
+    for row in rows:
+        prev = by_symbol.get(row["symbol"])
+        if prev is None:
+            by_symbol[row["symbol"]] = row
+        elif abs(row["aim_weight"]) > abs(prev["aim_weight"]):
+            skipped.append({**prev, "reason": f"duplicate symbol {row['symbol']!r} (lower |aim weight|)"})
+            by_symbol[row["symbol"]] = row
+        else:
+            skipped.append({**row, "reason": f"duplicate symbol {row['symbol']!r} (lower |aim weight|)"})
+    rows = list(by_symbol.values())
+
     rows.sort(key=lambda r: abs(r["aim_weight"]), reverse=True)
 
     kept: List[Dict[str, Any]] = []
