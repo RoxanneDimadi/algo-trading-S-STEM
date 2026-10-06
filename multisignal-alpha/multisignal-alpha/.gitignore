@@ -5,11 +5,17 @@ __pycache__/
 data/raw/*
 data/processed/*
 !data/raw/.gitkeep
+# small factor smoke-test panel -- tracked on purpose so the factor run is reproducible
+!data/raw/factor_panel.csv
+!data/raw/factor_meta.csv
 !data/processed/.gitkeep
 !data/raw/permno_ticker_map.csv.example
 models/*.pkl
 models/*.txt
 .venv/
+# conda envs created in-tree with `conda create -p ./envs`
+envs/
+.conda/
 .coverage
 .coverage.*
 coverage.xml

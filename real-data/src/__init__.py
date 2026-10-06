@@ -1,3 +1,4 @@
+"""Shared paths, config loading, and signal-list helpers."""
 from .paths import (
     ROOT,
     agent_raw_dir,

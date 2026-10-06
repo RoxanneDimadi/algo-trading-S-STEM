@@ -1,11 +1,16 @@
-# Paper/live Alpaca + webhook listener. Prefer env vars for secrets:
-# ALPACA_API_KEY, ALPACA_SECRET_KEY, WEBHOOK_PASSPHRASE
+# Paper/live Alpaca + webhook listener.
+#
+# This file is COMMITTED, so never put a credential in it. There are
+# deliberately no api_key or secret_key entries below: the only place the
+# server reads those from is the environment, which means .env beside this
+# package or a variable exported in your shell. Adding them back here would
+# publish them, and CI fails the build if they reappear with a value.
+#
+#   ALPACA_API_KEY, ALPACA_SECRET_KEY, WEBHOOK_PASSPHRASE
 
 broker:
   provider: alpaca
   paper: true
-  api_key: ""
-  secret_key: ""
   base_url: null
   timeout_seconds: 10.0
   max_retries: 2
@@ -14,7 +19,11 @@ broker:
 webhook:
   host: "0.0.0.0"
   port: 8000
-  passphrase: "change_this_secret_passphrase"
+  # Deliberately empty. A placeholder here would be a real, working
+  # passphrase published in the repository, and it would suppress the
+  # "no passphrase" warning the listener logs at startup. Set
+  # WEBHOOK_PASSPHRASE instead.
+  passphrase: ""
   debug: false
 
 agent_policy:

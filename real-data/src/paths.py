@@ -23,11 +23,13 @@ def load_config(path: Optional[str] = None) -> Dict[str, Any]:
 
     release = os.environ.get("OSAP_RELEASE", "").strip()
     if release:
-        cfg.setdefault("osap", {})["release"] = int(release) if release.isdigit() else release
+        cfg.setdefault("osap", {})["release"] = int(
+            release) if release.isdigit() else release
 
     signals = os.environ.get("OSAP_SIGNALS", "").strip()
     if signals:
-        cfg.setdefault("osap", {})["signals"] = [s.strip() for s in signals.split(",") if s.strip()]
+        cfg.setdefault("osap", {})["signals"] = [
+            s.strip() for s in signals.split(",") if s.strip()]
 
     french_start = os.environ.get("FRENCH_START", "").strip()
     if french_start:
@@ -61,7 +63,8 @@ def processed_dir(cfg: Dict[str, Any]) -> Path:
 
 
 def agent_raw_dir(cfg: Dict[str, Any]) -> Path:
-    d = resolve(cfg.get("paths", {}).get("agent_raw", "../multisignal-alpha/multisignal-alpha/data/raw"))
+    d = resolve(cfg.get("paths", {}).get(
+        "agent_raw", "../multisignal-alpha/multisignal-alpha/data/raw"))
     d.mkdir(parents=True, exist_ok=True)
     return d
 

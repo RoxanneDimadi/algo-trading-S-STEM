@@ -6,17 +6,25 @@ import logging
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(
+    0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from src.execution.agent_evaluator import AgentPolicyConfig, CostAwareAgentEvaluator
-from src.execution.alpaca_bridge import AlpacaConfig, AlpacaExecutionBridge
-from src.execution.config import load_execution_config as load_config
-from src.execution.ledger import ExecutionLedger
+# The package lives one level up; the bootstrap above has to run
+# before these imports resolve. load_config() also reads the .env next to
+# the package, so credentials in it reach the environment.
+# pylint: disable=wrong-import-position
 from src.execution.webhook_listener import create_webhook_app
+from src.execution.ledger import ExecutionLedger
+from src.execution.alpaca_bridge import AlpacaConfig, AlpacaExecutionBridge
+from src.execution.agent_evaluator import (AgentPolicyConfig,
+                                           CostAwareAgentEvaluator)
+from src.execution.config import PACKAGE_ROOT
+from src.execution.config import load_execution_config as load_config
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Alpaca paper/live webhook server")
+    parser = argparse.ArgumentParser(
+        description="Alpaca paper/live webhook server")
     parser.add_argument("--config", default="configs/execution_config.yaml")
     parser.add_argument("--host", default=None)
     parser.add_argument("--port", type=int, default=None)
@@ -33,6 +41,18 @@ def main():
     log = logging.getLogger("execution.server")
 
     cfg = load_config(args.config)
+    missing = [name for name, key in
+               (("ALPACA_API_KEY", "api_key"),
+                ("ALPACA_SECRET_KEY", "secret_key"))
+               if not cfg["broker"].get(key)]
+    if missing:
+        parser.error(
+            f"missing {' and '.join(missing)}. The server reads Alpaca "
+            f"credentials from the environment only. Copy .env.example to "
+            f"'{os.path.join(PACKAGE_ROOT, '.env')}' and fill it in, or "
+            f"export the variables in your shell. Do not put them in "
+            f"{args.config}, which is committed.")
+
     if args.live:
         cfg["broker"]["paper"] = False
         log.warning("live trading mode enabled")
@@ -70,9 +90,11 @@ def main():
         allow_short=ap.get("allow_short", False),
         default_base_alpha_bps=ap.get("default_base_alpha_bps", 30.0),
     )
-    evaluator = CostAwareAgentEvaluator(bridge=bridge, config=policy, ledger=ledger)
+    evaluator = CostAwareAgentEvaluator(
+        bridge=bridge, config=policy, ledger=ledger)
     app = create_webhook_app(
-        bridge=bridge, evaluator=evaluator, webhook_passphrase=passphrase, ledger=ledger,
+        bridge=bridge, evaluator=evaluator,
+        webhook_passphrase=passphrase, ledger=ledger,
     )
 
     mode = "paper" if alpaca.paper else "live"

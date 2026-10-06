@@ -101,7 +101,7 @@ class OrderLedgerEntry:
 
 
 class ExecutionLedger:
-    """Thread-safe store; keeps one connection so :memory: works across calls."""
+    """Thread-safe store; one connection so :memory: works across calls."""
 
     def __init__(
         self,
@@ -116,9 +116,11 @@ class ExecutionLedger:
 
     def _init_storage(self) -> None:
         if self.db_path != ":memory:":
-            os.makedirs(os.path.dirname(os.path.abspath(self.db_path)), exist_ok=True)
+            os.makedirs(os.path.dirname(
+                os.path.abspath(self.db_path)), exist_ok=True)
         if self.jsonl_path:
-            os.makedirs(os.path.dirname(os.path.abspath(self.jsonl_path)), exist_ok=True)
+            os.makedirs(os.path.dirname(
+                os.path.abspath(self.jsonl_path)), exist_ok=True)
 
         with self._lock:
             self._conn = sqlite3.connect(self.db_path, check_same_thread=False)
@@ -179,11 +181,21 @@ class ExecutionLedger:
                     raw_response TEXT
                 )
             """)
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_audit_x_req_id ON api_audit(x_request_id)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_audit_client_order_id ON api_audit(client_order_id)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_order_client_id ON order_ledger(client_order_id)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_order_alpaca_id ON order_ledger(alpaca_order_id)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_decision_symbol ON agent_decisions(symbol)")
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_audit_x_req_id "
+                "ON api_audit(x_request_id)")
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_audit_client_order_id "
+                "ON api_audit(client_order_id)")
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_order_client_id "
+                "ON order_ledger(client_order_id)")
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_order_alpaca_id "
+                "ON order_ledger(alpaca_order_id)")
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_decision_symbol "
+                "ON agent_decisions(symbol)")
             self._conn.commit()
 
     def record_api_call(self, entry: ApiAuditEntry) -> int:
@@ -196,9 +208,10 @@ class ExecutionLedger:
                     error_message, success
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (
-                    entry.timestamp, entry.method, entry.endpoint, entry.status_code,
-                    entry.x_request_id, entry.latency_ms, entry.request_body,
-                    entry.response_body, entry.client_order_id, entry.error_message,
+                    entry.timestamp, entry.method, entry.endpoint,
+                    entry.status_code, entry.x_request_id, entry.latency_ms,
+                    entry.request_body, entry.response_body,
+                    entry.client_order_id, entry.error_message,
                     1 if entry.success else 0,
                 ),
             )
@@ -210,7 +223,8 @@ class ExecutionLedger:
 
     def record_agent_decision(self, decision: AgentDecisionEntry) -> int:
         raw = json.dumps(decision.raw_signal) if decision.raw_signal else "{}"
-        directive = json.dumps(decision.directive) if decision.directive else None
+        directive = json.dumps(
+            decision.directive) if decision.directive else None
         with self._lock:
             cur = self._conn.cursor()
             cur.execute(
@@ -218,15 +232,18 @@ class ExecutionLedger:
                     timestamp, signal_source, symbol, raw_signal, approved,
                     reason, current_position_qty, current_price,
                     target_position_qty, order_qty, expected_alpha_bps,
-                    expected_cost_bps, net_benefit_bps, portfolio_value, directive
+                    expected_cost_bps, net_benefit_bps, portfolio_value,
+                    directive
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (
-                    decision.timestamp, decision.signal_source, decision.symbol,
-                    raw, 1 if decision.approved else 0, decision.reason,
+                    decision.timestamp, decision.signal_source,
+                    decision.symbol, raw, 1 if decision.approved else 0,
+                    decision.reason,
                     decision.current_position_qty, decision.current_price,
                     decision.target_position_qty, decision.order_qty,
                     decision.expected_alpha_bps, decision.expected_cost_bps,
-                    decision.net_benefit_bps, decision.portfolio_value, directive,
+                    decision.net_benefit_bps, decision.portfolio_value,
+                    directive,
                 ),
             )
             row_id = cur.lastrowid
@@ -242,7 +259,8 @@ class ExecutionLedger:
                 """INSERT INTO order_ledger (
                     timestamp, client_order_id, alpaca_order_id, x_request_id,
                     symbol, side, qty, order_type, status, filled_qty,
-                    filled_avg_price, limit_price, stop_price, error_message, raw_response
+                    filled_avg_price, limit_price, stop_price, error_message,
+                    raw_response
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(client_order_id) DO UPDATE SET
                     alpaca_order_id = excluded.alpaca_order_id,
@@ -253,10 +271,12 @@ class ExecutionLedger:
                     error_message = excluded.error_message,
                     raw_response = excluded.raw_response""",
                 (
-                    order.timestamp, order.client_order_id, order.alpaca_order_id,
+                    order.timestamp, order.client_order_id,
+                    order.alpaca_order_id,
                     order.x_request_id, order.symbol, order.side, order.qty,
                     order.order_type, order.status, order.filled_qty,
-                    order.filled_avg_price, order.limit_price, order.stop_price,
+                    order.filled_avg_price, order.limit_price,
+                    order.stop_price,
                     order.error_message, order.raw_response,
                 ),
             )
@@ -278,9 +298,11 @@ class ExecutionLedger:
             cur = self._conn.cursor()
             cur.execute(
                 """UPDATE order_ledger
-                   SET status = ?, filled_qty = ?, filled_avg_price = ?, error_message = ?
+                   SET status = ?, filled_qty = ?, filled_avg_price = ?,
+                       error_message = ?
                    WHERE client_order_id = ?""",
-                (status, filled_qty, filled_avg_price, error_message, client_order_id),
+                (status, filled_qty, filled_avg_price,
+                 error_message, client_order_id),
             )
             self._conn.commit()
 
@@ -288,28 +310,36 @@ class ExecutionLedger:
         with self._lock:
             self._conn.row_factory = sqlite3.Row
             cur = self._conn.cursor()
-            cur.execute("SELECT * FROM api_audit ORDER BY id DESC LIMIT ?", (limit,))
+            cur.execute(
+                "SELECT * FROM api_audit ORDER BY id DESC LIMIT ?", (limit,))
             return [dict(r) for r in cur.fetchall()]
 
     def get_recent_decisions(self, limit: int = 50) -> List[Dict[str, Any]]:
         with self._lock:
             self._conn.row_factory = sqlite3.Row
             cur = self._conn.cursor()
-            cur.execute("SELECT * FROM agent_decisions ORDER BY id DESC LIMIT ?", (limit,))
+            cur.execute(
+                "SELECT * FROM agent_decisions ORDER BY id DESC LIMIT ?",
+                (limit,))
             return [dict(r) for r in cur.fetchall()]
 
     def get_recent_orders(self, limit: int = 50) -> List[Dict[str, Any]]:
         with self._lock:
             self._conn.row_factory = sqlite3.Row
             cur = self._conn.cursor()
-            cur.execute("SELECT * FROM order_ledger ORDER BY id DESC LIMIT ?", (limit,))
+            cur.execute(
+                "SELECT * FROM order_ledger ORDER BY id DESC LIMIT ?",
+                (limit,))
             return [dict(r) for r in cur.fetchall()]
 
-    def get_by_x_request_id(self, x_request_id: str) -> Optional[Dict[str, Any]]:
+    def get_by_x_request_id(
+            self, x_request_id: str) -> Optional[Dict[str, Any]]:
         with self._lock:
             self._conn.row_factory = sqlite3.Row
             cur = self._conn.cursor()
-            cur.execute("SELECT * FROM api_audit WHERE x_request_id = ?", (x_request_id,))
+            cur.execute(
+                "SELECT * FROM api_audit WHERE x_request_id = ?",
+                (x_request_id,))
             row = cur.fetchone()
             return dict(row) if row else None
 
@@ -319,5 +349,5 @@ class ExecutionLedger:
         try:
             with open(self.jsonl_path, "a", encoding="utf-8") as f:
                 f.write(json.dumps({"event_type": event_type, **data}) + "\n")
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             logger.warning("jsonl write failed: %s", e)

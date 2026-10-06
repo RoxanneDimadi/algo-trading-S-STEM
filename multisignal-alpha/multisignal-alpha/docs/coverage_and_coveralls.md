@@ -1,16 +1,22 @@
 # Coverage
 
-```bash
+Commands below are **PowerShell** (Windows default). Lines marked `# unix:` are macOS/Linux alternatives.
+
+```powershell
 pip install -r requirements-dev.txt
 make coverage          # terminal + coverage.xml
 make coverage-html     # htmlcov/index.html
+# unix (no make): python -m pytest tests/ --cov=src --cov-report=term-missing --cov-report=xml -q
+# unix (no make): python -m pytest tests/ --cov=src --cov-report=term-missing --cov-report=xml --cov-report=html -q
 ```
 
 Config: `.coveragerc`. Fast path for just the broker stack:
 
-```bash
-python -m pytest tests/test_execution_bridge.py tests/test_execution_coverage.py \
+```powershell
+python -m pytest tests/test_execution_bridge.py tests/test_execution_coverage.py `
   --cov=src/execution --cov-report=term-missing -q
+# unix: python -m pytest tests/test_execution_bridge.py tests/test_execution_coverage.py \
+# unix:   --cov=src/execution --cov-report=term-missing -q
 ```
 
 ## Coveralls
@@ -23,6 +29,7 @@ Local upload (optional):
 
 ```powershell
 $env:COVERALLS_REPO_TOKEN = "token_from_coveralls_repo_settings"
+# unix: export COVERALLS_REPO_TOKEN=token_from_coveralls_repo_settings
 make coverage
 coveralls --service=github
 ```

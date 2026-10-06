@@ -45,7 +45,8 @@ def walkforward_splits(dates, min_train: int = 120, test_size: int = 12,
         raise ValueError("purge must be >= 1 (the label horizon).")
     dts = pd.DatetimeIndex(sorted(pd.unique(pd.DatetimeIndex(dates))))
     folds: list[Fold] = []
-    i = min_train + purge + embargo  # first test index with a full train window
+    # first test index with a full train window
+    i = min_train + purge + embargo
     fid = 0
     while i + test_size <= len(dts):
         train_end = i - 1 - purge - embargo
@@ -56,7 +57,8 @@ def walkforward_splits(dates, min_train: int = 120, test_size: int = 12,
         # -- self-checks: fail loudly rather than leak quietly ---------------
         assert len(train) > 0 and len(test) > 0
         assert train.max() < test.min(), "train/test overlap"
-        gap = np.searchsorted(dts, test.min()) - np.searchsorted(dts, train.max()) - 1
+        gap = np.searchsorted(dts, test.min()) - \
+            np.searchsorted(dts, train.max()) - 1
         assert gap >= purge + embargo, f"purge violated: gap={gap}"
 
         folds.append(Fold(fid, train, test))

@@ -40,9 +40,13 @@ meta
 """
 
 
-def md(s):  return {"cell_type": "markdown", "metadata": {}, "source": s}
-def code(s): return {"cell_type": "code", "metadata": {}, "execution_count": None,
-                     "outputs": [], "source": s}
+def md(s):
+    return {"cell_type": "markdown", "metadata": {}, "source": s}
+
+
+def code(s):
+    return {"cell_type": "code", "metadata": {},
+            "execution_count": None, "outputs": [], "source": s}
 
 
 def notebook(cells):
@@ -82,7 +86,8 @@ NB1 = notebook([
        "formation timing is itself a research variable."),
     code("from src.data.panel import staleness_experiment\n"
          "stale = staleness_experiment(panel, signal_cols, max_lag=6)\n"
-         "stale.pivot(index='staleness_months', columns='signal', values='IC').round(4)"),
+         "stale.pivot(index='staleness_months', columns='signal', "
+         "values='IC').round(4)"),
 ])
 
 NB2 = notebook([
@@ -94,7 +99,8 @@ NB2 = notebook([
     code(LOAD),
     md("## IC, ICIR, and the quintile long-short"),
     code("from src.evaluation.ic import mean_ic\n"
-         "from src.evaluation.portfolio import evaluate_signal_portfolio, summary_row\n"
+         "from src.evaluation.portfolio import "
+         "evaluate_signal_portfolio, summary_row\n"
          "import pandas as pd\n\n"
          "rows, series = [], {}\n"
          "for c in signal_cols:\n"
@@ -121,8 +127,10 @@ NB2 = notebook([
          "ls = series[lead]\n"
          "ax = ls.cumsum().plot(figsize=(9, 4), lw=1.4,\n"
          "    title=f'{lead}: cumulative L/S with decay markers')\n"
-         "ax.axvline(meta.loc[lead, 'sample_end'], ls='--', color='orange', label='sample end')\n"
-         "ax.axvline(meta.loc[lead, 'pub_date'], ls='--', color='red', label='publication')\n"
+         "ax.axvline(meta.loc[lead, 'sample_end'], ls='--', "
+         "color='orange', label='sample end')\n"
+         "ax.axvline(meta.loc[lead, 'pub_date'], ls='--', "
+         "color='red', label='publication')\n"
          "ax.legend(); plt.show()"),
 ])
 
@@ -134,25 +142,35 @@ NB3 = notebook([
        "win **for the right reason** via feature importances."),
     code(SHIM),
     code(LOAD),
-    code("from src.backtest.engine import run_model_backtest, comparison_table\n"
-         "from src.models.models import make_linear, make_lgbm\nfrom src.models.icnet import make_icnet\n\n"
+    code("from src.backtest.engine import run_model_backtest, "
+         "comparison_table\n"
+         "from src.models.models import make_linear, make_lgbm\n"
+         "from src.models.icnet import make_icnet\n\n"
          "wcfg, ecfg = cfg['walkforward'], cfg['evaluation']\n"
          "results = {\n"
          "    'elasticnet': run_model_backtest(panel, signal_cols,\n"
          "        lambda: make_linear(cfg['models']['linear']), wcfg, ecfg),\n"
          "    'lightgbm':  run_model_backtest(panel, signal_cols,\n"
-         "        lambda: make_lgbm(cfg['models']['lgbm']), wcfg, ecfg),\n    'icnet':     run_model_backtest(panel, signal_cols,\n        lambda: make_icnet(cfg['models']['icnet']), wcfg, ecfg),\n"
+         "        lambda: make_lgbm(cfg['models']['lgbm']), wcfg, "
+         "ecfg),\n"
+         "    'icnet':     run_model_backtest(panel, signal_cols,\n"
+         "        lambda: make_icnet(cfg['models']['icnet']), wcfg, "
+         "ecfg),\n"
          "}\n"
          "comparison_table(results).round(3)"),
     md("Note the turnover column: the tree model trades more, so its **net** "
        "edge is smaller than its gross edge. Costs are part of the answer, "
        "not a footnote."),
-    code("results['lightgbm']['feature_importance'].rename('importance').to_frame().round(3)"),
+    code(
+        "results['lightgbm']['feature_importance']"
+        ".rename('importance').to_frame().round(3)"),
     code("import matplotlib.pyplot as plt\n"
          "for name, r in results.items():\n"
-         "    r['series']['net'].cumsum().plot(label=f'{name} (net)', lw=1.6, figsize=(9, 4.5))\n"
+         "    r['series']['net'].cumsum().plot(label=f'{name} (net)', "
+         "lw=1.6, figsize=(9, 4.5))\n"
          "plt.axhline(0, color='k', lw=0.6); plt.legend()\n"
-         "plt.title('Out-of-sample, net of costs (purged walk-forward)'); plt.show()"),
+         "plt.title('Out-of-sample, net of costs (purged "
+         "walk-forward)'); plt.show()"),
 ])
 
 NB4 = notebook([
@@ -162,14 +180,20 @@ NB4 = notebook([
        "for every configuration examined."),
     code(SHIM),
     code(LOAD),
-    code("from src.backtest.engine import run_model_backtest, comparison_table\n"
-         "from src.models.models import make_linear, make_lgbm\nfrom src.models.icnet import make_icnet\n"
+    code("from src.backtest.engine import run_model_backtest, "
+         "comparison_table\n"
+         "from src.models.models import make_linear, make_lgbm\n"
+         "from src.models.icnet import make_icnet\n"
          "wcfg, ecfg = cfg['walkforward'], cfg['evaluation']\n"
          "results = {\n"
          "    'elasticnet': run_model_backtest(panel, signal_cols,\n"
          "        lambda: make_linear(cfg['models']['linear']), wcfg, ecfg),\n"
          "    'lightgbm':  run_model_backtest(panel, signal_cols,\n"
-         "        lambda: make_lgbm(cfg['models']['lgbm']), wcfg, ecfg),\n    'icnet':     run_model_backtest(panel, signal_cols,\n        lambda: make_icnet(cfg['models']['icnet']), wcfg, ecfg),\n"
+         "        lambda: make_lgbm(cfg['models']['lgbm']), wcfg, "
+         "ecfg),\n"
+         "    'icnet':     run_model_backtest(panel, signal_cols,\n"
+         "        lambda: make_icnet(cfg['models']['icnet']), wcfg, "
+         "ecfg),\n"
          "}\n"
          "comp = comparison_table(results); comp.round(3)"),
     md("## Factor-controlled alpha\n\nLow R² with surviving alpha = genuine "
@@ -189,9 +213,11 @@ NB4 = notebook([
     code("import numpy as np\n"
          "from src.evaluation.deflated_sharpe import deflated_sharpe\n"
          "from src.evaluation.portfolio import evaluate_signal_portfolio\n\n"
-         "single_srs = [evaluate_signal_portfolio(panel, c)['net']['monthly_sharpe']\n"
+         "single_srs = [evaluate_signal_portfolio(panel, c)"
+         "['net']['monthly_sharpe']\n"
          "              for c in signal_cols]\n"
-         "trials = [r['net']['monthly_sharpe'] for r in results.values()] + single_srs\n"
+         "trials = [r['net']['monthly_sharpe'] for r in "
+         "results.values()] + single_srs\n"
          "best = comp['sharpe_net'].idxmax(); b = results[best]['net']\n"
          "deflated_sharpe(b['monthly_sharpe'], b['n_months'], b['skew'],\n"
          "                b['kurtosis'], trials)"),

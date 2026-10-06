@@ -25,7 +25,8 @@ EULER_MASCHERONI = 0.5772156649015329
 def probabilistic_sharpe(sr: float, sr_benchmark: float, n_obs: int,
                          skew: float, kurtosis: float) -> float:
     """P(true SR > sr_benchmark | observed sr, n_obs, higher moments)."""
-    denom = np.sqrt(max(1e-12, 1.0 - skew * sr + (kurtosis - 1.0) / 4.0 * sr**2))
+    denom = np.sqrt(max(1e-12, 1.0 - skew * sr +
+                    (kurtosis - 1.0) / 4.0 * sr**2))
     z = (sr - sr_benchmark) * np.sqrt(max(n_obs - 1, 1)) / denom
     return float(norm.cdf(z))
 
@@ -41,7 +42,8 @@ def expected_max_sharpe(var_sr_across_trials: float, n_trials: int) -> float:
     ))
 
 
-def deflated_sharpe(sr_monthly: float, n_obs: int, skew: float, kurtosis: float,
+def deflated_sharpe(sr_monthly: float, n_obs: int, skew: float,
+                    kurtosis: float,
                     trial_sharpes_monthly: list[float]) -> dict:
     """DSR of a candidate given the full set of trial Sharpes examined.
 

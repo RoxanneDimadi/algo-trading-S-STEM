@@ -31,7 +31,8 @@ def fama_macbeth(panel: pd.DataFrame, signal_cols: list[str],
         y = g[fwd_col].to_numpy()
         beta, *_ = np.linalg.lstsq(X, y, rcond=None)
         coefs.append([dt, *beta])
-    cdf = pd.DataFrame(coefs, columns=["date", "const", *signal_cols]).set_index("date")
+    cdf = pd.DataFrame(
+        coefs, columns=["date", "const", *signal_cols]).set_index("date")
     rows = []
     for c in ["const", *signal_cols]:
         nw = nw_mean_test(cdf[c], lags=nw_lags)

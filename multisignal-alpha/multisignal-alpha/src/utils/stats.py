@@ -15,7 +15,7 @@ PERIODS_PER_YEAR = 12  # monthly data throughout
 
 
 def month_end_freq() -> str:
-    """Return a pandas month-end offset alias compatible with the installed version.
+    """Return a month-end offset alias matching the installed pandas.
 
     pandas < 2.2 uses ``M``; pandas >= 2.2 renamed it to ``ME``.
     """
@@ -39,7 +39,8 @@ def nw_mean_test(series: pd.Series, lags: int = 6) -> dict:
     res = sm.OLS(s.values, np.ones((len(s), 1))).fit(
         cov_type="HAC", cov_kwds={"maxlags": int(lags)}
     )
-    return {"mean": float(res.params[0]), "tstat": float(res.tvalues[0]), "n": len(s)}
+    return {"mean": float(res.params[0]), "tstat": float(res.tvalues[0]),
+            "n": len(s)}
 
 
 def annualized_stats(monthly_returns: pd.Series, nw_lags: int = 6) -> dict:

@@ -1,4 +1,7 @@
-"""CRSP-style monthly returns: existing CSV, optional WRDS, STreversal construction."""
+"""CRSP-style monthly returns.
+
+Existing CSV, optional WRDS, and STreversal construction.
+"""
 from __future__ import annotations
 
 import logging
@@ -6,7 +9,6 @@ import os
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-import numpy as np
 import pandas as pd
 
 logger = logging.getLogger("real_data.returns")
@@ -17,13 +19,18 @@ def _yyyymm_to_month_end(yyyymm: pd.Series) -> pd.Series:
     return pd.to_datetime(s, format="%Y%m") + pd.offsets.MonthEnd(0)
 
 
-def load_returns_csv(path: Path, prefer_delisting: bool = True) -> pd.DataFrame:
-    """Load (permno, yyyymm, ret[, dlret]) -> date, ticker, ret (delisting-adjusted if possible)."""
+def load_returns_csv(path: Path,
+                     prefer_delisting: bool = True) -> pd.DataFrame:
+    """Load (permno, yyyymm, ret[, dlret]) -> date, ticker, ret.
+
+    Delisting-adjusted when a dlret column is present.
+    """
     df = pd.read_csv(path)
     cols = {c.lower(): c for c in df.columns}
     for need in ("permno", "yyyymm", "ret"):
         if need not in cols:
-            raise ValueError(f"{path} missing column '{need}'; have {list(df.columns)}")
+            raise ValueError(
+                f"{path} missing column '{need}'; have {list(df.columns)}")
 
     out = pd.DataFrame({
         "permno": df[cols["permno"]].astype(int),
@@ -52,10 +59,13 @@ def fetch_wrds_monthly_returns(
     try:
         import wrds
     except ImportError as e:
-        raise ImportError("WRDS requested but wrds package not installed: pip install wrds") from e
+        raise ImportError(
+            "WRDS requested but wrds package not installed: "
+            "pip install wrds") from e
 
     logger.info("connecting to WRDS as %s", username)
-    db = wrds.Connection(wrds_username=username, wrds_password=password or None)
+    db = wrds.Connection(wrds_username=username,
+                         wrds_password=password or None)
     # msf: monthly stock file; msenames for share filters optional
     sql = f"""
         SELECT a.permno, a.date, a.ret, a.retx, b.dlret
@@ -88,9 +98,9 @@ def fetch_wrds_monthly_returns(
 
 
 def build_streversal(returns: pd.DataFrame) -> pd.DataFrame:
-    """STreversal = prior 1-month return (signed later by OSAP convention; here raw lag).
+    """STreversal = prior 1-month return (raw lag; OSAP signs it later).
 
-    OSAP signs predictors so higher => higher expected return; short-term reversal
+    OSAP signs predictors so higher => higher expected return; reversal
     is typically signed as *minus* last month's return. We emit -ret_{t-1}.
     """
     r = returns.sort_values(["ticker", "date"]).copy()
@@ -101,9 +111,11 @@ def build_streversal(returns: pd.DataFrame) -> pd.DataFrame:
 def resolve_returns(cfg: Dict[str, Any], raw: Path) -> Path:
     """Write data/raw/returns.csv from env path, WRDS, or existing file."""
     out = raw / "returns.csv"
-    prefer_dl = bool(cfg.get("returns", {}).get("prefer_delisting_adjusted", True))
+    prefer_dl = bool(cfg.get("returns", {}).get(
+        "prefer_delisting_adjusted", True))
 
-    configured = cfg.get("returns", {}).get("csv") or os.environ.get("RETURNS_CSV", "").strip()
+    configured = cfg.get("returns", {}).get(
+        "csv") or os.environ.get("RETURNS_CSV", "").strip()
     if configured:
         src = Path(configured)
         if not src.is_absolute():
@@ -111,7 +123,8 @@ def resolve_returns(cfg: Dict[str, Any], raw: Path) -> Path:
         df = load_returns_csv(src, prefer_delisting=prefer_dl)
         export = df[["permno", "yyyymm", "ret"]]
         export.to_csv(out, index=False)
-        logger.info("copied returns from %s -> %s (%d rows)", src, out, len(export))
+        logger.info("copied returns from %s -> %s (%d rows)",
+                    src, out, len(export))
         return out
 
     if out.exists() and out.stat().st_size > 0:
@@ -128,8 +141,10 @@ def resolve_returns(cfg: Dict[str, Any], raw: Path) -> Path:
 
     raise FileNotFoundError(
         "No returns file found. Either:\n"
-        "  1) set RETURNS_CSV in .env to a CSV with columns permno,yyyymm,ret\n"
+        "  1) set RETURNS_CSV in .env to a CSV with columns "
+        "permno,yyyymm,ret\n"
         "  2) set WRDS_USERNAME / WRDS_PASSWORD and pip install wrds\n"
         "  3) place data/raw/returns.csv yourself (CRSP monthly)\n"
-        "STreversal and the agent panel need this file; OSAP signals alone are not enough."
+        "STreversal and the agent panel need this file; "
+        "OSAP signals alone are not enough."
     )

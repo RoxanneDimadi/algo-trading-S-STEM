@@ -3,6 +3,9 @@
 Kept small (240 months x 200 names) so the suite runs in seconds while still
 having the statistical power to separate planted signals from the placebo.
 """
+# Requesting a pytest fixture shadows the fixture function's name by
+# design -- that is how pytest injects it.
+# pylint: disable=redefined-outer-name
 import pytest
 import yaml
 
@@ -12,7 +15,7 @@ from src.utils.stats import rank_normalize_cross_section
 
 @pytest.fixture(scope="session")
 def cfg():
-    with open("configs/config.yaml") as f:
+    with open("configs/config.yaml", encoding="utf-8") as f:
         c = yaml.safe_load(f)
     c["data"]["synthetic"]["n_tickers"] = 200
     c["data"]["synthetic"]["start"] = "2003-01-31"

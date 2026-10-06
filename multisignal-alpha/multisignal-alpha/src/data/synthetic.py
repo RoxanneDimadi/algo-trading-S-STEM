@@ -45,6 +45,8 @@ def _standardize_cross_section(x: np.ndarray) -> np.ndarray:
 
 
 def make_synthetic_panel(cfg: dict, seed: int = 42):
+    # one return-generating equation, written out in full
+    # pylint: disable=too-many-locals
     """Build the synthetic panel.
 
     Returns
@@ -79,7 +81,8 @@ def make_synthetic_panel(cfg: dict, seed: int = 42):
         rho = float(sig_cfg[name]["ar"])
         z = rng.standard_normal(N)
         for t in range(T):
-            z = rho * z + np.sqrt(max(1e-12, 1 - rho**2)) * rng.standard_normal(N)
+            z = rho * z + np.sqrt(max(1e-12, 1 - rho**2)) * \
+                rng.standard_normal(N)
             Z[k, t] = z
         Z[k] = _standardize_cross_section(Z[k])
 
@@ -116,7 +119,7 @@ def make_synthetic_panel(cfg: dict, seed: int = 42):
             drift = drift + b_int * (inter - inter.mean())
         R[t] = drift + b_mkt * mkt[t] + rng.normal(0.0, idio, size=N)
 
-    # --- assemble long panel --------------------------------------------------
+    # --- assemble long panel ---------------------------------------------
     frames = []
     for t, dt in enumerate(dates):
         f = pd.DataFrame({"date": dt, "ticker": tickers, "ret": R[t]})
@@ -131,7 +134,7 @@ def make_synthetic_panel(cfg: dict, seed: int = 42):
     # that date t=1 doesn't already carry.
     panel = panel[panel["date"] > dates[0]].reset_index(drop=True)
 
-    # --- synthetic factor panel (mkt real, rest noise) ------------------------
+    # --- synthetic factor panel (mkt real, rest noise) --------------------
     factors = pd.DataFrame(
         {
             "mkt_rf": mkt,
@@ -149,7 +152,8 @@ def make_synthetic_panel(cfg: dict, seed: int = 42):
         {
             "true_beta": [float(sig_cfg[n]["beta"]) for n in names],
             "ar": [float(sig_cfg[n]["ar"]) for n in names],
-            "sample_end": [pd.Timestamp(sig_cfg[n]["sample_end"]) for n in names],
+            "sample_end": [pd.Timestamp(sig_cfg[n]["sample_end"])
+                           for n in names],
             "pub_date": [pd.Timestamp(sig_cfg[n]["pub_date"]) for n in names],
         },
         index=pd.Index(names, name="signal"),
