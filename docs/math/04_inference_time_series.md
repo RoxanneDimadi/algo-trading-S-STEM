@@ -11,8 +11,7 @@ understate the noise for market data, and how the code corrects for it.
 variance $\sigma^2$, then the sample mean $\bar x = \frac1T\sum x_t$
 satisfies $\mathrm{Var}(\bar x) = \sigma^2/T$.
 
-**Proof.** $\mathrm{Var}(\bar x) = \frac{1}{T^2}\mathrm{Var}\big(\sum x_t\big)
-= \frac{1}{T^2}\sum_t \mathrm{Var}(x_t) = \frac{T\sigma^2}{T^2}$, using
+**Proof.** $\mathrm{Var}(\bar x) = \frac{1}{T^2}\mathrm{Var}\big(\sum x_t\big) = \frac{1}{T^2}\sum_t \mathrm{Var}(x_t) = \frac{T\sigma^2}{T^2}$, using
 §1.2's variance-of-a-sum rule (cross terms vanish because the $x_t$ are
 uncorrelated). ∎
 
@@ -21,8 +20,8 @@ The **standard error** is $\mathrm{se}(\bar x) = \sigma/\sqrt T$, and the
 errors the average sits from zero. By the Central Limit Theorem (Stated:
 sums of many small independent effects are approximately bell-curved), under
 the null "true mean $= 0$" the t-stat is approximately standard normal, so
-$|t| > 2$ happens by luck only $\approx 5\%$ of the time. That is the entire
-content of "$t > 2$ = significant" — and chapter 9 is about how this
+$|t| > 2$ happens by luck only $\approx 5$% of the time. That is the entire
+content of "significant if $t > 2$" — and chapter 9 is about how this
 guarantee *dissolves* when you test many things.
 
 ## 4.2 What autocorrelation does to that formula (derived)
@@ -31,10 +30,12 @@ Strategy returns and IC series are **autocorrelated**: a good month is more
 likely after a good month. Then the cross terms in the proof above do *not*
 vanish. Redo the computation keeping them, with $\rho_k$ the correlation
 between observations $k$ apart:
+
 $$
-\mathrm{Var}(\bar x) = \frac{1}{T^2}\Big[\sum_{t}\mathrm{Var}(x_t) + 2\!\!\sum_{t<s}\!\mathrm{Cov}(x_t,x_s)\Big]
+\mathrm{Var}(\bar x) = \frac{1}{T^2}\Big[\sum_{t}\mathrm{Var}(x_t) + 2\negthinspace\negthinspace\sum_{t<s}\negthinspace\mathrm{Cov}(x_t,x_s)\Big]
 = \frac{\sigma^2}{T}\Big[1 + 2\sum_{k=1}^{T-1}\Big(1-\frac{k}{T}\Big)\rho_k\Big],
 $$
+
 since there are exactly $T-k$ pairs at distance $k$. **If the $\rho_k$ are
 positive, the true variance of your average is *larger* than $\sigma^2/T$** —
 the naive t-stat divides by too small a number and overstates significance.
@@ -45,9 +46,11 @@ independent pieces of information.
 
 Newey–West (1987) plugs *estimated* autocovariances into the bracket,
 truncated at a lag $L$ and damped by **Bartlett weights** $1 - \frac{k}{L+1}$:
+
 $$
 \widehat{\mathrm{Var}}_{\text{NW}}(\bar x) = \frac{1}{T}\Big[\hat\gamma_0 + 2\sum_{k=1}^{L}\Big(1-\frac{k}{L+1}\Big)\hat\gamma_k\Big],
 $$
+
 where $\hat\gamma_k$ is the sample autocovariance at lag $k$. The triangular
 weights are not cosmetic: they guarantee the estimate is never negative
 (Stated — the weighted sum is a smoothed spectral density at frequency zero,
@@ -69,9 +72,11 @@ $z_b, z_c,\dots$ already predict? (Marginal, not standalone, power.)
 
 **Pass 1.** On each date $t$, run one cross-sectional regression across the
 $n$ stocks:
+
 $$
 r_{i,t+1} = c_t + \lambda_{a,t} z_{a,i,t} + \lambda_{b,t} z_{b,i,t} + \cdots + e_{i,t}.
 $$
+
 This yields a *time series* of estimated coefficients $\lambda_{a,t}$
 ($t = 1..T$).
 
@@ -99,12 +104,11 @@ which then only has to handle time-series dependence, which Newey–West does.
    identity)*. The regression is run on rank-normalized signals
    $\tilde z \approx$ uniform on $[-1,1]$ (variance $\tfrac13$), while
    returns were generated from the Gaussian $z$. The slope of $r$ on
-   $\tilde z$ is $\beta\,\mathrm{Cov}(z, \tilde z)/\mathrm{Var}(\tilde z)$.
+   $\tilde z$ is $\beta\thinspace\mathrm{Cov}(z, \tilde z)/\mathrm{Var}(\tilde z)$.
    With $\tilde z = 2\Phi(z) - 1$, $\mathrm{Cov} = 2E[z\Phi(z)] = 1/\sqrt{\pi}$
    (Stated; one-line via Stein's lemma $E[zf(z)] = E[f'(z)]$, giving
    $E[\phi(z)] = \tfrac{1}{2\sqrt\pi}$). So the predicted momentum
-   coefficient is $0.004 \times \frac{1/\sqrt\pi}{1/3} \times 0.755
-   \text{ (decay)} = \mathbf{0.0051}$. Measured: **0.0054**. ✓ (6% apart,
+   coefficient is $0.004 \times \frac{1/\sqrt\pi}{1/3} \times 0.755 \text{ (decay)} = \mathbf{0.0051}$. Measured: **0.0054**. ✓ (6% apart,
    inside its own standard error.)
 
 ## 4.5 The reading rule for every table in `results/`
