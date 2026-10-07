@@ -91,12 +91,15 @@ class AlpacaExecutionBridge:
         params: Optional[Dict[str, Any]] = None,
         json_data: Optional[Dict[str, Any]] = None,
         client_order_id: Optional[str] = None,
+        host: Optional[str] = None,
     ) -> Tuple[int, Dict[str, Any], Optional[str], Optional[str]]:
         """HTTP call with ledger audit.
 
-        Returns (status, body, x_request_id, error).
+        Returns (status, body, x_request_id, error). `host` overrides the
+        trading-API base url -- used for the market-data API, which lives at
+        a fixed host regardless of paper/live mode.
         """
-        url = f"{self.config.get_effective_base_url()}{endpoint}"
+        url = f"{host or self.config.get_effective_base_url()}{endpoint}"
         req_body_str = json.dumps(json_data) if json_data else None
 
         start = time.perf_counter()
@@ -204,6 +207,27 @@ class AlpacaExecutionBridge:
         raise RuntimeError(
             f"clock fetch failed "
             f"(HTTP {status_code}, x-request-id={x_req}): {err}")
+
+    def get_latest_price(self, symbol: str) -> Optional[float]:
+        """Latest trade price from Alpaca's market-data API.
+
+        Needed whenever a signal names a symbol with no existing position
+        and no price of its own (e.g. a model-generated signal scored from
+        data that carries no price field at all, like OSAP/CRSP factors).
+        Returns None rather than raising -- this is a best-effort fallback,
+        not something a caller should treat as broker-call-critical.
+        """
+        status_code, data, _x_req, err = self._request(
+            "GET", f"/v2/stocks/{symbol.upper()}/trades/latest",
+            host="https://data.alpaca.markets",
+        )
+        if status_code == 200 and isinstance(data, dict):
+            price = data.get("trade", {}).get("p")
+            if price is not None:
+                return float(price)
+        logger.warning("latest price unavailable for %s (HTTP %d): %s",
+                       symbol, status_code, err)
+        return None
 
     def submit_order(self, directive: TradeDirective) -> ExecutionResult:
         symbol = directive.symbol.upper().strip()

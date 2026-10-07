@@ -6,65 +6,20 @@ import logging
 import os
 import sys
 
-import yaml
-from dotenv import load_dotenv
-
-PACKAGE_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-sys.path.insert(0, PACKAGE_ROOT)
-
-# Read .env next to this package, if there is one, so the credentials in it
-# reach os.environ before load_config() looks for them. override=False, so a
-# variable already exported in the shell still wins over the file.
-load_dotenv(os.path.join(PACKAGE_ROOT, ".env"), override=False)
+sys.path.insert(
+    0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 # The package lives one level up; the bootstrap above has to run
-# before these imports resolve.
+# before these imports resolve. load_config() also reads the .env next to
+# the package, so credentials in it reach the environment.
 # pylint: disable=wrong-import-position
 from src.execution.webhook_listener import create_webhook_app
 from src.execution.ledger import ExecutionLedger
 from src.execution.alpaca_bridge import AlpacaConfig, AlpacaExecutionBridge
 from src.execution.agent_evaluator import (AgentPolicyConfig,
                                            CostAwareAgentEvaluator)
-
-
-def load_config(config_path: str = "configs/execution_config.yaml") -> dict:
-    """Merge configs/execution_config.yaml with the environment.
-
-    Environment variables win over the YAML file, and .env has already been
-    folded into the environment at import time, so the precedence is:
-    exported shell variable, then .env, then the YAML file.
-    """
-    cfg = {}
-    if os.path.exists(config_path):
-        with open(config_path, "r", encoding="utf-8") as f:
-            cfg = yaml.safe_load(f) or {}
-
-    broker = cfg.setdefault("broker", {})
-    # Credentials come from the environment only. The committed YAML has no
-    # api_key/secret_key entries, so there is nowhere to leak them from, and
-    # anything the file does happen to carry is ignored here.
-    broker["api_key"] = (
-        os.environ.get("ALPACA_API_KEY")
-        or os.environ.get("APCA_API_KEY_ID")
-        or ""
-    )
-    broker["secret_key"] = (
-        os.environ.get("ALPACA_SECRET_KEY")
-        or os.environ.get("APCA_API_SECRET_KEY")
-        or ""
-    )
-    paper_env = os.environ.get("ALPACA_PAPER")
-    if paper_env is not None:
-        broker["paper"] = paper_env.lower() in ("true", "1", "yes")
-    else:
-        broker.setdefault("paper", True)
-    broker["base_url"] = os.environ.get(
-        "ALPACA_BASE_URL") or broker.get("base_url")
-
-    webhook = cfg.setdefault("webhook", {})
-    webhook["passphrase"] = os.environ.get(
-        "WEBHOOK_PASSPHRASE") or webhook.get("passphrase", "")
-    return cfg
+from src.execution.config import PACKAGE_ROOT
+from src.execution.config import load_execution_config as load_config
 
 
 def main():

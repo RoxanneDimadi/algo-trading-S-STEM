@@ -9,6 +9,7 @@ data/processed/*
 !data/raw/factor_panel.csv
 !data/raw/factor_meta.csv
 !data/processed/.gitkeep
+!data/raw/permno_ticker_map.csv.example
 models/*.pkl
 models/*.txt
 .venv/

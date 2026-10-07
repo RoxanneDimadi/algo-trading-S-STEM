@@ -58,9 +58,12 @@ def msrr_theta(Z: np.ndarray, Y: np.ndarray, ridge: float = 1e-4):
     """
     F = factor_returns(Z, Y)
     mu = F.mean(axis=0)
-    Sig = np.cov(F, rowvar=False)
+    K = F.shape[1]
+    # np.cov collapses to a 0-d scalar for a single variable (K=1); np.trace
+    # and np.eye below need a proper (K, K) matrix regardless of K.
+    Sig = np.atleast_2d(np.cov(F, rowvar=False))
     lam = ridge * np.trace(Sig) / len(mu)
-    theta = np.linalg.solve(Sig + lam * np.eye(len(mu)), mu)
+    theta = np.linalg.solve(Sig + lam * np.eye(K), mu)
     s = np.abs(theta).sum()
     theta = theta / (s if s > 0 else 1.0)
     port = F @ theta

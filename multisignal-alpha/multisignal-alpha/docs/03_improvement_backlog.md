@@ -7,6 +7,7 @@
 ## P0 — Required before any real-data result is trustworthy
 
 **1. Validate the real-data loaders live.** `src/data/loaders.py` (OSAP wide CSV, CRSP returns, SignalDoc, French factors) is written with the correct signal-at-*t* → return-over-(*t*, *t*+1] alignment but has never touched real files (built in a network-restricted sandbox). First session with real data: check join row-counts against expectations, date ranges, the fraction of permno-months lost in the merge, and that SignalDoc's `SampleEndYear`/`Year` columns parse for every signal you use. Budget a full day; data plumbing always costs one.
+   *Fixed since the above was written:* `build_panel_from_osap` (and `real-data/src/panel_build.py::build_panel`) used to pair each row with the NEXT ROW in its ticker group via a positional `shift(-1)`, with no check that the next row was actually next calendar month — any gap (a trading halt, a signal missing for one month, a delisting/relisting, either source file simply lacking a month) silently mislabeled a longer return as the 1-month `fwd_ret`. Both now null `fwd_ret` across any gap, and dedupe `(ticker, date)` before merging. Covered by `tests/test_data_loaders.py` / `real-data/tests/test_panel_build.py`. Still worth a first-real-data-session check: confirm the fix doesn't null out *more* than expected (i.e. that real coverage is as contiguous as you think).
 
 **2. Universe filters.** The pipeline currently evaluates whatever the panel contains. Real CRSP data is dominated by microcaps whose "returns" are untradeable: without filters, every result is inflated. Add config-driven filters — minimum price (e.g., $5), minimum market cap or NYSE-percentile cutoff, share codes 10/11, exchange codes 1/2/3 — applied *before* quantile formation. This is the single largest gap between the synthetic demo and a defensible real-data number.
 
@@ -74,6 +75,7 @@
 - **Monthly frequency only.** No intramonth timing; the Anomaly Time experiment partially addresses this at monthly resolution.
 - **Notebooks validated as concatenated scripts,** not through a Jupyter kernel — cosmetic differences (display, widths) possible on first interactive run.
 - **`embargo` defaults to 0.** Defensible with purge ≥ horizon and monthly data, but say so rather than let a reader wonder.
+- **`rolling_ic`'s window is a count of surviving dates, not calendar months.** `ic_series` drops (not NaN-fills) any date with too few names, then `rolling_ic` runs a plain `.rolling(window=24)` over what's left. On the complete synthetic panel every date survives, so "24-month rolling IC" is exactly that. On real data with coverage gaps or a thin early cross-section, a 24-sample window can quietly span more than 24 calendar months. Harmless for the demo; worth a calendar-reindexed rolling window (`asfreq` onto the full month grid before rolling) before trusting the rolling-IC chart on real data.
 
 ---
 

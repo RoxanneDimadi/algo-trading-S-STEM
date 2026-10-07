@@ -13,7 +13,8 @@ Commands below are **PowerShell** (Windows default). Lines marked `# unix:` are 
 ```powershell
 conda env create -f environment.yml    # needs Miniconda or Anaconda
 conda activate msa-agent
-make test     # 53 statistical-correctness tests (placebo, leak, purge, ...)
+make test     # statistical-correctness tests (placebo, leak, purge, ...)
+              # + the execution-bridge / live-signal-generator suites
 make lint     # pylint: PEP 8 + defect gate (same command CI runs)
 make demo     # full pipeline on synthetic data with PLANTED signals
 # unix (no make): python -m pytest -q tests/
@@ -103,8 +104,12 @@ src/
   backtest/walkforward.py  # purged/embargoed splits with self-checks
   backtest/engine.py       # walk-forward train/predict → portfolio → costs
   pipeline.py              # end-to-end orchestrator (python -m src.pipeline)
+  execution/alpaca_bridge.py     # Alpaca REST client, audited
+  execution/agent_evaluator.py   # live risk gate: GP sizing + cost hurdle
+  execution/webhook_listener.py  # inbound signals (e.g. TradingView) -> bridge
+  execution/signal_generator.py  # the agent/models -> bridge, for real data
 notebooks/                 # 01 data+leaks, 02 eval+decay, 03 ML-vs-linear, 04 controls+DSR
-tests/                     # the statistical-correctness gate
+tests/                     # statistical-correctness gate + execution-bridge checks
 docs/                      # research findings + roadmap + backlog + model proposal
 ```
 
@@ -172,6 +177,54 @@ returns into `data/raw/`, and drops `configs/config_osap_overlay.yaml`.
 
 The loaders (`src/data/loaders.py`) implement signal-at-*t* → return-over-
 (*t*, *t*+1] alignment. Returns still need WRDS or a CSV you supply.
+
+## Connecting the agent and models to the broker
+
+`src/execution/` has a tested, risk-gated Alpaca paper-trading bridge. Two
+ways signals reach it:
+
+- **Inbound** (`scripts/run_execution_server.py`): a Flask server that
+  *receives* signals from an external source that already names a real
+  symbol and, usually, a price (e.g. a TradingView alert —
+  `scripts/send_test_webhook.py` sends a fake one for testing).
+- **Model-driven** (`scripts/run_agent_signals.py`, docs/06 §10): the other
+  half — it fits the agent's learned signal blend (`src/agent/policy.py`)
+  on the OSAP panel, scores the latest available cross-section, and feeds
+  the resulting buy/sell signals into the *same* risk gate and bridge, no
+  server required. This is the piece that lets the models themselves
+  trigger trades instead of waiting on an external alert.
+
+Either way, set broker credentials first (paper by default):
+
+```bash
+export ALPACA_API_KEY=...        # or APCA_API_KEY_ID
+export ALPACA_SECRET_KEY=...     # or APCA_API_SECRET_KEY
+```
+
+```bash
+# model-driven signals, straight to the bridge, no server needed
+python scripts/run_agent_signals.py \
+  --permno-ticker-map data/raw/permno_ticker_map.csv \
+  --dry-run   # drop --dry-run once you've checked the output
+
+# inbound webhook server, for an external alert source instead
+python scripts/run_execution_server.py
+```
+
+Two things `run_agent_signals.py` does **not** paper over:
+
+- OSAP/CRSP files key signals by `permno`, not a tradable ticker (CRSP
+  license) — you must supply a `permno,symbol` CSV mapping the names you
+  actually want traded (template: `data/raw/permno_ticker_map.csv.example`);
+  unmapped names are skipped and reported, never silently sent as garbage
+  symbols.
+- OSAP signals are monthly and published with a real lag. "Live" here means
+  "the most recently available complete month," not intraday — the same
+  honest-limits caveat as the rest of the real-data story (docs/06 §6).
+
+Every decision and order — from either path — lands in the same audit
+trail (`data/ledger.db` + `data/audit_log.jsonl`, or the running server's
+`/decisions` / `/orders` / `/audit` endpoints).
 
 Tooling note: the original Quantopian libraries (alphalens/pyfolio/zipline)
 are unmaintained; if you want tear sheets, install Stefan Jansen's

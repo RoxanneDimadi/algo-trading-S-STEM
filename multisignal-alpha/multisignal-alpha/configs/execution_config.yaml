@@ -40,3 +40,17 @@ agent_policy:
 ledger:
   db_path: "data/ledger.db"
   jsonl_path: "data/audit_log.jsonl"
+
+# scripts/run_agent_signals.py: the research agent/models -> this bridge,
+# for data.mode=osap in configs/config.yaml. See src/execution/signal_generator.py.
+signal_generator:
+  # REQUIRED for real orders: OSAP/CRSP files key signals by permno, not a
+  # tradable symbol (CRSP license). CSV with a permno column + a symbol/
+  # ticker column. No map => the script refuses to run against osap data.
+  permno_ticker_map_csv: "data/raw/permno_ticker_map.csv"
+  min_abs_aim_weight: 0.01   # drop names with a near-zero aim (not worth a signal)
+  max_names: 50              # cap how many names get sent to the risk gate per run
+  min_train_months: 24       # months of realized forward returns required before fitting
+  strategy_name: "diffpolicy_agent"
+  # agent_epochs / agent_lr / agent_seed / cost_bps_per_side default to the
+  # [agent] / [evaluation] sections of configs/config.yaml if left unset here.

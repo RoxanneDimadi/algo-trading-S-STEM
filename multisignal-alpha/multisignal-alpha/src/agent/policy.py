@@ -202,6 +202,30 @@ class DiffPolicyAgent:
         return self._roll(Z, Y, th, ga, w0=w0, with_grads=False)
 
 
+def aim_weights(Z_t: np.ndarray, theta: np.ndarray, eps: float = 1e-8) -> np.ndarray:
+    """The aim portfolio for ONE cross-section, given a learned signal blend.
+
+    Same score -> demean -> normalize map as `DiffPolicyAgent._roll`'s aim
+    step, exposed standalone for live inference: at the live decision date
+    there is no forward return yet (it hasn't happened), so the full roll
+    (which needs Y) cannot run. This only needs today's signals and the
+    already-fit theta. Deliberately does NOT apply gamma partial adjustment
+    -- that belongs to whatever holds the live inventory (the execution
+    evaluator, using the broker's actual current position), not to a second,
+    redundant smoothing pass here. Returns an (N,) dollar-neutral aim
+    ($1 long / $1 short gross) aligned with Z_t's columns.
+    """
+    Z_t = np.asarray(Z_t, float)
+    theta = np.asarray(theta, float)
+    s = theta @ Z_t
+    s_t = s - s.mean()
+    sa = _softabs(s_t, eps)
+    total = sa.sum()
+    if total <= eps:
+        return np.zeros_like(s_t)
+    return 2.0 * s_t / total
+
+
 def panel_to_matrices(panel, signal_cols, fwd_col: str = "fwd_ret"):
     """Long panel -> (Z (K,T,N), Y (T,N), dates, tickers). Complete panel
     assumed (synthetic mode); dates lacking forward returns are dropped and

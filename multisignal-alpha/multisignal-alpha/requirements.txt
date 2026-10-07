@@ -10,10 +10,10 @@ tabulate>=0.9          # pandas .to_markdown() in the summary writer
 PyYAML>=6.0
 pytest>=8.0
 
-# Execution bridge (src/execution) and its tests
-requests>=2.31
+# Live execution bridge (src/execution/): webhook listener + Alpaca REST client
 flask>=3.0
-python-dotenv>=1.0    # run_execution_server.py reads .env
+requests>=2.31
+python-dotenv>=1.0    # src/execution/config.py reads .env
 
 # Hyperparameter tuning (optional; used only if models.lgbm.tune = true)
 optuna>=3.6

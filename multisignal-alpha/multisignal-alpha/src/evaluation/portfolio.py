@@ -25,13 +25,24 @@ from ..utils.stats import annualized_stats
 
 
 def score_to_weights(panel: pd.DataFrame, score_col: str, n_q: int = 5,
-                     min_names: int = 50) -> pd.DataFrame:
+                     min_names: int = 50,
+                     fwd_col: str = "fwd_ret") -> pd.DataFrame:
     """Map a per-date cross-sectional score to long-short weights.
 
     Returns a long DataFrame [date, ticker, weight] with, per date,
     +1/n_top on the top quantile and -1/n_bottom on the bottom quantile.
+
+    Names are also required to have a non-null `fwd_col` here, BEFORE
+    quantile formation -- not just a non-null score. A name with no
+    realized forward return (a delisting, a coverage gap) cannot actually
+    be held, and including it in the quantile cut would both corrupt which
+    names land in each leg and leave `portfolio_returns` silently dropping
+    its weight from the sum without renormalizing the survivors, quietly
+    shrinking that leg below its intended $1 of exposure (pandas `sum`
+    skips NaN terms by default). Requiring the return up front keeps each
+    formed leg's `1/n` weights correctly summing to $1 on every date.
     """
-    df = panel[["date", "ticker", score_col]].dropna()
+    df = panel[["date", "ticker", score_col, fwd_col]].dropna()
     frames = []
     for dt, g in df.groupby("date", sort=True):
         if len(g) < min_names:

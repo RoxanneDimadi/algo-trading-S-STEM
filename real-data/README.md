@@ -72,6 +72,18 @@ After a successful sync + returns:
 2. Set `data.mode: osap` (or merge `configs/config_osap_overlay.yaml`)
 3. Run `python -m src.pipeline --config configs/config.yaml` from the agent repo
 
+### Going from backtest to live buy/sell signals
+
+Step 3 above only backtests. To have the agent act on this data — sizing and
+sending real orders through Alpaca — see
+`multisignal-alpha/multisignal-alpha/scripts/run_agent_signals.py`
+("Connecting the agent and models to the broker" in that repo's README).
+It needs one thing this ingest repo cannot produce: a `permno -> ticker`
+map. OSAP/CRSP files key every signal by `permno`, never by a tradable
+symbol (CRSP license), so you supply that mapping yourself — a CSV with
+`permno,symbol` columns for the names you actually want traded. A template
+is at `multisignal-alpha/multisignal-alpha/data/raw/permno_ticker_map.csv.example`.
+
 ## Outputs
 
 | File | Source |

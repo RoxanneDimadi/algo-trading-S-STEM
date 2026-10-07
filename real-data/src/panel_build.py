@@ -51,8 +51,20 @@ def build_panel(
 
     panel = sig.merge(ret[["date", "ticker", "ret"]],
                       on=["date", "ticker"], how="inner")
-    panel = panel.sort_values(["ticker", "date"])
+    panel = panel.drop_duplicates(subset=["ticker", "date"])
+    panel = panel.sort_values(["ticker", "date"]).reset_index(drop=True)
+    # shift(-1) is POSITIONAL: without a contiguity check, a missing month
+    # for a ticker (trading halt, signal not computed that month, a
+    # delisting/relisting gap, or either source file simply lacking that
+    # month) makes "next row" two or more months ahead, silently mislabeling
+    # that longer return as the 1-month fwd_ret every downstream IC, fit,
+    # and backtest assumes. Null it out wherever the gap isn't exactly one
+    # calendar month (mirrors the same fix in
+    # multisignal-alpha/src/data/loaders.py::build_panel_from_osap).
+    next_date = panel.groupby("ticker")["date"].shift(-1)
+    expected_next = panel["date"] + pd.offsets.MonthEnd(1)
     panel["fwd_ret"] = panel.groupby("ticker")["ret"].shift(-1)
+    panel.loc[next_date != expected_next, "fwd_ret"] = float("nan")
 
     # Drop thin months
     counts = panel.groupby("date")["ticker"].transform("size")

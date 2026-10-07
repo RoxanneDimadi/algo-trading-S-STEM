@@ -74,6 +74,26 @@ def test_icnet_from_scratch_finds_planted_structure(world_cfg):
     assert res["feature_importance"].notna().all()
 
 
+def test_icnet_fit_does_not_crash_on_short_training_window():
+    """val_fraction's floor of 6 validation dates is sized for realistic
+    walk-forward windows; on a short one (small min_train, or a short
+    initial fold) that floor used to consume the ENTIRE training set,
+    leaving none to train on and raising inside fit(). A short window must
+    now degrade gracefully (fewer epochs via early stopping) rather than
+    crash, for any number of unique dates down to 1."""
+    from src.models.icnet import make_icnet
+
+    rng = np.random.default_rng(0)
+    n_names, K = 80, 3
+    for n_dates in (1, 2, 6, 10):
+        dates = np.repeat(np.arange(n_dates), n_names)
+        X = rng.standard_normal((n_dates * n_names, K))
+        y = rng.standard_normal(n_dates * n_names)
+        m = make_icnet({"hidden": 8, "max_epochs": 5})
+        m.fit(X, y, dates=dates)  # must not raise
+        assert np.isfinite(m.predict(X)).all()
+
+
 def test_pulse_tracks_planted_decay_and_predicts_oos(world_cfg, cfg, world):
     """The headline claim, made falsifiable: PULSE's filtered efficacy states
     must TRACK the planted time-varying betas (correlate with the true path,
@@ -120,6 +140,35 @@ def test_pulse_tracks_planted_decay_and_predicts_oos(world_cfg, cfg, world):
                              wcfg, ecfg)
     assert res["oos_ic"]["ic_mean"] > 0.02
     assert res["oos_ic"]["ic_tstat"] > 2.0
+
+
+def test_pulse_predict_decay_uses_calendar_gap_not_date_position():
+    """predict()'s h ('months past training end') must be the actual
+    calendar gap from the last fitted date, not the position of a test date
+    within whatever `dates` array happens to be passed in. A purged
+    walk-forward fold's first test date is purge+embargo months after the
+    last training date (src/backtest/walkforward.py) -- enumerating test
+    dates from 0 would silently drop that gap and under-decay the state."""
+    import pandas as pd
+    from src.models.pulse import PulseModel
+
+    rng = np.random.default_rng(0)
+    n_dates, n_names = 150, 80
+    dates = pd.date_range("2000-01-31", periods=n_dates, freq=month_end_freq())
+    rows_date = np.repeat(dates, n_names)
+    X = rng.standard_normal((n_dates * n_names, 1))
+    y = 0.5 * X[:, 0] + 0.1 * rng.standard_normal(n_dates * n_names)
+
+    m = PulseModel(interactions=False, a_grid=(0.9,), q_scale_grid=(0.01,))
+    m.fit(X, y, dates=rows_date)
+    last_train = pd.Timestamp(m.filter_dates_[-1])
+
+    # a purge=1 fold's first test date is 2 months past the last train date
+    test_date = last_train + pd.DateOffset(months=2)
+    Xt = rng.standard_normal((5, 1))
+    pred = m.predict(Xt, dates=np.array([test_date] * 5))
+    assert np.allclose(pred, Xt @ (m.a_ ** 2 * m.state_mean_))
+    assert not np.allclose(pred, Xt @ (m.a_ ** 1 * m.state_mean_))
 
 
 def test_agent_learns_garleanu_pedersen_comparative_statics(world):
@@ -224,6 +273,21 @@ def test_msrr_closed_form_recovered_by_zero_cost_agent(world):
     assert abs(S_a - S_m) / max(S_m, 1e-9) < 0.05, (S_a, S_m)
 
 
+def test_msrr_handles_single_signal():
+    """np.cov(F, rowvar=False) collapses to a 0-d scalar when F has a single
+    column (K=1, e.g. a composed single-forecast aim); np.trace/np.eye on
+    that scalar used to raise. K=1 must return a usable, unit-L1-norm theta."""
+    from src.agent.msrr import msrr_theta
+
+    rng = np.random.default_rng(0)
+    Z = rng.standard_normal((1, 60, 40))
+    Y = rng.standard_normal((60, 40))
+    theta, info = msrr_theta(Z, Y)
+    assert theta.shape == (1,)
+    assert np.isclose(np.abs(theta).sum(), 1.0)
+    assert np.isfinite(info["monthly_sharpe_factor_space"])
+
+
 def test_sqrt_impact_slows_trading(world):
     """Square-root impact (convex cost in trade size) inside the loss must
     push the learned policy toward slower, smaller trading."""
@@ -240,3 +304,49 @@ def test_sqrt_impact_slows_trading(world):
     t_lin = lin.roll(Ztr, Ytr)["traded"].mean()
     t_imp = imp.roll(Ztr, Ytr)["traded"].mean()
     assert t_imp < t_lin, (t_lin, t_imp)
+
+
+def test_backtest_agent_carries_inventory_across_fold_boundaries(world_cfg, cfg):
+    """backtest_agent's docstring claims the book is ONE continuous portfolio
+    across fold boundaries, via w_carry -> w0 of the next fold's roll(). This
+    was previously untested by anything in this suite.
+
+    If a fold boundary silently reset to flat (w0=None instead of w_carry),
+    that fold's first-date traded notional would equal a full cold-start
+    rebalance from cash: traded = gamma * 2 (roll()'s w_prev=0, so
+    delta = w = gamma*A, and ||A||_1 = 2 by construction, docs/06 Sec. 3).
+    Each fold's own learned gamma (recovered from params_by_fold) gives the
+    exact cold-start value to compare against -- no guessing a threshold."""
+    from src.agent.backtest import backtest_agent
+    from src.backtest.walkforward import walkforward_splits
+
+    panel, wcfg, ecfg = world_cfg
+    feats = [c for c in panel.columns if c.startswith("sig_")]
+    res = backtest_agent(panel, feats, wcfg, ecfg, cfg["agent"])
+    traded = res["series"]["traded"]
+    gamma_by_fold = res["params_by_fold"]["gamma"]
+
+    dates = panel["date"].sort_values().unique()
+    folds = walkforward_splits(dates, min_train=wcfg["min_train"],
+                               test_size=wcfg["test_size"], purge=wcfg["purge"],
+                               embargo=wcfg["embargo"], expanding=wcfg["expanding"])
+    assert len(folds) >= 2, "need >= 2 folds to exercise a boundary at all"
+
+    # ||A||_1 (the aim's gross) is only APPROXIMATELY 2: softabs(x, eps) =
+    # sqrt(x^2+eps) smooths the normalization denominator too, so the
+    # cold-start value is close to, not bit-for-bit, 2*gamma.
+    cold_start_equiv = 2.0 * gamma_by_fold.loc[folds[0].fold_id]
+    cold_start = traded.loc[folds[0].test_dates.min()]
+    assert np.isclose(cold_start, cold_start_equiv, rtol=1e-3), (
+        "fold 1 starts from literal cash (w0=None): traded must be "
+        "approximately the cold-start value")
+
+    for f in folds[1:]:
+        boundary_traded = traded.loc[f.test_dates.min()]
+        this_fold_cold_start = 2.0 * gamma_by_fold.loc[f.fold_id]
+        assert boundary_traded < this_fold_cold_start * (1 - 1e-3), (
+            f"fold {f.fold_id} opened with a cold-start-sized rebalance "
+            f"(traded={boundary_traded:.4f} >= cold-start {this_fold_cold_start:.4f}) "
+            "-- inventory was not carried forward from the previous fold's "
+            "ending weights"
+        )

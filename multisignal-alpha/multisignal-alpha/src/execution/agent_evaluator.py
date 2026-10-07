@@ -58,22 +58,28 @@ class CostAwareAgentEvaluator:
         self.config = config or AgentPolicyConfig()
         self.ledger = ledger or bridge.ledger
 
-    def evaluate_signal(self, raw_signal: Dict[str, Any]) -> AgentDecision:
+    def evaluate_signal(
+        self, raw_signal: Dict[str, Any],
+        signal_source: str = "tradingview_webhook",
+    ) -> AgentDecision:
         # A gauntlet of independent rejection gates; each one returns
         # early with its own reason, which is clearer than nesting.
         # pylint: disable=too-many-locals, too-many-return-statements
+        # pylint: disable=too-many-branches, too-many-statements
         symbol = str(raw_signal.get("ticker") or raw_signal.get(
             "symbol", "")).upper().strip()
         if not symbol:
             return self._reject(
-                raw_signal, symbol, "Missing ticker/symbol in signal payload")
+                raw_signal, symbol, "Missing ticker/symbol in signal payload",
+                signal_source=signal_source)
 
         action = str(raw_signal.get("action")
                      or raw_signal.get("side", "")).lower().strip()
         if action not in ("buy", "sell", "long", "short", "flat", "close",
                           "hold"):
             return self._reject(
-                raw_signal, symbol, f"Unknown action/side: {action}")
+                raw_signal, symbol, f"Unknown action/side: {action}",
+                signal_source=signal_source)
 
         signal_strength = float(raw_signal.get(
             "signal_strength", raw_signal.get("strength", 1.0)))
@@ -107,7 +113,8 @@ class CostAwareAgentEvaluator:
         if portfolio_value <= 0:
             return self._reject(
                 raw_signal, symbol,
-                f"Portfolio value is non-positive: {portfolio_value}")
+                f"Portfolio value is non-positive: {portfolio_value}",
+                signal_source=signal_source)
 
         current_shares = 0.0
         current_price = signal_price
@@ -127,9 +134,19 @@ class CostAwareAgentEvaluator:
             if signal_price > 0:
                 current_price = signal_price
             else:
-                return self._reject(
-                    raw_signal, symbol,
-                    "Unable to determine current price for asset")
+                try:
+                    quoted = self.bridge.get_latest_price(symbol)
+                except Exception as e:  # pylint: disable=broad-exception-caught
+                    logger.warning("latest price lookup failed for %s: %s",
+                                   symbol, e)
+                    quoted = None
+                if quoted and quoted > 0:
+                    current_price = quoted
+                else:
+                    return self._reject(
+                        raw_signal, symbol,
+                        "Unable to determine current price for asset",
+                        signal_source=signal_source)
 
         current_weight = current_market_value / portfolio_value
 
@@ -137,7 +154,8 @@ class CostAwareAgentEvaluator:
                 and current_shares <= 0):
             return self._reject(
                 raw_signal, symbol,
-                "Short selling is disabled by policy configuration")
+                "Short selling is disabled by policy configuration",
+                signal_source=signal_source)
 
         aim_weight = self._compute_aim_weight(
             action, signal_strength, requested_qty, requested_notional,
@@ -166,6 +184,7 @@ class CostAwareAgentEvaluator:
             return self._skip(
                 raw_signal, symbol, reason, current_shares, current_price,
                 target_shares, portfolio_value, current_weight, target_weight,
+                signal_source=signal_source,
             )
 
         order_side = "buy" if order_shares > 0 else "sell"
@@ -190,6 +209,7 @@ class CostAwareAgentEvaluator:
                 target_shares, portfolio_value, current_weight, target_weight,
                 cost_bps=total_cost_bps, alpha_bps=gross_alpha_bps,
                 net_benefit=net_benefit_bps,
+                signal_source=signal_source,
             )
 
         if order_notional > self.config.max_order_notional:
@@ -207,6 +227,7 @@ class CostAwareAgentEvaluator:
                     f"Insufficient buying power: "
                     f"need ${order_notional:.2f}, "
                     f"have ${buying_power:.2f}",
+                    signal_source=signal_source,
                 )
             logger.info("%s buy sized down for buying power: %d -> %d",
                         symbol, abs_order_shares, affordable)
@@ -216,7 +237,8 @@ class CostAwareAgentEvaluator:
                 and current_shares <= 0):
             return self._reject(
                 raw_signal, symbol,
-                "Short selling is disabled by policy configuration")
+                "Short selling is disabled by policy configuration",
+                signal_source=signal_source)
 
         if (order_side == "sell" and not self.config.allow_short
                 and abs_order_shares > current_shares):
@@ -226,6 +248,7 @@ class CostAwareAgentEvaluator:
                     raw_signal, symbol, "already flat", current_shares,
                     current_price, target_shares, portfolio_value,
                     current_weight, target_weight,
+                    signal_source=signal_source,
                 )
 
         directive = TradeDirective(
@@ -263,6 +286,7 @@ class CostAwareAgentEvaluator:
         }
 
         self.ledger.record_agent_decision(AgentDecisionEntry(
+            signal_source=signal_source,
             symbol=symbol,
             raw_signal=raw_signal,
             approved=True,
@@ -311,10 +335,12 @@ class CostAwareAgentEvaluator:
         return direction * abs(signal_strength) * self.config.max_position_pct
 
     def _reject(self, raw_signal: Dict[str, Any], symbol: str,
-                reason: str) -> AgentDecision:
+                reason: str,
+                signal_source: str = "tradingview_webhook") -> AgentDecision:
         logger.warning("reject %s: %s", symbol or "UNKNOWN", reason)
         tagged = f"REJECTED: {reason}"
         self.ledger.record_agent_decision(AgentDecisionEntry(
+            signal_source=signal_source,
             symbol=symbol or "UNKNOWN",
             raw_signal=raw_signal,
             approved=False,
@@ -337,10 +363,12 @@ class CostAwareAgentEvaluator:
         cost_bps: float = 0.0,
         alpha_bps: float = 0.0,
         net_benefit: float = 0.0,
+        signal_source: str = "tradingview_webhook",
     ) -> AgentDecision:
         logger.info("skip %s: %s", symbol, reason)
         tagged = f"SKIPPED: {reason}"
         self.ledger.record_agent_decision(AgentDecisionEntry(
+            signal_source=signal_source,
             symbol=symbol,
             raw_signal=raw_signal,
             approved=False,
