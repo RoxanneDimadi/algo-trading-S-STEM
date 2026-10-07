@@ -21,10 +21,27 @@ def _openap(release: Optional[Any] = None):
     return oap.OpenAP(int(release) if str(release).isdigit() else release)
 
 
+def _require_rows(df: pd.DataFrame, what: str,
+                  required: tuple = ()) -> None:
+    """Refuse to write a failed download over an existing good file.
+
+    openassetpricing fetches from Google Drive; when Drive rate-limits it
+    returns an HTML page and the package hands back an empty frame.
+    """
+    missing = [c for c in required if c not in df.columns]
+    if df.empty or missing:
+        raise RuntimeError(
+            f"OSAP {what} download came back empty or malformed "
+            f"({len(df)} rows, missing columns {missing}). Usually Google "
+            "Drive's download quota; wait a few hours and retry. Existing "
+            "files were left untouched.")
+
+
 def download_signal_doc(out_path: Path,
                         release: Optional[Any] = None) -> pd.DataFrame:
     openap = _openap(release)
     doc = openap.dl_signal_doc("pandas")
+    _require_rows(doc, "SignalDoc", ("Acronym",))
     out_path.parent.mkdir(parents=True, exist_ok=True)
     doc.to_csv(out_path, index=False)
     logger.info("wrote SignalDoc (%d rows) -> %s", len(doc), out_path)
@@ -55,8 +72,7 @@ def download_signals(
     logger.info("downloading OSAP signals %s (release=%s)",
                 want, release or "latest")
     df = openap.dl_signal("pandas", want)
-    if "permno" not in df.columns or "yyyymm" not in df.columns:
-        raise RuntimeError(f"unexpected OSAP columns: {list(df.columns)}")
+    _require_rows(df, "signals", ("permno", "yyyymm"))
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(out_path, index=False)
@@ -111,6 +127,7 @@ def download_portfolios(
             "downloading OSAP portfolios form=%s signals=%s", form, want)
         df = openap.dl_port(form, "pandas", want)
 
+    _require_rows(df, "portfolios")
     out_path.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(out_path, index=False)
     n_sig = df["signalname"].nunique() if "signalname" in df.columns else "?"

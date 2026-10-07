@@ -55,8 +55,14 @@ Falsifiable structure (tested against planted truth in tests/):
 Honest scope notes: linear price impact only (costs proportional to traded
 notional; no square-root impact), previous weights not drift-adjusted
 between rebalances (same simplification as the evaluation stack, listed in
-the backlog), and a complete panel is assumed (synthetic mode; for real
-data, restrict to a full-history universe or extend with masking).
+the backlog).
+
+Unbalanced panels (real data: factors start and stop at different dates) are
+handled by MASKING. A NaN forward return marks a name as untradable that
+period: it is excluded from the demeaning and the L1 normalization, its
+weight is forced to zero (an existing position is closed and the trade is
+charged), and it contributes nothing to returns or gradients. A complete
+panel has an all-true mask, which reduces exactly to the unmasked policy.
 """
 from __future__ import annotations
 
@@ -65,6 +71,12 @@ import numpy as np
 
 def _softabs(x: np.ndarray, eps: float) -> np.ndarray:
     return np.sqrt(x * x + eps)
+
+
+def _mask_row(y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """(tradable mask as 0/1 floats, returns with untradable set to 0)."""
+    ok = np.isfinite(y)
+    return ok.astype(float), np.where(ok, y, 0.0)
 
 
 class DiffPolicyAgent:
@@ -91,7 +103,7 @@ class DiffPolicyAgent:
     def _roll(self, Z, Y, theta, gamma, w0=None, with_grads=False):
         """Run the policy through the panel.
 
-        Z: (K, T, N) signals; Y: (T, N) forward returns.
+        Z: (K, T, N) signals; Y: (T, N) forward returns, NaN = untradable.
         Returns net/gross/traded series (T,), final weights, and -- if
         with_grads -- the exact gradient of each net_t w.r.t. params
         (theta_1..K, g), computed by forward-mode accumulation:
@@ -109,37 +121,46 @@ class DiffPolicyAgent:
         dnet = np.empty((P, T)) if with_grads else None
 
         for t in range(T):
+            m, Yt = _mask_row(Y[t])
+            n = m.sum()
             Zt = Z[:, t, :]                       # (K, N)
             s = theta @ Zt                        # scores
-            s_t = s - s.mean()
-            sa = _softabs(s_t, self.eps)
-            D = sa.sum()
-            A = 2.0 * s_t / D              # aim: dollar-neutral, gross 2
+            s_t = (s - (s @ m) / max(n, 1.0)) * m
+            sa_raw = _softabs(s_t, self.eps)
+            D = (sa_raw * m).sum()
+            if D > 0:
+                A = 2.0 * s_t / D          # aim: dollar-neutral, gross 2
+            else:
+                A = np.zeros(N)
 
-            w = (1.0 - gamma) * w_prev + gamma * A
+            w = ((1.0 - gamma) * w_prev + gamma * A) * m
             delta = w - w_prev
             da = _softabs(delta, self.eps)
-            gross[t] = w @ Y[t]
-            traded[t] = da.sum()
-            impact_t = float(((delta * delta + self.eps) ** 0.75).sum())
+            act = (m > 0) | (w_prev != 0)       # tradable or being closed
+            gross[t] = w @ Yt
+            traded[t] = da[act].sum()
+            impact_t = float(((delta * delta + self.eps) ** 0.75)[act].sum())
             net[t] = gross[t] - c * traded[t] - (self.impact / 1e4) * impact_t
 
             if with_grads:
-                # dA/dtheta_k via quotient rule; Zt demeaned row-wise
-                Ztil = Zt - Zt.mean(axis=1, keepdims=True)      # (K, N)
-                sprime = s_t / sa                                # softabs'
-                dD = Ztil @ sprime                               # (K,)
-                dA_dth = 2.0 * (Ztil * D - np.outer(dD, s_t)) / \
-                    (D * D)  # (K, N)
+                # dA/dtheta_k via quotient rule; Zt demeaned over tradable
+                Ztil = (Zt - (Zt @ m)[:, None] / max(n, 1.0)) * m  # (K, N)
+                if D > 0:
+                    sprime = (s_t / sa_raw) * m                  # softabs'
+                    dD = Ztil @ sprime                           # (K,)
+                    dA_dth = 2.0 * (Ztil * D - np.outer(dD, s_t)) / \
+                        (D * D)  # (K, N)
+                else:
+                    dA_dth = np.zeros((K, N))
                 dw = np.empty((P, N))
-                dw[:K] = (1.0 - gamma) * dw_prev[:K] + gamma * dA_dth
+                dw[:K] = ((1.0 - gamma) * dw_prev[:K] + gamma * dA_dth) * m
                 # speed parameter g: gamma = sigmoid(g)
                 dgam = gamma * (1.0 - gamma)
-                dw[K] = (1.0 - gamma) * dw_prev[K] + (A - w_prev) * dgam
+                dw[K] = ((1.0 - gamma) * dw_prev[K] + (A - w_prev) * dgam) * m
                 ddelta = dw - dw_prev
                 marginal = c * (delta / da) + (self.impact / 1e4) * (
                     1.5 * delta * (delta * delta + self.eps) ** -0.25)
-                dnet[:, t] = dw @ Y[t] - ddelta @ marginal
+                dnet[:, t] = dw @ Yt - ddelta @ marginal
                 dw_prev = dw
             w_prev = w
 
@@ -227,12 +248,14 @@ def aim_weights(Z_t: np.ndarray, theta: np.ndarray, eps: float = 1e-8) -> np.nda
 
 
 def panel_to_matrices(panel, signal_cols, fwd_col: str = "fwd_ret"):
-    """Long panel -> (Z (K,T,N), Y (T,N), dates, tickers). Complete panel
-    assumed (synthetic mode); dates lacking forward returns are dropped and
-    residual signal NaNs are filled with the cross-sectional neutral 0."""
+    """Long panel -> (Z (K,T,N), Y (T,N), dates, tickers).
+
+    Y keeps NaN where a name has no forward return that month; the policy
+    treats those names as untradable (see module notes on masking), so an
+    unbalanced real-data panel keeps every month. Residual signal NaNs are
+    filled with the cross-sectional neutral 0."""
     df = panel.dropna(subset=[fwd_col])
     Ypv = df.pivot_table(index="date", columns="ticker", values=fwd_col)
-    Ypv = Ypv.dropna(axis=0, how="any")
     dates, tickers = Ypv.index, Ypv.columns
     Z = np.stack([
         df.pivot_table(index="date", columns="ticker", values=c)
@@ -275,32 +298,40 @@ class MultiSpeedPolicyAgent(DiffPolicyAgent):
         dnet = np.empty((P, T)) if with_grads else None
 
         for t in range(T):
-            A = Z[:, t, :] - Z[:, t, :].mean(axis=1, keepdims=True)   # (K,N)
+            m, Yt = _mask_row(Y[t])
+            n = m.sum()
+            Zt = Z[:, t, :]
+            A = (Zt - (Zt @ m)[:, None] / max(n, 1.0)) * m            # (K,N)
             if with_grads:
                 cu = ((1 - gamma)[:, None] * cu
-                      + (A - u) * (gamma * (1 - gamma))[:, None])
-            u = (1 - gamma)[:, None] * u + gamma[:, None] * A
+                      + (A - u) * (gamma * (1 - gamma))[:, None]) * m
+            # an untradable name's EMA state resets rather than going stale
+            u = ((1 - gamma)[:, None] * u + gamma[:, None] * A) * m
             wt = theta @ u                                            # (N,)
             wta = _softabs(wt, self.eps)
-            D = wta.sum()
-            w = 2.0 * wt / D
+            D = (wta * m).sum()
+            w = 2.0 * wt / D if D > 0 else np.zeros(N)
             delta = w - w_prev
             da = _softabs(delta, self.eps)
-            gross[t] = w @ Y[t]
-            traded[t] = da.sum()
-            impact_t = float(((delta * delta + self.eps) ** 0.75).sum())
+            act = (m > 0) | (w_prev != 0)       # tradable or being closed
+            gross[t] = w @ Yt
+            traded[t] = da[act].sum()
+            impact_t = float(((delta * delta + self.eps) ** 0.75)[act].sum())
             net[t] = gross[t] - c * traded[t] - (self.impact / 1e4) * impact_t
 
             if with_grads:
-                ss = wt / wta                                  # softsign
+                ss = (wt / wta) * m                            # softsign
                 # dwt/dp (P,N)
                 V = np.vstack([u, theta[:, None] * cu])
-                dD = V @ ss                                           # (P,)
-                dw = 2.0 * (V * D - np.outer(dD, wt)) / (D * D)
+                if D > 0:
+                    dD = V @ ss                                       # (P,)
+                    dw = 2.0 * (V * D - np.outer(dD, wt)) / (D * D)
+                else:
+                    dw = np.zeros((P, N))
                 ddelta = dw - dw_prev
                 marginal = c * (delta / da) + (self.impact / 1e4) * (
                     1.5 * delta * (delta * delta + self.eps) ** -0.25)
-                dnet[:, t] = dw @ Y[t] - ddelta @ marginal
+                dnet[:, t] = dw @ Yt - ddelta @ marginal
                 dw_prev = dw
             w_prev = w
 
