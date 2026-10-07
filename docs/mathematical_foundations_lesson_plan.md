@@ -48,7 +48,7 @@ exists on its own under `math/`, linked in the table below.
 - $n$ — number of stocks on one date (the **cross-section**); $T$ — number of dates.
 - Vectors are per-date cross-sections: $p = (p_1,\dots,p_n)$ are the model's
   predictions for the $n$ stocks on one date; $y$ the forward returns.
-- $\langle a,b\rangle = \sum_i a_i b_i$ (dot product); $\|a\| = \sqrt{\langle a,a\rangle}$.
+- $\langle a,b\rangle = \sum_i a_i b_i$ (dot product); $\Vert a\Vert= \sqrt{\langle a,a\rangle}$.
 
 **Honesty labels.** Everything marked **Proof** is complete on the page.
 Results marked **Stated** are quoted with a reference because a full proof
@@ -57,9 +57,11 @@ needs tools beyond this plan's scope — the label tells you which is which.
 **The planted truth (used by every Check box).** The synthetic generator
 (`src/data/synthetic.py`, parameters in `configs/config.yaml`) draws returns
 as
+
 $$
-r_{i,t+1} \;=\; \sum_k \beta_k(t)\, z_{k,i,t} \;+\; \beta_{\text{int}}\, z_{a,i,t} z_{b,i,t} \;+\; b_i\, m_{t+1} \;+\; \varepsilon_{i,t+1},
+r_{i,t+1} \mkern5mu=\mkern5mu\sum_k \beta_k(t)\thinspace z_{k,i,t} \mkern5mu+\mkern5mu\beta_{\text{int}}\thinspace z_{a,i,t} z_{b,i,t} \mkern5mu+\mkern5mu b_i\thinspace m_{t+1} \mkern5mu+\mkern5mu\varepsilon_{i,t+1},
 $$
+
 with Gaussian signals $z$ (standardized each date), market factor $m \sim N(0.006, 0.045^2)$,
 market betas $b_i \sim N(1, 0.3^2)$, idiosyncratic noise $\varepsilon \sim N(0, 0.08^2)$,
 and $\beta_k(t)$ stepping down by ×0.70 after each signal's "sample end" and to
@@ -114,20 +116,23 @@ and $Y$ tend to be above (or below) their averages *together*.
 
 Covariance has awkward units (return × return). Dividing by both standard
 deviations gives the unit-free **correlation**:
+
 $$
-\rho(X,Y) \;=\; \frac{\mathrm{Cov}(X,Y)}{\sigma_X\, \sigma_Y}.
+\rho(X,Y) \mkern5mu=\mkern5mu\frac{\mathrm{Cov}(X,Y)}{\sigma_X\thinspace\sigma_Y}.
 $$
 
 **Theorem (Cauchy–Schwarz).** $|\rho| \le 1$ always.
 
 **Proof.** For any number $t$, the quantity $(\tilde X + t\tilde Y)^2$ is a
 square, so its expectation is $\ge 0$:
+
 $$
-0 \;\le\; E[(\tilde X + t\tilde Y)^2] \;=\; \underbrace{E[\tilde Y^2]}_{c}\,t^2 + \underbrace{2E[\tilde X\tilde Y]}_{b}\,t + \underbrace{E[\tilde X^2]}_{a}.
+0 \mkern5mu\le\mkern5mu E[(\tilde X + t\tilde Y)^2] \mkern5mu=\mkern5mu\underbrace{E[\tilde Y^2]}_{c}\thinspace t^2 + \underbrace{2E[\tilde X\tilde Y]}_{b}\thinspace t + \underbrace{E[\tilde X^2]}_{a}.
 $$
+
 A quadratic $ct^2 + bt + a$ that is never negative cannot have two distinct
 real roots, so its discriminant satisfies $b^2 - 4ca \le 0$, i.e.
-$4\,\mathrm{Cov}(X,Y)^2 \le 4\,\mathrm{Var}(Y)\mathrm{Var}(X)$. Divide by
+$4\thinspace\mathrm{Cov}(X,Y)^2 \le 4\thinspace\mathrm{Var}(Y)\mathrm{Var}(X)$. Divide by
 $4\sigma_X^2\sigma_Y^2$ and take square roots: $|\rho| \le 1$. ∎
 
 So $\rho = 1$ means a perfect increasing straight-line relationship,
@@ -157,9 +162,11 @@ chapter 3 exploits in a computation.
 
 A strategy's monthly returns $r_1, \dots, r_T$ have average $\mu$ and
 standard deviation $\sigma$. The **Sharpe ratio** is
+
 $$
 \mathrm{SR}_{\text{monthly}} = \mu / \sigma :
 $$
+
 reward per unit of risk. It is the right *ratio* because a strategy can
 always be scaled (bet twice as much: both $\mu$ and $\sigma$ double, SR is
 unchanged) — SR measures quality independent of sizing.
@@ -170,10 +177,12 @@ Convention reports SR **annualized**. The rule is: multiply by $\sqrt{12}$.
 independent with the same $\mu, \sigma$, and approximate the annual return
 as the sum of 12 monthly returns. By linearity, the annual mean is $12\mu$;
 by independence (§1.2), the annual variance is $12\sigma^2$, so the annual
-standard deviation is $\sqrt{12}\,\sigma$. Hence
+standard deviation is $\sqrt{12}\thinspace\sigma$. Hence
+
 $$
-\mathrm{SR}_{\text{annual}} = \frac{12\mu}{\sqrt{12}\,\sigma} = \sqrt{12}\;\frac{\mu}{\sigma}. \qquad \blacksquare
+\mathrm{SR}_{\text{annual}} = \frac{12\mu}{\sqrt{12}\thinspace\sigma} = \sqrt{12}\mkern5mu\frac{\mu}{\sigma}. \qquad \blacksquare
 $$
+
 Both assumptions are approximations for real returns (compounding is not a
 sum; months are not perfectly independent). Chapter 4 is entirely about what
 happens to inference when independence fails — and the code's use of
@@ -206,9 +215,11 @@ Take one date's cross-section: predictions $p = (p_1,\dots,p_n)$ and forward
 returns $y = (y_1,\dots,y_n)$, one entry per stock. Demean each
 ($\tilde p = p - \bar p\mathbf{1}$, $\tilde y = y - \bar y\mathbf{1}$, where
 $\mathbf 1$ is the all-ones vector). The **sample correlation** is
+
 $$
-\rho(p, y) \;=\; \frac{\langle \tilde p, \tilde y\rangle}{\|\tilde p\|\,\|\tilde y\|},
+\rho(p, y) \mkern5mu=\mkern5mu\frac{\langle \tilde p, \tilde y\rangle}{\Vert\tilde p\Vert\thinspace\Vert\tilde y\Vert},
 $$
+
 which is *literally the cosine of the angle* between the two demeaned vectors
 in $n$-dimensional space (that is the definition of the angle between
 vectors). Perfectly aligned: $\rho = 1$. Opposite: $-1$. Perpendicular: $0$.
@@ -217,18 +228,17 @@ the exact expression IC-Net differentiates in chapter 7.
 
 ## 2.2 Two invariance theorems (small proofs, large consequences)
 
-**Theorem A (translation invariance).** $\rho(p + c\mathbf 1,\, y) = \rho(p, y)$
+**Theorem A (translation invariance).** $\rho(p + c\mathbf 1,\thinspace y) = \rho(p, y)$
 for any constant $c$.
 
-**Proof.** Demeaning kills constants: $(p + c\mathbf 1) - \overline{(p+c\mathbf 1)}\,\mathbf 1
-= p + c\mathbf 1 - (\bar p + c)\mathbf 1 = \tilde p$. The formula only sees
+**Proof.** Demeaning kills constants: $(p + c\mathbf 1) - \overline{(p+c\mathbf 1)}\thinspace\mathbf 1 = p + c\mathbf 1 - (\bar p + c)\mathbf 1 = \tilde p$. The formula only sees
 $\tilde p$. ∎
 
-**Theorem B (positive scale invariance).** $\rho(p,\, \lambda y) = \rho(p, y)$
+**Theorem B (positive scale invariance).** $\rho(p,\thinspace\lambda y) = \rho(p, y)$
 for any $\lambda > 0$ (and likewise in $p$).
 
 **Proof.** $\widetilde{\lambda y} = \lambda\tilde y$, so the numerator gains a
-factor $\lambda$ and the denominator gains $\|\lambda \tilde y\| = \lambda\|\tilde y\|$;
+factor $\lambda$ and the denominator gains $\Vert\lambda \tilde y\Vert= \lambda\Vert\tilde y\Vert$;
 they cancel. ∎
 
 *Why these matter here:* Theorem A says correlation cannot reward predicting
@@ -253,6 +263,7 @@ comes from — a pleasant exercise in the definitions.
 **Step 1: mean and variance of ranks.** Ranks are the numbers $1,\dots,n$ in
 some order, so $\bar R = \frac1n\sum_{k=1}^n k = \frac{n+1}{2}$ and, using
 $\sum k^2 = \frac{n(n+1)(2n+1)}{6}$,
+
 $$
 \mathrm{Var}(R) = \frac1n\sum k^2 - \bar R^2
 = \frac{(n+1)(2n+1)}{6} - \frac{(n+1)^2}{4}
@@ -262,13 +273,16 @@ $$
 
 **Step 2: covariance via the $d_i$'s.** Let $R_i, S_i$ be the two rank lists
 and $d_i = R_i - S_i$. Expanding $d_i^2 = R_i^2 - 2R_iS_i + S_i^2$ and summing,
+
 $$
 \sum R_iS_i = \tfrac12\Big(\sum R_i^2 + \sum S_i^2 - \sum d_i^2\Big)
 = \frac{n(n+1)(2n+1)}{6} - \tfrac12\sum d_i^2 ,
 $$
+
 because both rank lists contain the same numbers $1..n$. Then
+
 $$
-\mathrm{Cov}(R,S) = \frac1n\sum R_iS_i - \bar R\,\bar S
+\mathrm{Cov}(R,S) = \frac1n\sum R_iS_i - \bar R\thinspace\bar S
 = \frac{(n+1)(2n+1)}{6} - \frac{\sum d_i^2}{2n} - \frac{(n+1)^2}{4}
 = \frac{n^2-1}{12} - \frac{\sum d_i^2}{2n}.
 $$
@@ -283,7 +297,7 @@ transform**, inheriting §2.2's invariances and adding outlier immunity.
 ## 2.4 The Information Coefficient (IC): definition and design choices
 
 $$
-\mathrm{IC}_t \;=\; \text{Spearman correlation, across stocks } i \text{, between } z_{i,t} \text{ and } r_{i,t+1}.
+\mathrm{IC}_t \mkern5mu=\mkern5mu\text{Spearman correlation, across stocks } i \text{, between } z_{i,t} \text{ and } r_{i,t+1}.
 $$
 
 One number per date; the headline statistic is the time-series mean
@@ -292,7 +306,7 @@ stability ratio $\mathrm{ICIR} = \overline{\mathrm{IC}}/\sigma_{\mathrm{IC}}$
 (implemented in `src/evaluation/ic.py`). Two design choices carry the theory:
 
 **(a) Forward, never contemporaneous.** The pair is (signal known at $t$,
-return over $t\!\to\!t{+}1$). Correlating a signal with the *same* month's
+return over $t\negthinspace\to\negthinspace t{+}1$). Correlating a signal with the *same* month's
 return measures description, not prediction — chapter 8 quantifies exactly
 how spectacular that mistake looks.
 
@@ -338,23 +352,27 @@ four numbers in the config file.**
 Assign each stock a **weight** $w_i$ (fraction of capital; negative =
 **short**, i.e. borrow the stock, sell it, profit if it falls). The
 portfolio's return over the month is
+
 $$
-r_p \;=\; \sum_i w_i\, y_i \;=\; \langle w, y\rangle ,
+r_p \mkern5mu=\mkern5mu\sum_i w_i\thinspace y_i \mkern5mu=\mkern5mu\langle w, y\rangle ,
 $$
+
 because each dollar of weight earns that stock's return. The repo's
 constructor (`src/evaluation/portfolio.py::score_to_weights`) sorts each
 date's stocks into 5 **quintiles** by score and sets
+
 $$
-w_i = \begin{cases} +1/n_{\text{top}} & i \in \text{top quintile}\\[2pt]
--1/n_{\text{bot}} & i \in \text{bottom quintile}\\[2pt] 0 & \text{else,}\end{cases}
+w_i = \begin{cases} +1/n_{\text{top}} & i \in \text{top quintile}\cr
+-1/n_{\text{bot}} & i \in \text{bottom quintile}\cr 0 & \text{else,}\end{cases}
 $$
+
 i.e. \$1 long the best fifth, \$1 short the worst fifth.
 
 ## 3.2 Theorem (dollar neutrality): the market drops out
 
 **Theorem.** If $\sum_i w_i = 0$, then adding any constant $c$ to *every*
 stock's return leaves the portfolio return unchanged:
-$\langle w,\, y + c\mathbf 1\rangle = \langle w, y\rangle$.
+$\langle w,\thinspace y + c\mathbf 1\rangle = \langle w, y\rangle$.
 
 **Proof.** $\langle w, y + c\mathbf 1\rangle = \langle w,y\rangle + c\sum_i w_i = \langle w,y\rangle$. ∎
 
@@ -373,37 +391,39 @@ inside the top quintile?* The synthetic returns are generated from Gaussian
 standard normal *conditional on being in its top 20%*.
 
 **Lemma.** For standard normal $Z$ with density $\phi(z) = \tfrac{1}{\sqrt{2\pi}}e^{-z^2/2}$
-and CDF $\Phi$: $\;E[Z \mid Z > a] = \dfrac{\phi(a)}{1 - \Phi(a)}$.
+and CDF $\Phi$: $\mkern5mu E[Z \mid Z > a] = \dfrac{\phi(a)}{1 - \Phi(a)}$.
 
-**Proof.** The key is that $\phi'(z) = -z\,\phi(z)$ (differentiate the
+**Proof.** The key is that $\phi'(z) = -z\thinspace\phi(z)$ (differentiate the
 exponential). Therefore
-$\int_a^\infty z\,\phi(z)\,dz = \big[-\phi(z)\big]_a^\infty = \phi(a)$.
+$\int_a^\infty z\thinspace\phi(z)\thinspace dz = \big[-\phi(z)\big]_ a^\infty = \phi(a)$.
 Dividing by the probability of the event, $P(Z>a) = 1-\Phi(a)$, gives the
 conditional mean. ∎
 
 Top quintile: $a = \Phi^{-1}(0.8) = 0.8416$, so
-$E[Z \mid \text{top } 20\%] = \phi(0.8416)/0.2 = 0.2800/0.2 = \mathbf{1.400}$.
+$E[Z \mid \text{top quintile}] = \phi(0.8416)/0.2 = 0.2800/0.2 = \mathbf{1.400}$.
 By symmetry the bottom quintile averages $-1.400$: the **long–short spread in
 signal units is 2.80**.
 
 ## 3.4 The flagship prediction: 10.14% vs measured 10.17%
 
-The planted model (index page) says $r_{i,t+1} = \beta\, z_{i,t} + (\text{terms
-with mean 0 in both legs})$: the interaction has mean zero given the sort
+The planted model (index page) says $r_{i,t+1} = \beta\thinspace z_{i,t} + (\text{terms with mean 0 in both legs})$: the interaction has mean zero given the sort
 (the *other* signal is independent), market exposure $b_i$ is independent of
 $z$ so both legs average $b \approx 1$ and cancel by §3.2, and noise averages
 out. So the expected monthly long–short return is
+
 $$
-E[r_p] \;=\; \beta \cdot \big(E[z\mid\text{top}] - E[z\mid\text{bot}]\big) \;=\; 2.80\,\beta .
+E[r_p] \mkern5mu=\mkern5mu\beta \cdot \big(E[z\mid\text{top}] - E[z\mid\text{bot}]\big) \mkern5mu=\mkern5mu 2.80\thinspace\beta .
 $$
 
 Now the config numbers for `sig_momentum`: $\beta = 0.0040$ in-sample,
 stepped to $0.70\beta$ after 2012-12 and $0.45\beta$ after 2014-12. The panel
 spans 299 months of which about 155 are in-sample, 24 post-sample, 120
 post-publication, so the *time-averaged* multiplier is
+
 $$
-\frac{155(1.0) + 24(0.70) + 120(0.45)}{299} \;=\; 0.755 .
+\frac{155(1.0) + 24(0.70) + 120(0.45)}{299} \mkern5mu=\mkern5mu 0.755 .
 $$
+
 Prediction: $12 \times 2.80 \times 0.0040 \times 0.755 = \mathbf{0.1014}$,
 i.e. **10.14% per year, gross**.
 
@@ -420,8 +440,7 @@ sampling error plus the small terms we dropped.)
 
 **Predicting the IC too.** The per-date correlation between $z$ and $r$ under
 the planted model is $\beta$ divided by the cross-sectional return spread:
-$\rho \approx \beta / \sqrt{\beta_{\text{all}}^2\text{-terms} + b\text{-dispersion}^2 E[m^2] + \sigma_\varepsilon^2}
-= 0.0040/0.0813 = 0.049$ in-sample (Pearson). Two adjustments: Spearman on
+$\rho \approx \beta / \sqrt{\beta_{\text{all}}^2\text{-terms} + b\text{-dispersion}^2 E[m^2] + \sigma_\varepsilon^2} = 0.0040/0.0813 = 0.049$ in-sample (Pearson). Two adjustments: Spearman on
 near-Gaussian data is slightly smaller (factor $\tfrac{6}{\pi}\arcsin(\rho/2) \approx 0.955\rho$
 for small $\rho$ — Stated, classical result for bivariate normals), and the
 decay multiplier 0.755 applies. Prediction:
@@ -432,12 +451,14 @@ Within sampling error (chapter 2 put the standard error at $\approx 0.0026$).
 
 Weights change each month; trading costs money. With weight vectors $w_t$
 (pivoted stock-by-date), the **traded notional** is
-$\text{traded}_t = \sum_i |w_{t,i} - w_{t-1,i}|$ — every dollar bought or
+$\text{traded}_ t = \sum_i |w_{t,i} - w_{t-1,i}|$ — every dollar bought or
 sold — and the net return is
+
 $$
-r^{\text{net}}_t \;=\; r^{\text{gross}}_t \;-\; \text{traded}_t \times \frac{\text{cost}_{\text{bps}}}{10{,}000}.
+r^{\text{net}}_t \mkern5mu=\mkern5mu r^{\text{gross}}_t \mkern5mu-\mkern5mu\text{traded}_t \times \frac{\text{cost}_{\text{bps}}}{10{,}000}.
 $$
-"One-way turnover" $= \text{traded}_t/2$ (a \$1 sale funding a \$1 purchase is
+
+"One-way turnover" $= \text{traded}_ t/2$ (a \$1 sale funding a \$1 purchase is
 \$2 traded, one repositioning). This is deliberately the simplest defensible
 cost model; `docs/03_improvement_backlog.md` lists its two honest
 refinements (drift correction; size-dependent costs).
@@ -445,7 +466,7 @@ refinements (drift correction; size-dependent costs).
 ## 3.6 Persistence, staleness, and the law IC(k) ≈ ρᵏ · IC(0)
 
 The synthetic signals follow an **AR(1)**:
-$z_t = \rho z_{t-1} + \sqrt{1-\rho^2}\,\epsilon_t$ with fresh noise
+$z_t = \rho z_{t-1} + \sqrt{1-\rho^2}\thinspace\epsilon_t$ with fresh noise
 $\epsilon_t$ (variance 1).
 
 **Claim 1 (variance is stable at 1).** If $\mathrm{Var}(z_{t-1}) = 1$ then
@@ -453,13 +474,13 @@ $\mathrm{Var}(z_t) = \rho^2\cdot 1 + (1-\rho^2)\cdot 1 = 1$ (independence of
 $\epsilon_t$, §1.2). ∎
 
 **Claim 2 (correlation across k months is ρᵏ).**
-$\mathrm{Cov}(z_t, z_{t-1}) = \rho\,\mathrm{Var}(z_{t-1}) = \rho$
+$\mathrm{Cov}(z_t, z_{t-1}) = \rho\thinspace\mathrm{Var}(z_{t-1}) = \rho$
 (the noise term is uncorrelated with the past); iterate $k$ times to get
 $\mathrm{Corr}(z_t, z_{t-k}) = \rho^k$. ∎
 
 **Consequence.** A $k$-month-old signal is (in the correlation sense) a
 $\rho^k$-strength copy of today's plus unrelated noise, so its predictive
-correlation is scaled: $\mathrm{IC}(k\text{-stale}) \approx \rho^k\,\mathrm{IC}(\text{fresh})$.
+correlation is scaled: $\mathrm{IC}(k\text{-stale}) \approx \rho^k\thinspace\mathrm{IC}(\text{fresh})$.
 This is the mathematical content of the "Anomaly Time" lesson (stale
 formation hides real signal), turned into a *rate*.
 
@@ -491,8 +512,7 @@ understate the noise for market data, and how the code corrects for it.
 variance $\sigma^2$, then the sample mean $\bar x = \frac1T\sum x_t$
 satisfies $\mathrm{Var}(\bar x) = \sigma^2/T$.
 
-**Proof.** $\mathrm{Var}(\bar x) = \frac{1}{T^2}\mathrm{Var}\big(\sum x_t\big)
-= \frac{1}{T^2}\sum_t \mathrm{Var}(x_t) = \frac{T\sigma^2}{T^2}$, using
+**Proof.** $\mathrm{Var}(\bar x) = \frac{1}{T^2}\mathrm{Var}\big(\sum x_t\big) = \frac{1}{T^2}\sum_t \mathrm{Var}(x_t) = \frac{T\sigma^2}{T^2}$, using
 §1.2's variance-of-a-sum rule (cross terms vanish because the $x_t$ are
 uncorrelated). ∎
 
@@ -501,8 +521,8 @@ The **standard error** is $\mathrm{se}(\bar x) = \sigma/\sqrt T$, and the
 errors the average sits from zero. By the Central Limit Theorem (Stated:
 sums of many small independent effects are approximately bell-curved), under
 the null "true mean $= 0$" the t-stat is approximately standard normal, so
-$|t| > 2$ happens by luck only $\approx 5\%$ of the time. That is the entire
-content of "$t > 2$ = significant" — and chapter 9 is about how this
+$|t| > 2$ happens by luck only $\approx 5$% of the time. That is the entire
+content of "significant if $t > 2$" — and chapter 9 is about how this
 guarantee *dissolves* when you test many things.
 
 ## 4.2 What autocorrelation does to that formula (derived)
@@ -511,10 +531,12 @@ Strategy returns and IC series are **autocorrelated**: a good month is more
 likely after a good month. Then the cross terms in the proof above do *not*
 vanish. Redo the computation keeping them, with $\rho_k$ the correlation
 between observations $k$ apart:
+
 $$
-\mathrm{Var}(\bar x) = \frac{1}{T^2}\Big[\sum_{t}\mathrm{Var}(x_t) + 2\!\!\sum_{t<s}\!\mathrm{Cov}(x_t,x_s)\Big]
+\mathrm{Var}(\bar x) = \frac{1}{T^2}\Big[\sum_{t}\mathrm{Var}(x_t) + 2\negthinspace\negthinspace\sum_{t<s}\negthinspace\mathrm{Cov}(x_t,x_s)\Big]
 = \frac{\sigma^2}{T}\Big[1 + 2\sum_{k=1}^{T-1}\Big(1-\frac{k}{T}\Big)\rho_k\Big],
 $$
+
 since there are exactly $T-k$ pairs at distance $k$. **If the $\rho_k$ are
 positive, the true variance of your average is *larger* than $\sigma^2/T$** —
 the naive t-stat divides by too small a number and overstates significance.
@@ -525,9 +547,11 @@ independent pieces of information.
 
 Newey–West (1987) plugs *estimated* autocovariances into the bracket,
 truncated at a lag $L$ and damped by **Bartlett weights** $1 - \frac{k}{L+1}$:
+
 $$
 \widehat{\mathrm{Var}}_{\text{NW}}(\bar x) = \frac{1}{T}\Big[\hat\gamma_0 + 2\sum_{k=1}^{L}\Big(1-\frac{k}{L+1}\Big)\hat\gamma_k\Big],
 $$
+
 where $\hat\gamma_k$ is the sample autocovariance at lag $k$. The triangular
 weights are not cosmetic: they guarantee the estimate is never negative
 (Stated — the weighted sum is a smoothed spectral density at frequency zero,
@@ -549,9 +573,11 @@ $z_b, z_c,\dots$ already predict? (Marginal, not standalone, power.)
 
 **Pass 1.** On each date $t$, run one cross-sectional regression across the
 $n$ stocks:
+
 $$
 r_{i,t+1} = c_t + \lambda_{a,t} z_{a,i,t} + \lambda_{b,t} z_{b,i,t} + \cdots + e_{i,t}.
 $$
+
 This yields a *time series* of estimated coefficients $\lambda_{a,t}$
 ($t = 1..T$).
 
@@ -579,12 +605,11 @@ which then only has to handle time-series dependence, which Newey–West does.
    identity)*. The regression is run on rank-normalized signals
    $\tilde z \approx$ uniform on $[-1,1]$ (variance $\tfrac13$), while
    returns were generated from the Gaussian $z$. The slope of $r$ on
-   $\tilde z$ is $\beta\,\mathrm{Cov}(z, \tilde z)/\mathrm{Var}(\tilde z)$.
+   $\tilde z$ is $\beta\thinspace\mathrm{Cov}(z, \tilde z)/\mathrm{Var}(\tilde z)$.
    With $\tilde z = 2\Phi(z) - 1$, $\mathrm{Cov} = 2E[z\Phi(z)] = 1/\sqrt{\pi}$
    (Stated; one-line via Stein's lemma $E[zf(z)] = E[f'(z)]$, giving
    $E[\phi(z)] = \tfrac{1}{2\sqrt\pi}$). So the predicted momentum
-   coefficient is $0.004 \times \frac{1/\sqrt\pi}{1/3} \times 0.755
-   \text{ (decay)} = \mathbf{0.0051}$. Measured: **0.0054**. ✓ (6% apart,
+   coefficient is $0.004 \times \frac{1/\sqrt\pi}{1/3} \times 0.755 \text{ (decay)} = \mathbf{0.0051}$. Measured: **0.0054**. ✓ (6% apart,
    inside its own standard error.)
 
 ## 4.5 The reading rule for every table in `results/`
@@ -605,19 +630,23 @@ chapter 9 sin).
 Given features $x_i$ (vector, includes a leading 1 for the intercept) and
 targets $y_i$, ordinary least squares (OLS) picks coefficients $\beta$
 minimizing the sum of squared errors
-$L(\beta) = \sum_i (y_i - x_i^\top \beta)^2 = \|y - X\beta\|^2$.
+$L(\beta) = \sum_i (y_i - x_i^\top \beta)^2 = \Vert y - X\beta\Vert^2$.
 
 **Derivation.** $L$ is a smooth bowl in $\beta$; at the minimum its gradient
 is zero. Expanding $L = y^\top y - 2\beta^\top X^\top y + \beta^\top X^\top X\beta$
 and differentiating: $\nabla L = -2X^\top y + 2X^\top X\beta = 0$, so
+
 $$
-\boxed{\;\hat\beta = (X^\top X)^{-1} X^\top y\;}
+\boxed{\mkern5mu\hat\beta = (X^\top X)^{-1} X^\top y\mkern5mu}
 $$
+
 (the **normal equations**). In the one-feature case this collapses, after a
 little algebra, to two formulas worth memorizing:
+
 $$
 \hat\beta_1 = \frac{\mathrm{Cov}(x,y)}{\mathrm{Var}(x)}, \qquad \hat\beta_0 = \bar y - \hat\beta_1 \bar x .
 $$
+
 So a regression slope *is* a rescaled covariance — regression, correlation,
 and the IC are one family. And regressing on a constant alone gives
 $\hat\beta_0 = \bar y$: §4.3's "mean test as regression" identity, proved.
@@ -627,9 +656,11 @@ $\hat\beta_0 = \bar y$: §4.3's "mean test as regression" identity, proved.
 Chapter 3's strategy returns might secretly be repackaged *known* risk
 premia. The test (`src/evaluation/factor_controls.py`): regress strategy
 returns on factor returns $f_t$ (market, size, value, …),
+
 $$
 r^{\text{strat}}_t = \alpha + \beta^\top f_t + e_t ,
 $$
+
 with Newey–West errors. $\beta^\top f_t$ is the part explained by *rentable
 exposures anyone can buy*; the intercept $\alpha$ is the average return left
 over — the claim to genuine information. $R^2$ (the fraction of variance the
@@ -646,7 +677,7 @@ Why not always fit the most flexible model? Let the truth be
 $y = f(x) + \varepsilon$ with noise variance $\sigma^2$, and let $\hat f$ be
 a model fit on a random training sample. For a fixed test point $x$:
 
-**Theorem.** $\;E\big[(y - \hat f(x))^2\big] = \underbrace{\big(E[\hat f(x)] - f(x)\big)^2}_{\text{bias}^2} + \underbrace{\mathrm{Var}\big(\hat f(x)\big)}_{\text{variance}} + \sigma^2 .$
+**Theorem.** $\mkern5mu E\big[(y - \hat f(x))^2\big] = \underbrace{\big(E[\hat f(x)] - f(x)\big)^2}_ {\text{bias}^2} + \underbrace{\mathrm{Var}\big(\hat f(x)\big)}_ {\text{variance}} + \sigma^2 .$
 
 **Proof.** Add and subtract $E[\hat f]$ inside the square:
 $y - \hat f = \varepsilon + (f - E[\hat f]) + (E[\hat f] - \hat f)$.
@@ -666,28 +697,31 @@ case for shrinkage.
 ## 5.4 Ridge and lasso, solved exactly in the clean case
 
 The **elastic net** (the repo's linear benchmark, `make_linear`) minimizes
-$\|y - X\beta\|^2 + \lambda_2\|\beta\|^2 + \lambda_1\|\beta\|_1$ — squared
+$\Vert y - X\beta\Vert^2 + \lambda_2\Vert\beta\Vert^2 + \lambda_1\Vert\beta\Vert_1$ — squared
 error plus an L2 ("ridge") and an L1 ("lasso") penalty. In the *orthonormal*
 case ($X^\top X = I$; think uncorrelated standardized features) both pieces
 solve in closed form, and the closed forms teach exactly what each penalty
 does. Let $\hat\beta = X^\top y$ be the OLS solution.
 
-**Ridge (L1 off).** Minimize $\|y - X\beta\|^2 + \lambda\|\beta\|^2$.
+**Ridge (L1 off).** Minimize $\Vert y - X\beta\Vert^2 + \lambda\Vert\beta\Vert^2$.
 Gradient: $-2X^\top y + 2\beta + 2\lambda\beta = 0$, so
+
 $$
 \hat\beta^{\text{ridge}} = \frac{\hat\beta}{1+\lambda}:
 $$
+
 **every coefficient is shrunk toward zero by the same factor.** Pure
 variance reduction, paid for with a little bias — §5.3's trade made explicit.
 
 **Lasso (L2 off).** The problem separates coordinate by coordinate: minimize
 $g(\beta_j) = (\beta_j - \hat\beta_j)^2 + \lambda|\beta_j|$ (up to constants).
-For $\beta_j > 0$: $g' = 2(\beta_j - \hat\beta_j) + \lambda = 0 \Rightarrow
-\beta_j = \hat\beta_j - \lambda/2$, valid only if positive; symmetric case
+For $\beta_j > 0$: $g' = 2(\beta_j - \hat\beta_j) + \lambda = 0 \Rightarrow \beta_j = \hat\beta_j - \lambda/2$, valid only if positive; symmetric case
 for negative; otherwise the minimum is at the kink $\beta_j = 0$. Compactly:
+
 $$
-\hat\beta_j^{\text{lasso}} = \mathrm{sign}(\hat\beta_j)\,\max\!\big(|\hat\beta_j| - \tfrac{\lambda}{2},\, 0\big)
+\hat\beta_j^{\text{lasso}} = \mathrm{sign}(\hat\beta_j)\thinspace\max\negthinspace\big(|\hat\beta_j| - \tfrac{\lambda}{2},\thinspace 0\big)
 $$
+
 — **soft thresholding**: small coefficients are set *exactly* to zero
 (automatic signal selection), large ones shrunk by a constant. The elastic
 net blends both behaviors; the repo keeps its penalties tiny because the
@@ -698,7 +732,7 @@ honest linear combination," not aggressive selection.
 
 However shrunk, $\hat y = \beta^\top z$ is **additive**: momentum's
 contribution is the same regardless of the value signal's level. The
-synthetic truth contains a term $\beta_{\text{int}}\, z_{\text{mom}}\, z_{\text{val}}$
+synthetic truth contains a term $\beta_{\text{int}}\thinspace z_{\text{mom}}\thinspace z_{\text{val}}$
 whose whole point is that it is *not* additive. Chapter 6 proves no additive
 model can represent it — and shows why trees can. That gap is exactly the
 measured OOS difference between the elastic net (IC 0.043) and the
@@ -720,7 +754,7 @@ comes from adding many small ones.
 
 ## 6.2 Theorem: gradient boosting with squared loss = repeatedly fitting residuals
 
-**Setup.** Build a model in stages: $F_M(x) = \sum_{m=1}^M \eta\, h_m(x)$,
+**Setup.** Build a model in stages: $F_M(x) = \sum_{m=1}^M \eta\thinspace h_m(x)$,
 where each $h_m$ is a small tree and $\eta$ is a learning rate. Stage $m$
 chooses $h_m$ to reduce the loss $L(F) = \tfrac12\sum_i \big(y_i - F(x_i)\big)^2$.
 
@@ -730,9 +764,11 @@ current model still gets wrong.
 
 **Proof.** Treat the model's predictions at the training points,
 $F(x_1),\dots,F(x_N)$, as free variables. Then
+
 $$
 \frac{\partial L}{\partial F(x_i)} = -\big(y_i - F(x_i)\big),
 $$
+
 so the negative gradient — the direction that decreases the loss fastest —
 is exactly the residual vector. Gradient descent "in function space" means:
 fit the next tree $h_m$ to approximate these residuals, then take a small
@@ -748,7 +784,7 @@ that its gradient is the thing you care about*.
 
 ## 6.3 The interaction theorem: what additive models cannot say
 
-The planted DGP contains $\beta_{\text{int}}\, z_1 z_2$ (momentum × value):
+The planted DGP contains $\beta_{\text{int}}\thinspace z_1 z_2$ (momentum × value):
 momentum works *better among cheap stocks*. Linear models — indeed anything
 of the **additive** form $f_1(z_1) + f_2(z_2)$, however nonlinear each piece
 — cannot represent this.
@@ -812,19 +848,21 @@ $\bar p, \bar y$ for the means, $s_p, s_q$ for the (population) standard
 deviations, $\rho$ for the Pearson correlation.
 
 **Theorem (exact per-date MSE decomposition).**
+
 $$
-\frac1n\sum_{i=1}^n (p_i - y_i)^2 \;=\; \underbrace{(\bar p - \bar y)^2}_{\text{level error}} \;+\; \underbrace{(s_p - s_y)^2}_{\text{scale error}} \;+\; \underbrace{2\, s_p\, s_y\,(1 - \rho)}_{\text{ordering error}} .
+\frac1n\sum_{i=1}^n (p_i - y_i)^2 \mkern5mu=\mkern5mu\underbrace{(\bar p - \bar y)^2}_{\text{level error}} \mkern5mu+\mkern5mu\underbrace{(s_p - s_y)^2}_{\text{scale error}} \mkern5mu+\mkern5mu\underbrace{2\thinspace s_p\thinspace s_y\thinspace(1 - \rho)}_{\text{ordering error}} .
 $$
 
 **Proof.** Split each error into a mean part and a demeaned part:
 $p_i - y_i = (\bar p - \bar y) + (\tilde p_i - \tilde y_i)$. Squaring and
 averaging over $i$, the cross term vanishes because demeaned quantities
 average to zero:
+
 $$
 \tfrac1n\sum (p_i - y_i)^2 = (\bar p - \bar y)^2 + \tfrac1n\sum(\tilde p_i - \tilde y_i)^2 .
 $$
-Expand the second piece: $\tfrac1n\sum \tilde p_i^2 - \tfrac2n\sum\tilde p_i\tilde y_i + \tfrac1n\sum\tilde y_i^2
-= s_p^2 - 2 s_p s_y \rho + s_y^2$ (the middle term is the covariance,
+
+Expand the second piece: $\tfrac1n\sum \tilde p_i^2 - \tfrac2n\sum\tilde p_i\tilde y_i + \tfrac1n\sum\tilde y_i^2 = s_p^2 - 2 s_p s_y \rho + s_y^2$ (the middle term is the covariance,
 $= s_p s_y \rho$ by definition of $\rho$). Finally regroup:
 $s_p^2 + s_y^2 - 2s_ps_y\rho = (s_p - s_y)^2 + 2 s_p s_y(1 - \rho)$. ∎
 
@@ -841,10 +879,12 @@ sample weighting.
 
 ## 7.2 The IC-Net objective
 
-Delete the waste. Train the network $f(\cdot\,; W)$ to directly **maximize**
+Delete the waste. Train the network $f(\cdot\thinspace; W)$ to directly **maximize**
+
 $$
-J(W) \;=\; \frac{1}{T}\sum_{t=1}^{T} \rho_t\big(f(X_t; W),\, y_t\big) \;-\; \lambda \|W\|^2 ,
+J(W) \mkern5mu=\mkern5mu\frac{1}{T}\sum_{t=1}^{T} \rho_t\big(f(X_t; W),\thinspace y_t\big) \mkern5mu-\mkern5mu\lambda \Vert W\Vert^2 ,
 $$
+
 the average per-date cross-sectional correlation between predictions and
 forward returns, minus a ridge penalty. On rank-normalized inputs this is a
 differentiable stand-in for the Spearman IC — the exact statistic every
@@ -858,26 +898,30 @@ volatile months (scale invariance).
 The only nontrivial calculus is $\partial \rho / \partial p$ for one date.
 Use the cosine form: with $M = I - \tfrac1n\mathbf{1}\mathbf{1}^\top$ the
 demeaning matrix ($Mp = \tilde p$; note $M^\top = M$ and $MM = M$),
+
 $$
-\rho(p) = \frac{A}{B}, \qquad A = \langle \tilde p, \tilde y\rangle, \qquad B = \|\tilde p\|\,\|\tilde y\|.
+\rho(p) = \frac{A}{B}, \qquad A = \langle \tilde p, \tilde y\rangle, \qquad B = \Vert\tilde p\Vert\thinspace\Vert\tilde y\Vert.
 $$
 
 **Piece 1: gradient of $A$.** $A = (Mp)^\top \tilde y = p^\top (M\tilde y) = p^\top \tilde y$
 (demeaning the already-demeaned $\tilde y$ changes nothing). So
 $\nabla_p A = \tilde y$.
 
-**Piece 2: gradient of $\|\tilde p\|$.** $\|\tilde p\|^2 = p^\top M p$, so
-$\nabla_p \|\tilde p\|^2 = 2Mp = 2\tilde p$, and by the chain rule
-$\nabla_p \|\tilde p\| = \tilde p / \|\tilde p\|$.
+**Piece 2: gradient of $\Vert\tilde p\Vert$.** $\Vert\tilde p\Vert^2 = p^\top M p$, so
+$\nabla_p \Vert\tilde p\Vert^2 = 2Mp = 2\tilde p$, and by the chain rule
+$\nabla_p \Vert\tilde p\Vert= \tilde p / \Vert\tilde p\Vert$.
 
 **Combine with the quotient rule.**
+
 $$
-\nabla_p \rho = \frac{\nabla_p A}{B} - \frac{A\, \nabla_p B}{B^2}
-= \frac{\tilde y}{\|\tilde p\|\|\tilde y\|} - \frac{A\,\|\tilde y\|\,\tilde p/\|\tilde p\|}{\|\tilde p\|^2\|\tilde y\|^2}
+\nabla_p \rho = \frac{\nabla_p A}{B} - \frac{A\thinspace\nabla_p B}{B^2}
+= \frac{\tilde y}{\Vert\tilde p\Vert\Vert\tilde y\Vert} - \frac{A\thinspace\Vert\tilde y\Vert\thinspace\tilde p/\Vert\tilde p\Vert}{\Vert\tilde p\Vert^2\Vert\tilde y\Vert^2}
 $$
+
 $$
-\boxed{\;\nabla_p \rho \;=\; \frac{\tilde y}{\|\tilde p\|\,\|\tilde y\|} \;-\; \rho\,\frac{\tilde p}{\|\tilde p\|^2}\;}
+\boxed{\mkern5mu\nabla_p \rho \mkern5mu=\mkern5mu\frac{\tilde y}{\Vert\tilde p\Vert\thinspace\Vert\tilde y\Vert} \mkern5mu-\mkern5mu\rho\thinspace\frac{\tilde p}{\Vert\tilde p\Vert^2}\mkern5mu}
 $$
+
 — exactly the two-term expression in `_objective_and_grad`. A pleasing
 sanity property falls out free: both $\tilde y$ and $\tilde p$ have zero
 mean, so the gradient has zero mean — nudging all predictions up together
@@ -903,13 +947,13 @@ chain rule, one layer at a time — each line is a line of `icnet.py`:
 |---|---|
 | $\partial J/\partial w_2 = H^\top g$ | `dw2 = H.T @ g_p` |
 | $\partial J/\partial b_2 = \mathbf 1^\top g$ | `db2 = g_p.sum()` |
-| $\partial J/\partial H = g\, w_2^\top$ | `dH = np.outer(g_p, self.w2)` |
-| $\partial J/\partial Z = (g\,w_2^\top) \odot (1 - H^2)$ | `dZ = dH * (1 - H*H)` |
-| $\partial J/\partial W_1 = X^\top\, \partial J/\partial Z$ | `dW1 = X.T @ dZ` |
+| $\partial J/\partial H = g\thinspace w_2^\top$ | `dH = np.outer(g_p, self.w2)` |
+| $\partial J/\partial Z = (g\thinspace w_2^\top) \odot (1 - H^2)$ | `dZ = dH * (1 - H*H)` |
+| $\partial J/\partial W_1 = X^\top\thinspace\partial J/\partial Z$ | `dW1 = X.T @ dZ` |
 | $\partial J/\partial b_1 = \mathbf 1^\top \partial J/\partial Z$ | `db1 = dZ.sum(axis=0)` |
 
 each with $-2\lambda W$ appended for the ridge term (derivative of
-$-\lambda\|W\|^2$). "Backpropagation" is nothing more mysterious than this
+$-\lambda\Vert W\Vert^2$). "Backpropagation" is nothing more mysterious than this
 table: the chain rule, organized so every intermediate is reused.
 
 ## 7.5 Adam, and why the bias correction exists
@@ -918,14 +962,14 @@ Plain gradient ascent, $W \leftarrow W + \eta g$, is fragile when gradient
 scales differ across parameters. Adam keeps two exponential moving averages —
 $m \leftarrow \beta_1 m + (1-\beta_1) g$ (direction, smoothed) and
 $v \leftarrow \beta_2 v + (1-\beta_2) g^2$ (per-parameter magnitude) — and
-steps $W \leftarrow W + \eta\, \hat m / (\sqrt{\hat v} + \epsilon)$: a
+steps $W \leftarrow W + \eta\thinspace\hat m / (\sqrt{\hat v} + \epsilon)$: a
 momentum-smoothed direction with each coordinate normalized by its own
 typical size.
 
 **The correction, derived.** Both averages start at 0, so early values are
-biased low. Unroll: $m_k = (1-\beta_1)\sum_{j=1}^{k} \beta_1^{\,k-j} g_j$. If
+biased low. Unroll: $m_k = (1-\beta_1)\sum_{j=1}^{k} \beta_1^{\thinspace k-j} g_j$. If
 gradients hover around a constant $g$, the weights sum to a geometric series:
-$E[m_k] \approx g\,(1-\beta_1)\frac{1-\beta_1^k}{1-\beta_1} = g\,(1 - \beta_1^k)$.
+$E[m_k] \approx g\thinspace(1-\beta_1)\frac{1-\beta_1^k}{1-\beta_1} = g\thinspace(1 - \beta_1^k)$.
 Dividing by $(1-\beta_1^k)$ — and likewise $v_k$ by $(1-\beta_2^k)$ — removes
 the startup bias exactly. ∎ That division is the otherwise-cryptic pair of
 lines in the training loop.
@@ -955,7 +999,7 @@ chapter 8 imposes on all tuning. Randomly sampled validation rows would leak
   vs LightGBM **0.91** — the smoothness dividend, worth ~0.5 net Sharpe at
   the configured costs.
 - **Attribution:** first-layer path importances
-  $\mathrm{imp}_k = \sum_h |W_{1,kh}||w_{2,h}|$ put the planted interaction
+  $\mathrm{imp}_ k = \sum_h |W_{1,kh}||w_{2,h}|$ put the planted interaction
   pair on top (value 0.32, momentum 0.28) and the placebo last (0.07).
 - **Caveats the math also predicts:** the objective is non-convex (multiple
   local optima ⇒ seed dependence — backlog item 19), and correlation ignores
@@ -976,13 +1020,13 @@ demonstrated.
 
 ## 8.1 Information sets: the bookkeeping that everything hangs on
 
-Let $\mathcal{F}_t$ denote everything knowable at the end of month $t$. The
+Let $\mathcal{F}_ t$ denote everything knowable at the end of month $t$. The
 rules of the game, stated once:
 
 1. A signal dated $t$ must be a function of $\mathcal F_t$ only.
 2. The label paired with it, $r_{t\to t+1}$, is realized during $(t, t+1]$ —
    it belongs to $\mathcal F_{t+1}$, *not* $\mathcal F_t$.
-3. Any statistic that pairs a time-$t$ feature with information outside
+3. Any statistic that pairs a feature dated $t$ with information outside
    $\mathcal F_t$-measurable inputs and $(t,t+1]$-realized labels, in a way
    that lets fitting see test-period information, is **leaked**.
 
@@ -997,7 +1041,7 @@ $\tau$. Training-label windows and test-fold information are disjoint if and
 only if $t^\* + h < \tau$ — i.e. at least $h$ whole periods must separate
 train from test ("purge $\ge h$").
 
-**Proof.** The union of training-label windows is $(\,\cdot\,,\, t^\* + h]$;
+**Proof.** The union of training-label windows is $(\thinspace\cdot\thinspace,\thinspace t^\* + h]$;
 the test fold's features and labels begin at $\tau$. The two overlap exactly
 when $t^\* + h \ge \tau$. Removing the $h$ dates between them
 ($\tau - h \le t \le \tau - 1$ dropped from training) is precisely the
@@ -1016,16 +1060,18 @@ a hyperparameter chosen with test information is a leak wearing a suit.
 ## 8.3 Predicting a leak before measuring it
 
 The repo ships a deliberate leak (`demonstrate_lookahead`): a fake feature
-$\ell = a\,y + e$ — a half-strength copy of the *very return it claims to
+$\ell = a\thinspace y + e$ — a half-strength copy of the *very return it claims to
 predict* plus independent noise ($a = 0.5$, $\sigma_e = \sigma_y$). This
 simulates a timestamp error that lets next month's information into today's
 feature. What IC *should* it produce? Compute, don't guess:
+
 $$
-\rho(\ell, y) = \frac{\mathrm{Cov}(ay + e,\, y)}{\sigma_\ell\,\sigma_y}
-= \frac{a\,\sigma_y^2}{\sigma_y\sqrt{a^2\sigma_y^2 + \sigma_e^2}}
-= \frac{a\,\sigma_y}{\sqrt{a^2\sigma_y^2 + \sigma_e^2}}
+\rho(\ell, y) = \frac{\mathrm{Cov}(ay + e,\thinspace y)}{\sigma_\ell\thinspace\sigma_y}
+= \frac{a\thinspace\sigma_y^2}{\sigma_y\sqrt{a^2\sigma_y^2 + \sigma_e^2}}
+= \frac{a\thinspace\sigma_y}{\sqrt{a^2\sigma_y^2 + \sigma_e^2}}
 = \frac{0.5}{\sqrt{1.25}} = 0.447 .
 $$
+
 Converting Pearson to Spearman for near-Gaussian data
 ($\rho_s = \tfrac{6}{\pi}\arcsin(\rho/2)$ — Stated, classical): predicted IC
 $\approx \mathbf{0.431}$.
@@ -1087,9 +1133,11 @@ $N$.
 (any dependence allowed), then $E[\max_i X_i] \le \sqrt{2\ln N}$.
 
 **Proof.** For any $s > 0$, Jensen's inequality ($e^{sx}$ is convex) gives
+
 $$
-e^{\,s\,E[\max X_i]} \;\le\; E\big[e^{\,s \max X_i}\big] \;=\; E\big[\max_i e^{sX_i}\big] \;\le\; \sum_{i=1}^N E[e^{sX_i}] \;=\; N e^{s^2/2},
+e^{\thinspace s\thinspace E[\max X_i]} \mkern5mu\le\mkern5mu E\big[e^{\thinspace s \max X_i}\big] \mkern5mu=\mkern5mu E\big[\max_i e^{sX_i}\big] \mkern5mu\le\mkern5mu\sum_{i=1}^N E[e^{sX_i}] \mkern5mu=\mkern5mu N e^{s^2/2},
 $$
+
 using $\max \le \text{sum}$ for nonnegative terms and the normal
 moment-generating function $E[e^{sX}] = e^{s^2/2}$ (Stated; one Gaussian
 integral). Take logs and divide by $s$:
@@ -1107,11 +1155,13 @@ accordingly. The DSR does both.
 A backtest Sharpe $\widehat{SR}$ (per-period, e.g. monthly) computed from $T$
 observations is an estimate with error bars. Its approximate variance
 (Stated — Lo 2002 / Bailey & López de Prado 2014, via the delta method):
+
 $$
-\mathrm{Var}(\widehat{SR}) \;\approx\; \frac{1 - \gamma_3\, SR + \frac{\gamma_4 - 1}{4} SR^2}{T - 1},
+\mathrm{Var}(\widehat{SR}) \mkern5mu\approx\mkern5mu\frac{1 - \gamma_3\thinspace SR + \frac{\gamma_4 - 1}{4} SR^2}{T - 1},
 $$
+
 where $\gamma_3$ is skewness and $\gamma_4$ *full* kurtosis (normal = 3).
-The intuitions to keep: more months ⇒ tighter ($1/(T{-}1)$); left-skewed
+The intuitions to keep: more months ⇒ tighter ($1/(T{-}1){}$); left-skewed
 strategies ($\gamma_3 < 0$, e.g. steady gains punctuated by crashes) have
 *noisier* Sharpes than the normal formula suggests; fat tails likewise. This
 is why `annualized_stats` records skew and kurtosis for every series — they
@@ -1120,9 +1170,11 @@ are inputs here, not decorations.
 ## 9.3 The Probabilistic Sharpe Ratio (PSR)
 
 Standardize the estimate against a benchmark $SR^\*$:
+
 $$
-\mathrm{PSR}(SR^\*) \;=\; \Phi\!\left( \frac{(\widehat{SR} - SR^\*)\,\sqrt{T-1}}{\sqrt{\,1 - \gamma_3 \widehat{SR} + \frac{\gamma_4-1}{4}\widehat{SR}^2\,}} \right)
+\mathrm{PSR}(SR^\*) \mkern5mu=\mkern5mu\Phi\negthinspace\left( \frac{(\widehat{SR} - SR^\*)\thinspace\sqrt{T-1}}{\sqrt{\thinspace 1 - \gamma_3 \widehat{SR} + \frac{\gamma_4-1}{4}\widehat{SR}^2\thinspace}} \right)
 $$
+
 — the probability the *true* Sharpe exceeds $SR^\*$, given the estimate, its
 sample size, and its non-normality. With $SR^\* = 0$ this is a
 moment-corrected one-sided test; everything is per-period (mixing a monthly
@@ -1133,17 +1185,21 @@ module docstring warns about).
 
 The Deflated Sharpe Ratio makes one substitution: the benchmark is the
 Sharpe that *pure selection luck* would hand the best of your $N$ trials,
+
 $$
-SR^\* \;=\; \sqrt{\mathrm{Var}(\widehat{SR}_n)}\;\Big[(1-\gamma_E)\,\Phi^{-1}\!\big(1 - \tfrac1N\big) + \gamma_E\,\Phi^{-1}\!\big(1 - \tfrac{1}{Ne}\big)\Big],
+SR^\* \mkern5mu=\mkern5mu\sqrt{\mathrm{Var}(\widehat{SR}_n)}\mkern5mu\Big[(1-\gamma_E)\thinspace\Phi^{-1}\negthinspace\big(1 - \tfrac1N\big) + \gamma_E\thinspace\Phi^{-1}\negthinspace\big(1 - \tfrac{1}{Ne}\big)\Big],
 $$
-where $\mathrm{Var}(\widehat{SR}_n)$ is the variance of Sharpe estimates
+
+where $\mathrm{Var}(\widehat{SR}_ n)$ is the variance of Sharpe estimates
 *across the trials you ran* and $\gamma_E \approx 0.5772$ is the
 Euler–Mascheroni constant. This is the extreme-value refinement of §9.1's
 crude bound (Stated — the expected maximum of $N$ Gaussians, Bailey & López
 de Prado 2014): same $\sqrt{\ln N}$ growth, correct constants. Then
+
 $$
 \mathrm{DSR} = \mathrm{PSR}(SR^\*) :
 $$
+
 *the probability the true Sharpe is positive, after charging for the search
 that found it.* Note the two dials: deflation grows with the **number** of
 trials and with their **dispersion** — trying many wildly different things
@@ -1208,7 +1264,7 @@ with the weight chosen by the data instead of by hand.
 For one coefficient (PULSE runs one such filter per expanded feature):
 
 $$
-\beta_t = a\,\beta_{t-1} + w_t,\quad w_t \sim N(0, q)
+\beta_t = a\thinspace\beta_{t-1} + w_t,\quad w_t \sim N(0, q)
 \qquad\qquad
 \lambda_t = \beta_t + v_t,\quad v_t \sim N(0, r_t)
 $$
@@ -1218,8 +1274,7 @@ equation says it drifts slowly ($q$ small) and relaxes toward zero at rate
 $a \le 1$ — the decay prior. The second says what we *can* see: the per-date
 cross-sectional regression coefficient $\lambda_t$ (Fama–MacBeth pass 1,
 chapter 4) equals the truth plus estimation noise whose variance $r_t$ the
-regression itself reports (§5.1's machinery: $\mathrm{Var}(\hat\beta) =
-s^2 (Z^\top Z)^{-1}$, diagonal). Known observation noise is the luxury that
+regression itself reports (§5.1's machinery: $\mathrm{Var}(\hat\beta) = s^2 (Z^\top Z)^{-1}$, diagonal). Known observation noise is the luxury that
 makes everything below exact rather than heuristic.
 
 ## 10.2 The one lemma everything rests on: multiplying two Gaussians
@@ -1227,24 +1282,28 @@ makes everything below exact rather than heuristic.
 **Lemma (Bayesian update for a Gaussian).** If prior belief is
 $\beta \sim N(m, P)$ and we observe $\lambda \mid \beta \sim N(\beta, r)$,
 then the posterior is
+
 $$
-\beta \mid \lambda \;\sim\; N\!\Big(m + K(\lambda - m),\; (1-K)\,P\Big),
+\beta \mid \lambda \mkern5mu\sim\mkern5mu N\negthinspace\Big(m + K(\lambda - m),\mkern5mu(1-K)\thinspace P\Big),
 \qquad K = \frac{P}{P + r}.
 $$
 
 **Proof.** Bayes' rule multiplies densities; work with exponents (log
 densities), dropping constants:
+
 $$
 -\tfrac{(\beta - m)^2}{2P} - \tfrac{(\lambda - \beta)^2}{2r}
 = -\tfrac12\Big[\beta^2\big(\tfrac1P + \tfrac1r\big) - 2\beta\big(\tfrac{m}{P} + \tfrac{\lambda}{r}\big)\Big] + \text{const}.
 $$
+
 A quadratic in $\beta$ is the exponent of a Gaussian with
 precision (= 1/variance) equal to the $\beta^2$ coefficient and mean equal
 to the linear coefficient divided by the precision:
+
 $$
 P_{\text{post}} = \Big(\tfrac1P + \tfrac1r\Big)^{-1} = \frac{Pr}{P + r} = (1-K)P,
 \qquad
-m_{\text{post}} = P_{\text{post}}\Big(\tfrac{m}{P} + \tfrac{\lambda}{r}\Big) = m + K(\lambda - m). \;\blacksquare
+m_{\text{post}} = P_{\text{post}}\Big(\tfrac{m}{P} + \tfrac{\lambda}{r}\Big) = m + K(\lambda - m). \mkern5mu\blacksquare
 $$
 
 Read the mean: **posterior = prior + gain × surprise.** The gain
@@ -1258,18 +1317,22 @@ the uncertainties hidden.
 Between observations the state moves, so belief must too. If
 $\beta_{t-1}\mid\text{data} \sim N(m_{t-1}, P_{t-1})$, then by linearity of
 the state equation and §1.2's variance rules:
+
 $$
-\textbf{Predict:}\quad \beta_t \mid \text{data}_{t-1} \sim N\big(a\,m_{t-1},\; a^2 P_{t-1} + q\big).
+\textbf{Predict:}\quad \beta_t \mid \text{data}_{t-1} \sim N\big(a\thinspace m_{t-1},\mkern5mu a^2 P_{t-1} + q\big).
 $$
+
 Then fold in $\lambda_t$ with the Lemma:
+
 $$
-\textbf{Update:}\quad m_t = a\,m_{t-1} + K_t\big(\lambda_t - a\,m_{t-1}\big),
+\textbf{Update:}\quad m_t = a\thinspace m_{t-1} + K_t\big(\lambda_t - a\thinspace m_{t-1}\big),
 \qquad K_t = \frac{a^2P_{t-1} + q}{a^2P_{t-1} + q + r_t}.
 $$
+
 Those two lines are, verbatim, the loop in `pulse.py::_filter_1d`. The
-forecast PULSE actually trades on is the *predicted* mean $a\,m_{t-1}$ —
+forecast PULSE actually trades on is the *predicted* mean $a\thinspace m_{t-1}$ —
 belief about *this* month's efficacy given data through last month. The
-one-step **innovation** $\lambda_t - a\,m_{t-1} \sim N(0, a^2P_{t-1}+q+r_t)$
+one-step **innovation** $\lambda_t - a\thinspace m_{t-1} \sim N(0, a^2P_{t-1}+q+r_t)$
 also hands us a model-selection criterion for free: the hyperparameters
 $(a, q)$ that maximize the summed innovation log-likelihood are the ones
 whose *predictions* explain the observed coefficient series best — an
@@ -1284,15 +1347,17 @@ The filter explains *why that works and what the weight should be*.
 filter variance converges to a fixed point $P^\* = \tfrac{-q + \sqrt{q^2 + 4qr}}{2}$,
 the gain to a constant $K^\* = \tfrac{P^\* + q}{P^\* + q + r}$, and the state
 estimate becomes exactly
+
 $$
-m_t = (1 - K^\*)\, m_{t-1} + K^\*\,\lambda_t
-\;=\; K^\*\sum_{j\ge0} (1-K^\*)^j\, \lambda_{t-j} :
+m_t = (1 - K^\*)\thinspace m_{t-1} + K^\*\thinspace\lambda_t
+\mkern5mu=\mkern5mu K^\*\sum_{j\ge0} (1-K^\*)^j\thinspace\lambda_{t-j} :
 $$
+
 an exponentially weighted moving average with half-life
 $\ln 2 / \big|\ln(1 - K^\*)\big|$.
 
 **Proof.** At a fixed point the post-update variance reproduces itself
-through one predict–update cycle: $P = \frac{(P + q)\,r}{P + q + r}$.
+through one predict–update cycle: $P = \frac{(P + q)\thinspace r}{P + q + r}$.
 Cross-multiplying: $P^2 + qP - qr = 0$, whose positive root is $P^\*$
 (quadratic formula). Constant $P^\*$ gives constant $K^\*$; substituting
 into the update recursion and unrolling the geometric recursion gives the
@@ -1314,7 +1379,7 @@ $\mathcal F_t$-measurable quantities.
 returns over $(s, s+1]$, hence $\lambda_s \in \mathcal F_{s+1}$ (chapter 8's
 bookkeeping). At formation date $t$ the observations available are exactly
 $\lambda_1, \dots, \lambda_{t-1}$; the filter state $m_{t-1}$ is a function
-of those alone, and the traded forecast $\sum_k a\,m_{k,t-1}\, z_{k,i,t}$
+of those alone, and the traded forecast $\sum_k a\thinspace m_{k,t-1}\thinspace z_{k,i,t}$
 additionally uses only signals dated $t$. Inside a walk-forward test fold no
 update steps run (states propagate as $a^h m$), so no test-fold return ever
 touches the weights. ∎
@@ -1353,20 +1418,23 @@ simulator turns "learning to trade" into ordinary calculus.**
 Per date $t$: blend signals into a score $s_t = \sum_k \theta_k z_{k,t}$
 (vectors over stocks), demean and $L_1$-normalize into a dollar-neutral aim
 $A_t$ with gross exposure 2, then **partially adjust**:
+
 $$
-w_t = (1-\gamma)\,w_{t-1} + \gamma\,A_t, \qquad \gamma \in (0,1).
+w_t = (1-\gamma)\thinspace w_{t-1} + \gamma\thinspace A_t, \qquad \gamma \in (0,1).
 $$
 
 **Theorem (the policy is an EWMA of aims).** With $w_0 = 0$,
+
 $$
-w_t \;=\; \gamma \sum_{j=0}^{t-1} (1-\gamma)^{\,j} A_{t-j}.
+w_t \mkern5mu=\mkern5mu\gamma \sum_{j=0}^{t-1} (1-\gamma)^{\thinspace j} A_{t-j}.
 $$
 
 **Proof.** Induction. Base: $w_1 = \gamma A_1$. Step: substitute the claim
 for $w_{t-1}$ into the recursion:
+
 $$
-w_t = (1-\gamma)\,\gamma\!\sum_{j=0}^{t-2}(1-\gamma)^j A_{t-1-j} + \gamma A_t
-= \gamma\!\sum_{j=1}^{t-1}(1-\gamma)^{j} A_{t-j} + \gamma A_t. \;\blacksquare
+w_t = (1-\gamma)\thinspace\gamma\negthinspace\sum_{j=0}^{t-2}(1-\gamma)^j A_{t-1-j} + \gamma A_t
+= \gamma\negthinspace\sum_{j=1}^{t-1}(1-\gamma)^{j} A_{t-j} + \gamma A_t. \mkern5mu\blacksquare
 $$
 
 So the agent has exactly two economic dials: *what to aim at* ($\theta$,
@@ -1389,14 +1457,16 @@ Training maximizes $J = m/s$ where $m$ and $s$ are the mean and (population)
 standard deviation of the net return series $(r_1,\dots,r_T)$. We need
 $\partial J/\partial r_t$ — how the objective responds to each month's P&L.
 
-From $m = \tfrac1T\sum r_t$: $\;\partial m/\partial r_t = 1/T$.
+From $m = \tfrac1T\sum r_t$: $\mkern5mu\partial m/\partial r_t = 1/T$.
 From $s^2 = \tfrac1T\sum (r_t - m)^2$, differentiate:
-$2s\,\tfrac{\partial s}{\partial r_t} = \tfrac{2}{T}(r_t - m)$ (the inner
+$2s\thinspace\tfrac{\partial s}{\partial r_t} = \tfrac{2}{T}(r_t - m)$ (the inner
 $-\partial m/\partial r_t$ terms cancel because $\sum(r_u - m) = 0$), so
 $\partial s/\partial r_t = (r_t - m)/(Ts)$. Quotient rule:
+
 $$
-\boxed{\;\frac{\partial J}{\partial r_t} = \frac{1}{T\,s} \;-\; \frac{m\,(r_t - m)}{T\,s^{3}}\;}
+\boxed{\mkern5mu\frac{\partial J}{\partial r_t} = \frac{1}{T\thinspace s} \mkern5mu-\mkern5mu\frac{m\thinspace(r_t - m)}{T\thinspace s^{3}}\mkern5mu}
 $$
+
 Read it: every month's marginal value has a *baseline* $1/(Ts)$ (more return
 is good) minus a *risk charge* proportional to how far that month already
 sits from the mean — the objective actively dislikes months that add
@@ -1412,21 +1482,23 @@ backpropagation through time, the code uses **forward-mode accumulation**:
 carry the Jacobian $D_t = \partial w_t/\partial p$ (a small $P\times N$
 matrix, $P = K+1$) alongside the simulation. Differentiating the policy
 recursion directly:
+
 $$
-D_t = (1-\gamma)\,D_{t-1} \;+\; \gamma\,\frac{\partial A_t}{\partial \theta}
-\;+\; (A_t - w_{t-1})\,\frac{\partial \gamma}{\partial g},
+D_t = (1-\gamma)\thinspace D_{t-1} \mkern5mu+\mkern5mu\gamma\thinspace\frac{\partial A_t}{\partial \theta}
+\mkern5mu+\mkern5mu(A_t - w_{t-1})\thinspace\frac{\partial \gamma}{\partial g},
 \qquad \frac{\partial\gamma}{\partial g} = \gamma(1-\gamma)
 $$
+
 (the last factor from $\gamma = \sigma(g)$; note $D_{t-1}$ already contains
 $g$'s influence on *past* weights, so no term is double-counted). The aim's
 own gradient is a quotient-rule exercise on
-$A = 2\tilde s/\!\sum_i\sqrt{\tilde s_i^2+\varepsilon}$, and the smoothed
+$A = 2\tilde s/\negthinspace\sum_i\sqrt{\tilde s_i^2+\varepsilon}$, and the smoothed
 absolute value contributes the derivative
 $\tfrac{d}{dx}\sqrt{x^2+\varepsilon} = x/\sqrt{x^2+\varepsilon}$ — a
 "soft sign" that equals $\pm1$ away from zero and rolls smoothly through
 it, which is the entire reason the cost term $c\sum_i|w_{t,i}-w_{t-1,i}|$
 becomes differentiable. Each month then contributes
-$\partial r_t/\partial p = D_t\, y_t - c\,(D_t - D_{t-1})\,\mathrm{softsign}(\Delta_t)$,
+$\partial r_t/\partial p = D_t\thinspace y_t - c\thinspace(D_t - D_{t-1})\thinspace\mathrm{softsign}(\Delta_t)$,
 and the chain rule assembles the full gradient as
 $\sum_t (\partial J/\partial r_t)(\partial r_t/\partial p)$.
 
@@ -1481,14 +1553,15 @@ against analytic truth, the same discipline every other chapter uses.
 **Lemma.** If each stock's weight is linear in its (per-date demeaned)
 signals, $w_{i,t} = \sum_k \theta_k \tilde z_{k,i,t}$, then the portfolio
 return collapses onto $K$ numbers per date:
+
 $$
-r_p(t) \;=\; \sum_i w_{i,t}\, y_{i,t} \;=\; \sum_k \theta_k \underbrace{\Big(\sum_i \tilde z_{k,i,t}\, y_{i,t}\Big)}_{f_{k,t}} \;=\; \theta^\top f_t .
+r_p(t) \mkern5mu=\mkern5mu\sum_i w_{i,t}\thinspace y_{i,t} \mkern5mu=\mkern5mu\sum_k \theta_k \underbrace{\Big(\sum_i \tilde z_{k,i,t}\thinspace y_{i,t}\Big)}_{f_{k,t}} \mkern5mu=\mkern5mu\theta^\top f_t .
 $$
 
 **Proof.** Swap the two finite sums (linearity). ∎
 
 The $f_{k,t}$ are **characteristic-managed portfolio returns**: what you
-earn holding each stock in proportion to its signal-$k$ value. A universe of
+earn holding each stock in proportion to its value of signal $k$. A universe of
 500 stocks has just become a $K$-asset problem — the single most useful
 dimension reduction in cross-sectional finance, and the reason the next
 theorem has a closed form.
@@ -1496,7 +1569,7 @@ theorem has a closed form.
 ## 12.2 Theorem (MSRR): the max-Sharpe blend is $\Sigma^{-1}\mu$
 
 Let $\mu = E[f_t]$ and $\Sigma = \mathrm{Cov}(f_t)$. Choose $\theta$ to
-maximize the Sharpe ratio $S(\theta) = \theta^\top\mu / \sqrt{\theta^\top\Sigma\,\theta}$.
+maximize the Sharpe ratio $S(\theta) = \theta^\top\mu / \sqrt{\theta^\top\Sigma\thinspace\theta}$.
 
 **Theorem.** $\theta^\* \propto \Sigma^{-1}\mu$, achieving
 $S(\theta^\*) = \sqrt{\mu^\top\Sigma^{-1}\mu}$.
@@ -1504,12 +1577,14 @@ $S(\theta^\*) = \sqrt{\mu^\top\Sigma^{-1}\mu}$.
 **Proof.** Substitute $x = \Sigma^{1/2}\theta$ and $b = \Sigma^{-1/2}\mu$
 (the symmetric square root exists because $\Sigma$ is positive definite).
 Then
+
 $$
-S = \frac{b^\top x}{\|x\|} \;\le\; \|b\|
+S = \frac{b^\top x}{\Vert x\Vert} \mkern5mu\le\mkern5mu\Vert b\Vert
 $$
+
 by Cauchy–Schwarz (chapter 1's theorem, reused verbatim), with equality iff
 $x \propto b$, i.e. $\Sigma^{1/2}\theta \propto \Sigma^{-1/2}\mu$, i.e.
-$\theta \propto \Sigma^{-1}\mu$; and $\|b\| = \sqrt{\mu^\top\Sigma^{-1}\mu}$. ∎
+$\theta \propto \Sigma^{-1}\mu$; and $\Vert b\Vert= \sqrt{\mu^\top\Sigma^{-1}\mu}$. ∎
 
 Read it: the optimal blend is the mean return of each factor, *deflated by
 the risk it shares with the others* — high-mean factors get weight, but
@@ -1532,7 +1607,7 @@ $(A + uv^\top)^{-1} = A^{-1} - \dfrac{A^{-1}uv^\top A^{-1}}{1 + v^\top A^{-1}u}$
 $q = v^\top A^{-1} u$ the cross terms give
 $uv^\top A^{-1}\big[1 - \tfrac{1}{1+q} - \tfrac{q}{1+q}\big] = 0$, leaving $I$. ∎
 
-**Corollary.** $(\Sigma + \mu\mu^\top)^{-1}\mu = \dfrac{\Sigma^{-1}\mu}{1 + \mu^\top\Sigma^{-1}\mu} \;\propto\; \Sigma^{-1}\mu$.
+**Corollary.** $(\Sigma + \mu\mu^\top)^{-1}\mu = \dfrac{\Sigma^{-1}\mu}{1 + \mu^\top\Sigma^{-1}\mu} \mkern5mu\propto\mkern5mu\Sigma^{-1}\mu$.
 
 **Proof.** Apply the lemma with $A=\Sigma$, $u=v=\mu$, then multiply by
 $\mu$ and factor: $\Sigma^{-1}\mu\big[1 - \tfrac{q}{1+q}\big]$ with
@@ -1565,12 +1640,12 @@ track a single AR(1) signal $z_t$ with persistence $\rho$ (ch. 3), so
 next-month alpha is $\beta z_t$, and let $w_t = \gamma\sum_{j\ge0}(1-\gamma)^j z_{t-j}$.
 
 **Theorem.** Expected captured alpha is $\beta \cdot \kappa(\gamma,\rho)$ with
+
 $$
-\kappa(\gamma, \rho) \;=\; \gamma \sum_{j\ge0} (1-\gamma)^j \rho^j \;=\; \frac{\gamma}{1 - (1-\gamma)\rho}.
+\kappa(\gamma, \rho) \mkern5mu=\mkern5mu\gamma \sum_{j\ge0} (1-\gamma)^j \rho^j \mkern5mu=\mkern5mu\frac{\gamma}{1 - (1-\gamma)\rho}.
 $$
 
-**Proof.** $E[w_t\,\beta z_t] = \beta\gamma\sum_j (1-\gamma)^j E[z_{t-j}z_t]
-= \beta\gamma\sum_j (1-\gamma)^j \rho^j$ by chapter 3's Claim 2
+**Proof.** $E[w_t\thinspace\beta z_t] = \beta\gamma\sum_j (1-\gamma)^j E[z_{t-j}z_t] = \beta\gamma\sum_j (1-\gamma)^j \rho^j$ by chapter 3's Claim 2
 ($\mathrm{Corr}(z_t, z_{t-j}) = \rho^j$); sum the geometric series. ∎
 
 Sanity: $\kappa(1,\rho) = 1$ (myopic captures everything);
@@ -1578,7 +1653,7 @@ $\kappa \to 0$ as $\gamma \to 0$ (a frozen book captures nothing);
 $\kappa$ increases in $\rho$ (slow signals forgive slow trading). Turnover,
 meanwhile, *increases* in $\gamma$ (more chasing = more trading), so the
 net objective is a tug-of-war
-$\beta\,\kappa(\gamma,\rho) - c \cdot \text{turnover}(\gamma)$ whose
+$\beta\thinspace\kappa(\gamma,\rho) - c \cdot \text{turnover}(\gamma)$ whose
 interior optimum moves **down** as $c$ rises — the derived skeleton of the
 measured cost sweep ($\gamma: 0.92 \to 0.83 \to 0.60 \to 0.39 \to 0.21$ at
 $c = 0/10/25/50/100$ bps). Put a number on the sweet spot: at the 25 bps
@@ -1594,16 +1669,18 @@ cheaply as the first. Markets disagree: the empirical **square-root law**
 (Stated — one of the most replicated results in market microstructure) has
 price impact growing like the square root of trade size, so total cost —
 impact × quantity — grows like
+
 $$
-|\Delta w| \cdot |\Delta w|^{1/2} \;=\; |\Delta w|^{3/2},
+|\Delta w| \cdot |\Delta w|^{1/2} \mkern5mu=\mkern5mu|\Delta w|^{3/2},
 $$
+
 a **convex** cost. Convexity has one big behavioral consequence: marginal
 cost rises with size, so optimal trades shrink and spread out — exactly the
 verified comparative static (`test_sqrt_impact_slows_trading`: adding
 impact lowered the learned speed 0.49 → 0.44 and turnover 0.22 → 0.20).
 Differentiability is preserved by the same smoothing trick as chapter 11:
 implement $|x|^{3/2}$ as $(x^2+\varepsilon)^{3/4}$, whose derivative
-$\tfrac{3}{2}\,x\,(x^2+\varepsilon)^{-1/4}$ is the line in the code, and
+$\tfrac{3}{2}\thinspace x\thinspace(x^2+\varepsilon)^{-1/4}$ is the line in the code, and
 which rolls smoothly through zero instead of kinking. One honest caveat
 travels with the feature: the *coefficient* of impact is far harder to
 estimate from data than a commission schedule, so on real data it is a
@@ -1625,23 +1702,24 @@ Debugging, done properly, is applied mathematics.
 ## 13.1 The null-direction theorem: symmetry creates a flat direction
 
 The agent's aim is scale-invariant by construction:
-$A(\theta) = 2\,\widetilde{s}/\|\widetilde{s}\|_1$ with
+$A(\theta) = 2\thinspace\widetilde{s}/\Vert\widetilde{s}\Vert_1$ with
 $s = \sum_k \theta_k z_k$, so replacing $\theta \to c\theta$ (any $c>0$)
-multiplies $\widetilde s$ and $\|\widetilde s\|_1$ by the same $c$, which
+multiplies $\widetilde s$ and $\Vert\widetilde s\Vert_1$ by the same $c$, which
 cancels.
 
 **Theorem.** The training objective satisfies $J(c\theta, g) = J(\theta, g)$
 for all $c > 0$, and consequently the gradient is everywhere orthogonal to
 $\theta$:
+
 $$
-\theta^\top \nabla_\theta J \;=\; 0 .
+\theta^\top \nabla_\theta J \mkern5mu=\mkern5mu 0 .
 $$
 
 **Proof.** Every quantity downstream of the aim (weights, returns, costs,
 Sharpe) depends on $\theta$ only through $A(\theta)$, which we just showed
 is invariant, so $J(c\theta) = J(\theta)$. Differentiate this identity with
 respect to $c$ at $c = 1$ (chain rule):
-$\frac{d}{dc}J(c\theta)\big|_{c=1} = \theta^\top\nabla_\theta J = 0$. ∎
+$\frac{d}{dc}J(c\theta)\big|_ {c=1} = \theta^\top\nabla_\theta J = 0$. ∎
 
 (This is Euler's homogeneous-function argument for degree-zero functions —
 a symmetry always manufactures a direction the gradient cannot see, the
@@ -1672,17 +1750,17 @@ producing OOS Sharpe $-6.19$ under $\gamma = 1$ (the exact mirror image of
 the true book's $+6.49$) and a "learned" $\gamma$ of 0.003.
 
 **The fix, and a lemma that it works.** After each Adam step, project
-$\theta$ back to the unit L1 sphere, $\theta \leftarrow \theta/\|\theta\|_1$
+$\theta$ back to the unit L1 sphere, $\theta \leftarrow \theta/\Vert\theta\Vert_1$
 — optimization on the quotient of the symmetry, which deletes the flat
 direction while leaving all perpendicular (real) gradients untouched.
 
 **Lemma (no sign flip).** With $K = 1$, projection keeps
-$\theta \in \{-1, +1\}$, and a flip would require a single step of
+$\theta \in \lbrace-1, +1\rbrace$, and a flip would require a single step of
 magnitude $> 1$; Adam's step is bounded near lr $= 0.05 \ll 1$, so the sign
 is stable. For $K \ge 2$ the projection is inert where it should be:
 genuine gradients are orthogonal to $\theta$ (the Theorem), hence tangent
-to the sphere already. ∎ *(The step bound is the standard heuristic
-$|\hat m|/\sqrt{\hat v} \lesssim 1$ — labeled honestly: an argument, not a
+to the sphere already. ∎ *(The step bound is the standard heuristic*
+$|\hat m|/\sqrt{\hat v} \lesssim 1$ *— labeled honestly: an argument, not a
 worst-case proof.)*
 
 **Check (repo).** Post-fix, the same composition runs at net Sharpe
@@ -1699,9 +1777,11 @@ a second flat-ish direction. How large is $u_k$?
 
 **Lemma.** For an i.i.d. unit-variance input, the EMA
 $u_t = (1-\gamma)u_{t-1} + \gamma A_t$ has stationary variance
+
 $$
-\mathrm{Var}(u) \;=\; \gamma^2 \sum_{j\ge0} (1-\gamma)^{2j} \;=\; \frac{\gamma^2}{1-(1-\gamma)^2} \;=\; \frac{\gamma}{2-\gamma},
+\mathrm{Var}(u) \mkern5mu=\mkern5mu\gamma^2 \sum_{j\ge0} (1-\gamma)^{2j} \mkern5mu=\mkern5mu\frac{\gamma^2}{1-(1-\gamma)^2} \mkern5mu=\mkern5mu\frac{\gamma}{2-\gamma},
 $$
+
 which $\to 0$ as $\gamma \to 0$. (Persistent inputs change the constant,
 not the limit — Stated.) ∎
 
@@ -1714,7 +1794,7 @@ economically empty parameter parked at a meaningless value. The corrected
 metric is **effective exposure** $\theta_k \cdot \mathrm{sd}(u_k)$, which
 the Lemma shows zeroes any frozen signal automatically — and which is the
 pre-registered lens for the slow-signal-tilt test on real data (docs/06
-§5), replacing the raw-$\theta$ version this analysis refuted.
+§5), replacing the raw $\theta$ version this analysis refuted.
 
 ## 13.4 Composition is point-in-time by induction
 
@@ -1737,15 +1817,17 @@ stacking first — the documented requirement, now with its reason proved.)
 ## 13.5 What a proportional book earns: the Pearson formula (with a check)
 
 The agent's aim holds each stock in proportion to its demeaned forecast:
-$w = 2\tilde f/\|\tilde f\|_1$. Its one-date gross return has a closed
+$w = 2\tilde f/\Vert\tilde f\Vert_1$. Its one-date gross return has a closed
 form. Using $\tilde f^\top \mathbf 1 = 0$ (so the return level drops out,
 ch. 3's dollar-neutrality) and the definition of correlation:
+
 $$
-w^\top y \;=\; \frac{2\,\tilde f^\top \tilde y}{\|\tilde f\|_1}
-\;=\; \frac{2\,n\, s_f\, s_y\, \rho_t}{\|\tilde f\|_1}
-\;\approx\; 2\sqrt{\tfrac{\pi}{2}}\; s_y\,\rho_t \;\approx\; 2.507\, s_y\, \rho_t,
+w^\top y \mkern5mu=\mkern5mu\frac{2\thinspace\tilde f^\top \tilde y}{\Vert\tilde f\Vert_1}
+\mkern5mu=\mkern5mu\frac{2\thinspace n\thinspace s_f\thinspace s_y\thinspace\rho_t}{\Vert\tilde f\Vert_1}
+\mkern5mu\approx\mkern5mu 2\sqrt{\tfrac{\pi}{2}}\mkern5mu s_y\thinspace\rho_t \mkern5mu\approx\mkern5mu 2.507\thinspace s_y\thinspace\rho_t,
 $$
-where the last step uses $\|\tilde f\|_1 \approx n\,s_f\sqrt{2/\pi}$ for a
+
+where the last step uses $\Vert\tilde f\Vert_1 \approx n\thinspace s_f\sqrt{2/\pi}$ for a
 roughly Gaussian cross-section ($E|Z| = \sigma\sqrt{2/\pi}$ — one integral,
 same trick as ch. 3's truncated-mean lemma). Two readings:
 
@@ -1758,11 +1840,10 @@ same trick as ch. 3's truncated-mean lemma). Two readings:
 2. **It predicts the composition's headline.** Measured mean Pearson
    $\bar\rho = 0.0834$ and cross-sectional return spread
    $s_y \approx 0.081$ (ch. 3) give expected gross
-   $\approx 2.507 \times 0.0834 \times 0.081 = 0.0169$/month $= 20.3\%$/yr.
+   $\approx 2.507 \times 0.0834 \times 0.081 = 0.0169$/month $= 20.3$%/yr.
    The composed agent measured **19.0% net** at turnover 0.395 — adding
-   back its cost drag ($0.395 \times 2 \times 10\,\text{bps} \times 12
-   \approx 0.9\%$) implies gross $\approx 19.9\%$. Predicted 20.3, implied
-   19.9 — agreement to within the Gaussian-$\|\cdot\|_1$ approximation,
+   back its cost drag ($0.395 \times 2 \times 10\thinspace\text{bps} \times 12 \approx 0.9$%) implies gross $\approx 19.9$%. Predicted 20.3, implied
+   19.9 — agreement to within the Gaussian $\Vert\cdot\Vert_1$ approximation,
    with zero fitted parameters. The lesson plan's oldest habit, applied to
    its newest artifact.
 

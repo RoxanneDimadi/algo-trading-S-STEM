@@ -41,20 +41,23 @@ and $Y$ tend to be above (or below) their averages *together*.
 
 Covariance has awkward units (return × return). Dividing by both standard
 deviations gives the unit-free **correlation**:
+
 $$
-\rho(X,Y) \;=\; \frac{\mathrm{Cov}(X,Y)}{\sigma_X\, \sigma_Y}.
+\rho(X,Y) \mkern5mu=\mkern5mu\frac{\mathrm{Cov}(X,Y)}{\sigma_X\thinspace\sigma_Y}.
 $$
 
 **Theorem (Cauchy–Schwarz).** $|\rho| \le 1$ always.
 
 **Proof.** For any number $t$, the quantity $(\tilde X + t\tilde Y)^2$ is a
 square, so its expectation is $\ge 0$:
+
 $$
-0 \;\le\; E[(\tilde X + t\tilde Y)^2] \;=\; \underbrace{E[\tilde Y^2]}_{c}\,t^2 + \underbrace{2E[\tilde X\tilde Y]}_{b}\,t + \underbrace{E[\tilde X^2]}_{a}.
+0 \mkern5mu\le\mkern5mu E[(\tilde X + t\tilde Y)^2] \mkern5mu=\mkern5mu\underbrace{E[\tilde Y^2]}_{c}\thinspace t^2 + \underbrace{2E[\tilde X\tilde Y]}_{b}\thinspace t + \underbrace{E[\tilde X^2]}_{a}.
 $$
+
 A quadratic $ct^2 + bt + a$ that is never negative cannot have two distinct
 real roots, so its discriminant satisfies $b^2 - 4ca \le 0$, i.e.
-$4\,\mathrm{Cov}(X,Y)^2 \le 4\,\mathrm{Var}(Y)\mathrm{Var}(X)$. Divide by
+$4\thinspace\mathrm{Cov}(X,Y)^2 \le 4\thinspace\mathrm{Var}(Y)\mathrm{Var}(X)$. Divide by
 $4\sigma_X^2\sigma_Y^2$ and take square roots: $|\rho| \le 1$. ∎
 
 So $\rho = 1$ means a perfect increasing straight-line relationship,
@@ -84,9 +87,11 @@ chapter 3 exploits in a computation.
 
 A strategy's monthly returns $r_1, \dots, r_T$ have average $\mu$ and
 standard deviation $\sigma$. The **Sharpe ratio** is
+
 $$
 \mathrm{SR}_{\text{monthly}} = \mu / \sigma :
 $$
+
 reward per unit of risk. It is the right *ratio* because a strategy can
 always be scaled (bet twice as much: both $\mu$ and $\sigma$ double, SR is
 unchanged) — SR measures quality independent of sizing.
@@ -97,10 +102,12 @@ Convention reports SR **annualized**. The rule is: multiply by $\sqrt{12}$.
 independent with the same $\mu, \sigma$, and approximate the annual return
 as the sum of 12 monthly returns. By linearity, the annual mean is $12\mu$;
 by independence (§1.2), the annual variance is $12\sigma^2$, so the annual
-standard deviation is $\sqrt{12}\,\sigma$. Hence
+standard deviation is $\sqrt{12}\thinspace\sigma$. Hence
+
 $$
-\mathrm{SR}_{\text{annual}} = \frac{12\mu}{\sqrt{12}\,\sigma} = \sqrt{12}\;\frac{\mu}{\sigma}. \qquad \blacksquare
+\mathrm{SR}_{\text{annual}} = \frac{12\mu}{\sqrt{12}\thinspace\sigma} = \sqrt{12}\mkern5mu\frac{\mu}{\sigma}. \qquad \blacksquare
 $$
+
 Both assumptions are approximations for real returns (compounding is not a
 sum; months are not perfectly independent). Chapter 4 is entirely about what
 happens to inference when independence fails — and the code's use of

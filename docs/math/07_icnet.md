@@ -12,19 +12,21 @@ $\bar p, \bar y$ for the means, $s_p, s_q$ for the (population) standard
 deviations, $\rho$ for the Pearson correlation.
 
 **Theorem (exact per-date MSE decomposition).**
+
 $$
-\frac1n\sum_{i=1}^n (p_i - y_i)^2 \;=\; \underbrace{(\bar p - \bar y)^2}_{\text{level error}} \;+\; \underbrace{(s_p - s_y)^2}_{\text{scale error}} \;+\; \underbrace{2\, s_p\, s_y\,(1 - \rho)}_{\text{ordering error}} .
+\frac1n\sum_{i=1}^n (p_i - y_i)^2 \mkern5mu=\mkern5mu\underbrace{(\bar p - \bar y)^2}_{\text{level error}} \mkern5mu+\mkern5mu\underbrace{(s_p - s_y)^2}_{\text{scale error}} \mkern5mu+\mkern5mu\underbrace{2\thinspace s_p\thinspace s_y\thinspace(1 - \rho)}_{\text{ordering error}} .
 $$
 
 **Proof.** Split each error into a mean part and a demeaned part:
 $p_i - y_i = (\bar p - \bar y) + (\tilde p_i - \tilde y_i)$. Squaring and
 averaging over $i$, the cross term vanishes because demeaned quantities
 average to zero:
+
 $$
 \tfrac1n\sum (p_i - y_i)^2 = (\bar p - \bar y)^2 + \tfrac1n\sum(\tilde p_i - \tilde y_i)^2 .
 $$
-Expand the second piece: $\tfrac1n\sum \tilde p_i^2 - \tfrac2n\sum\tilde p_i\tilde y_i + \tfrac1n\sum\tilde y_i^2
-= s_p^2 - 2 s_p s_y \rho + s_y^2$ (the middle term is the covariance,
+
+Expand the second piece: $\tfrac1n\sum \tilde p_i^2 - \tfrac2n\sum\tilde p_i\tilde y_i + \tfrac1n\sum\tilde y_i^2 = s_p^2 - 2 s_p s_y \rho + s_y^2$ (the middle term is the covariance,
 $= s_p s_y \rho$ by definition of $\rho$). Finally regroup:
 $s_p^2 + s_y^2 - 2s_ps_y\rho = (s_p - s_y)^2 + 2 s_p s_y(1 - \rho)$. ∎
 
@@ -41,10 +43,12 @@ sample weighting.
 
 ## 7.2 The IC-Net objective
 
-Delete the waste. Train the network $f(\cdot\,; W)$ to directly **maximize**
+Delete the waste. Train the network $f(\cdot\thinspace; W)$ to directly **maximize**
+
 $$
-J(W) \;=\; \frac{1}{T}\sum_{t=1}^{T} \rho_t\big(f(X_t; W),\, y_t\big) \;-\; \lambda \|W\|^2 ,
+J(W) \mkern5mu=\mkern5mu\frac{1}{T}\sum_{t=1}^{T} \rho_t\big(f(X_t; W),\thinspace y_t\big) \mkern5mu-\mkern5mu\lambda \Vert W\Vert^2 ,
 $$
+
 the average per-date cross-sectional correlation between predictions and
 forward returns, minus a ridge penalty. On rank-normalized inputs this is a
 differentiable stand-in for the Spearman IC — the exact statistic every
@@ -58,26 +62,30 @@ volatile months (scale invariance).
 The only nontrivial calculus is $\partial \rho / \partial p$ for one date.
 Use the cosine form: with $M = I - \tfrac1n\mathbf{1}\mathbf{1}^\top$ the
 demeaning matrix ($Mp = \tilde p$; note $M^\top = M$ and $MM = M$),
+
 $$
-\rho(p) = \frac{A}{B}, \qquad A = \langle \tilde p, \tilde y\rangle, \qquad B = \|\tilde p\|\,\|\tilde y\|.
+\rho(p) = \frac{A}{B}, \qquad A = \langle \tilde p, \tilde y\rangle, \qquad B = \Vert\tilde p\Vert\thinspace\Vert\tilde y\Vert.
 $$
 
 **Piece 1: gradient of $A$.** $A = (Mp)^\top \tilde y = p^\top (M\tilde y) = p^\top \tilde y$
 (demeaning the already-demeaned $\tilde y$ changes nothing). So
 $\nabla_p A = \tilde y$.
 
-**Piece 2: gradient of $\|\tilde p\|$.** $\|\tilde p\|^2 = p^\top M p$, so
-$\nabla_p \|\tilde p\|^2 = 2Mp = 2\tilde p$, and by the chain rule
-$\nabla_p \|\tilde p\| = \tilde p / \|\tilde p\|$.
+**Piece 2: gradient of $\Vert\tilde p\Vert$.** $\Vert\tilde p\Vert^2 = p^\top M p$, so
+$\nabla_p \Vert\tilde p\Vert^2 = 2Mp = 2\tilde p$, and by the chain rule
+$\nabla_p \Vert\tilde p\Vert= \tilde p / \Vert\tilde p\Vert$.
 
 **Combine with the quotient rule.**
+
 $$
-\nabla_p \rho = \frac{\nabla_p A}{B} - \frac{A\, \nabla_p B}{B^2}
-= \frac{\tilde y}{\|\tilde p\|\|\tilde y\|} - \frac{A\,\|\tilde y\|\,\tilde p/\|\tilde p\|}{\|\tilde p\|^2\|\tilde y\|^2}
+\nabla_p \rho = \frac{\nabla_p A}{B} - \frac{A\thinspace\nabla_p B}{B^2}
+= \frac{\tilde y}{\Vert\tilde p\Vert\Vert\tilde y\Vert} - \frac{A\thinspace\Vert\tilde y\Vert\thinspace\tilde p/\Vert\tilde p\Vert}{\Vert\tilde p\Vert^2\Vert\tilde y\Vert^2}
 $$
+
 $$
-\boxed{\;\nabla_p \rho \;=\; \frac{\tilde y}{\|\tilde p\|\,\|\tilde y\|} \;-\; \rho\,\frac{\tilde p}{\|\tilde p\|^2}\;}
+\boxed{\mkern5mu\nabla_p \rho \mkern5mu=\mkern5mu\frac{\tilde y}{\Vert\tilde p\Vert\thinspace\Vert\tilde y\Vert} \mkern5mu-\mkern5mu\rho\thinspace\frac{\tilde p}{\Vert\tilde p\Vert^2}\mkern5mu}
 $$
+
 — exactly the two-term expression in `_objective_and_grad`. A pleasing
 sanity property falls out free: both $\tilde y$ and $\tilde p$ have zero
 mean, so the gradient has zero mean — nudging all predictions up together
@@ -103,13 +111,13 @@ chain rule, one layer at a time — each line is a line of `icnet.py`:
 |---|---|
 | $\partial J/\partial w_2 = H^\top g$ | `dw2 = H.T @ g_p` |
 | $\partial J/\partial b_2 = \mathbf 1^\top g$ | `db2 = g_p.sum()` |
-| $\partial J/\partial H = g\, w_2^\top$ | `dH = np.outer(g_p, self.w2)` |
-| $\partial J/\partial Z = (g\,w_2^\top) \odot (1 - H^2)$ | `dZ = dH * (1 - H*H)` |
-| $\partial J/\partial W_1 = X^\top\, \partial J/\partial Z$ | `dW1 = X.T @ dZ` |
+| $\partial J/\partial H = g\thinspace w_2^\top$ | `dH = np.outer(g_p, self.w2)` |
+| $\partial J/\partial Z = (g\thinspace w_2^\top) \odot (1 - H^2)$ | `dZ = dH * (1 - H*H)` |
+| $\partial J/\partial W_1 = X^\top\thinspace\partial J/\partial Z$ | `dW1 = X.T @ dZ` |
 | $\partial J/\partial b_1 = \mathbf 1^\top \partial J/\partial Z$ | `db1 = dZ.sum(axis=0)` |
 
 each with $-2\lambda W$ appended for the ridge term (derivative of
-$-\lambda\|W\|^2$). "Backpropagation" is nothing more mysterious than this
+$-\lambda\Vert W\Vert^2$). "Backpropagation" is nothing more mysterious than this
 table: the chain rule, organized so every intermediate is reused.
 
 ## 7.5 Adam, and why the bias correction exists
@@ -118,14 +126,14 @@ Plain gradient ascent, $W \leftarrow W + \eta g$, is fragile when gradient
 scales differ across parameters. Adam keeps two exponential moving averages —
 $m \leftarrow \beta_1 m + (1-\beta_1) g$ (direction, smoothed) and
 $v \leftarrow \beta_2 v + (1-\beta_2) g^2$ (per-parameter magnitude) — and
-steps $W \leftarrow W + \eta\, \hat m / (\sqrt{\hat v} + \epsilon)$: a
+steps $W \leftarrow W + \eta\thinspace\hat m / (\sqrt{\hat v} + \epsilon)$: a
 momentum-smoothed direction with each coordinate normalized by its own
 typical size.
 
 **The correction, derived.** Both averages start at 0, so early values are
-biased low. Unroll: $m_k = (1-\beta_1)\sum_{j=1}^{k} \beta_1^{\,k-j} g_j$. If
+biased low. Unroll: $m_k = (1-\beta_1)\sum_{j=1}^{k} \beta_1^{\thinspace k-j} g_j$. If
 gradients hover around a constant $g$, the weights sum to a geometric series:
-$E[m_k] \approx g\,(1-\beta_1)\frac{1-\beta_1^k}{1-\beta_1} = g\,(1 - \beta_1^k)$.
+$E[m_k] \approx g\thinspace(1-\beta_1)\frac{1-\beta_1^k}{1-\beta_1} = g\thinspace(1 - \beta_1^k)$.
 Dividing by $(1-\beta_1^k)$ — and likewise $v_k$ by $(1-\beta_2^k)$ — removes
 the startup bias exactly. ∎ That division is the otherwise-cryptic pair of
 lines in the training loop.
@@ -155,7 +163,7 @@ chapter 8 imposes on all tuning. Randomly sampled validation rows would leak
   vs LightGBM **0.91** — the smoothness dividend, worth ~0.5 net Sharpe at
   the configured costs.
 - **Attribution:** first-layer path importances
-  $\mathrm{imp}_k = \sum_h |W_{1,kh}||w_{2,h}|$ put the planted interaction
+  $\mathrm{imp}_ k = \sum_h |W_{1,kh}||w_{2,h}|$ put the planted interaction
   pair on top (value 0.32, momentum 0.28) and the placebo last (0.07).
 - **Caveats the math also predicts:** the objective is non-convex (multiple
   local optima ⇒ seed dependence — backlog item 19), and correlation ignores

@@ -10,7 +10,7 @@ comes from adding many small ones.
 
 ## 6.2 Theorem: gradient boosting with squared loss = repeatedly fitting residuals
 
-**Setup.** Build a model in stages: $F_M(x) = \sum_{m=1}^M \eta\, h_m(x)$,
+**Setup.** Build a model in stages: $F_M(x) = \sum_{m=1}^M \eta\thinspace h_m(x)$,
 where each $h_m$ is a small tree and $\eta$ is a learning rate. Stage $m$
 chooses $h_m$ to reduce the loss $L(F) = \tfrac12\sum_i \big(y_i - F(x_i)\big)^2$.
 
@@ -20,9 +20,11 @@ current model still gets wrong.
 
 **Proof.** Treat the model's predictions at the training points,
 $F(x_1),\dots,F(x_N)$, as free variables. Then
+
 $$
 \frac{\partial L}{\partial F(x_i)} = -\big(y_i - F(x_i)\big),
 $$
+
 so the negative gradient — the direction that decreases the loss fastest —
 is exactly the residual vector. Gradient descent "in function space" means:
 fit the next tree $h_m$ to approximate these residuals, then take a small
@@ -38,7 +40,7 @@ that its gradient is the thing you care about*.
 
 ## 6.3 The interaction theorem: what additive models cannot say
 
-The planted DGP contains $\beta_{\text{int}}\, z_1 z_2$ (momentum × value):
+The planted DGP contains $\beta_{\text{int}}\thinspace z_1 z_2$ (momentum × value):
 momentum works *better among cheap stocks*. Linear models — indeed anything
 of the **additive** form $f_1(z_1) + f_2(z_2)$, however nonlinear each piece
 — cannot represent this.

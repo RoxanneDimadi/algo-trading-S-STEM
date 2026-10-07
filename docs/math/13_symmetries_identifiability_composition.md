@@ -10,23 +10,24 @@ Debugging, done properly, is applied mathematics.
 ## 13.1 The null-direction theorem: symmetry creates a flat direction
 
 The agent's aim is scale-invariant by construction:
-$A(\theta) = 2\,\widetilde{s}/\|\widetilde{s}\|_1$ with
+$A(\theta) = 2\thinspace\widetilde{s}/\Vert\widetilde{s}\Vert_1$ with
 $s = \sum_k \theta_k z_k$, so replacing $\theta \to c\theta$ (any $c>0$)
-multiplies $\widetilde s$ and $\|\widetilde s\|_1$ by the same $c$, which
+multiplies $\widetilde s$ and $\Vert\widetilde s\Vert_1$ by the same $c$, which
 cancels.
 
 **Theorem.** The training objective satisfies $J(c\theta, g) = J(\theta, g)$
 for all $c > 0$, and consequently the gradient is everywhere orthogonal to
 $\theta$:
+
 $$
-\theta^\top \nabla_\theta J \;=\; 0 .
+\theta^\top \nabla_\theta J \mkern5mu=\mkern5mu 0 .
 $$
 
 **Proof.** Every quantity downstream of the aim (weights, returns, costs,
 Sharpe) depends on $\theta$ only through $A(\theta)$, which we just showed
 is invariant, so $J(c\theta) = J(\theta)$. Differentiate this identity with
 respect to $c$ at $c = 1$ (chain rule):
-$\frac{d}{dc}J(c\theta)\big|_{c=1} = \theta^\top\nabla_\theta J = 0$. ∎
+$\frac{d}{dc}J(c\theta)\big|_ {c=1} = \theta^\top\nabla_\theta J = 0$. ∎
 
 (This is Euler's homogeneous-function argument for degree-zero functions —
 a symmetry always manufactures a direction the gradient cannot see, the
@@ -57,17 +58,17 @@ producing OOS Sharpe $-6.19$ under $\gamma = 1$ (the exact mirror image of
 the true book's $+6.49$) and a "learned" $\gamma$ of 0.003.
 
 **The fix, and a lemma that it works.** After each Adam step, project
-$\theta$ back to the unit L1 sphere, $\theta \leftarrow \theta/\|\theta\|_1$
+$\theta$ back to the unit L1 sphere, $\theta \leftarrow \theta/\Vert\theta\Vert_1$
 — optimization on the quotient of the symmetry, which deletes the flat
 direction while leaving all perpendicular (real) gradients untouched.
 
 **Lemma (no sign flip).** With $K = 1$, projection keeps
-$\theta \in \{-1, +1\}$, and a flip would require a single step of
+$\theta \in \lbrace-1, +1\rbrace$, and a flip would require a single step of
 magnitude $> 1$; Adam's step is bounded near lr $= 0.05 \ll 1$, so the sign
 is stable. For $K \ge 2$ the projection is inert where it should be:
 genuine gradients are orthogonal to $\theta$ (the Theorem), hence tangent
-to the sphere already. ∎ *(The step bound is the standard heuristic
-$|\hat m|/\sqrt{\hat v} \lesssim 1$ — labeled honestly: an argument, not a
+to the sphere already. ∎ *(The step bound is the standard heuristic*
+$|\hat m|/\sqrt{\hat v} \lesssim 1$ *— labeled honestly: an argument, not a
 worst-case proof.)*
 
 **Check (repo).** Post-fix, the same composition runs at net Sharpe
@@ -84,9 +85,11 @@ a second flat-ish direction. How large is $u_k$?
 
 **Lemma.** For an i.i.d. unit-variance input, the EMA
 $u_t = (1-\gamma)u_{t-1} + \gamma A_t$ has stationary variance
+
 $$
-\mathrm{Var}(u) \;=\; \gamma^2 \sum_{j\ge0} (1-\gamma)^{2j} \;=\; \frac{\gamma^2}{1-(1-\gamma)^2} \;=\; \frac{\gamma}{2-\gamma},
+\mathrm{Var}(u) \mkern5mu=\mkern5mu\gamma^2 \sum_{j\ge0} (1-\gamma)^{2j} \mkern5mu=\mkern5mu\frac{\gamma^2}{1-(1-\gamma)^2} \mkern5mu=\mkern5mu\frac{\gamma}{2-\gamma},
 $$
+
 which $\to 0$ as $\gamma \to 0$. (Persistent inputs change the constant,
 not the limit — Stated.) ∎
 
@@ -99,7 +102,7 @@ economically empty parameter parked at a meaningless value. The corrected
 metric is **effective exposure** $\theta_k \cdot \mathrm{sd}(u_k)$, which
 the Lemma shows zeroes any frozen signal automatically — and which is the
 pre-registered lens for the slow-signal-tilt test on real data (docs/06
-§5), replacing the raw-$\theta$ version this analysis refuted.
+§5), replacing the raw $\theta$ version this analysis refuted.
 
 ## 13.4 Composition is point-in-time by induction
 
@@ -122,15 +125,17 @@ stacking first — the documented requirement, now with its reason proved.)
 ## 13.5 What a proportional book earns: the Pearson formula (with a check)
 
 The agent's aim holds each stock in proportion to its demeaned forecast:
-$w = 2\tilde f/\|\tilde f\|_1$. Its one-date gross return has a closed
+$w = 2\tilde f/\Vert\tilde f\Vert_1$. Its one-date gross return has a closed
 form. Using $\tilde f^\top \mathbf 1 = 0$ (so the return level drops out,
 ch. 3's dollar-neutrality) and the definition of correlation:
+
 $$
-w^\top y \;=\; \frac{2\,\tilde f^\top \tilde y}{\|\tilde f\|_1}
-\;=\; \frac{2\,n\, s_f\, s_y\, \rho_t}{\|\tilde f\|_1}
-\;\approx\; 2\sqrt{\tfrac{\pi}{2}}\; s_y\,\rho_t \;\approx\; 2.507\, s_y\, \rho_t,
+w^\top y \mkern5mu=\mkern5mu\frac{2\thinspace\tilde f^\top \tilde y}{\Vert\tilde f\Vert_1}
+\mkern5mu=\mkern5mu\frac{2\thinspace n\thinspace s_f\thinspace s_y\thinspace\rho_t}{\Vert\tilde f\Vert_1}
+\mkern5mu\approx\mkern5mu 2\sqrt{\tfrac{\pi}{2}}\mkern5mu s_y\thinspace\rho_t \mkern5mu\approx\mkern5mu 2.507\thinspace s_y\thinspace\rho_t,
 $$
-where the last step uses $\|\tilde f\|_1 \approx n\,s_f\sqrt{2/\pi}$ for a
+
+where the last step uses $\Vert\tilde f\Vert_1 \approx n\thinspace s_f\sqrt{2/\pi}$ for a
 roughly Gaussian cross-section ($E|Z| = \sigma\sqrt{2/\pi}$ — one integral,
 same trick as ch. 3's truncated-mean lemma). Two readings:
 
@@ -143,11 +148,10 @@ same trick as ch. 3's truncated-mean lemma). Two readings:
 2. **It predicts the composition's headline.** Measured mean Pearson
    $\bar\rho = 0.0834$ and cross-sectional return spread
    $s_y \approx 0.081$ (ch. 3) give expected gross
-   $\approx 2.507 \times 0.0834 \times 0.081 = 0.0169$/month $= 20.3\%$/yr.
+   $\approx 2.507 \times 0.0834 \times 0.081 = 0.0169$/month $= 20.3$%/yr.
    The composed agent measured **19.0% net** at turnover 0.395 — adding
-   back its cost drag ($0.395 \times 2 \times 10\,\text{bps} \times 12
-   \approx 0.9\%$) implies gross $\approx 19.9\%$. Predicted 20.3, implied
-   19.9 — agreement to within the Gaussian-$\|\cdot\|_1$ approximation,
+   back its cost drag ($0.395 \times 2 \times 10\thinspace\text{bps} \times 12 \approx 0.9$%) implies gross $\approx 19.9$%. Predicted 20.3, implied
+   19.9 — agreement to within the Gaussian $\Vert\cdot\Vert_1$ approximation,
    with zero fitted parameters. The lesson plan's oldest habit, applied to
    its newest artifact.
 

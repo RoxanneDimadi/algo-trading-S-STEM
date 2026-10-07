@@ -12,7 +12,7 @@ with the weight chosen by the data instead of by hand.
 For one coefficient (PULSE runs one such filter per expanded feature):
 
 $$
-\beta_t = a\,\beta_{t-1} + w_t,\quad w_t \sim N(0, q)
+\beta_t = a\thinspace\beta_{t-1} + w_t,\quad w_t \sim N(0, q)
 \qquad\qquad
 \lambda_t = \beta_t + v_t,\quad v_t \sim N(0, r_t)
 $$
@@ -22,8 +22,7 @@ equation says it drifts slowly ($q$ small) and relaxes toward zero at rate
 $a \le 1$ — the decay prior. The second says what we *can* see: the per-date
 cross-sectional regression coefficient $\lambda_t$ (Fama–MacBeth pass 1,
 chapter 4) equals the truth plus estimation noise whose variance $r_t$ the
-regression itself reports (§5.1's machinery: $\mathrm{Var}(\hat\beta) =
-s^2 (Z^\top Z)^{-1}$, diagonal). Known observation noise is the luxury that
+regression itself reports (§5.1's machinery: $\mathrm{Var}(\hat\beta) = s^2 (Z^\top Z)^{-1}$, diagonal). Known observation noise is the luxury that
 makes everything below exact rather than heuristic.
 
 ## 10.2 The one lemma everything rests on: multiplying two Gaussians
@@ -31,24 +30,28 @@ makes everything below exact rather than heuristic.
 **Lemma (Bayesian update for a Gaussian).** If prior belief is
 $\beta \sim N(m, P)$ and we observe $\lambda \mid \beta \sim N(\beta, r)$,
 then the posterior is
+
 $$
-\beta \mid \lambda \;\sim\; N\!\Big(m + K(\lambda - m),\; (1-K)\,P\Big),
+\beta \mid \lambda \mkern5mu\sim\mkern5mu N\negthinspace\Big(m + K(\lambda - m),\mkern5mu(1-K)\thinspace P\Big),
 \qquad K = \frac{P}{P + r}.
 $$
 
 **Proof.** Bayes' rule multiplies densities; work with exponents (log
 densities), dropping constants:
+
 $$
 -\tfrac{(\beta - m)^2}{2P} - \tfrac{(\lambda - \beta)^2}{2r}
 = -\tfrac12\Big[\beta^2\big(\tfrac1P + \tfrac1r\big) - 2\beta\big(\tfrac{m}{P} + \tfrac{\lambda}{r}\big)\Big] + \text{const}.
 $$
+
 A quadratic in $\beta$ is the exponent of a Gaussian with
 precision (= 1/variance) equal to the $\beta^2$ coefficient and mean equal
 to the linear coefficient divided by the precision:
+
 $$
 P_{\text{post}} = \Big(\tfrac1P + \tfrac1r\Big)^{-1} = \frac{Pr}{P + r} = (1-K)P,
 \qquad
-m_{\text{post}} = P_{\text{post}}\Big(\tfrac{m}{P} + \tfrac{\lambda}{r}\Big) = m + K(\lambda - m). \;\blacksquare
+m_{\text{post}} = P_{\text{post}}\Big(\tfrac{m}{P} + \tfrac{\lambda}{r}\Big) = m + K(\lambda - m). \mkern5mu\blacksquare
 $$
 
 Read the mean: **posterior = prior + gain × surprise.** The gain
@@ -62,18 +65,22 @@ the uncertainties hidden.
 Between observations the state moves, so belief must too. If
 $\beta_{t-1}\mid\text{data} \sim N(m_{t-1}, P_{t-1})$, then by linearity of
 the state equation and §1.2's variance rules:
+
 $$
-\textbf{Predict:}\quad \beta_t \mid \text{data}_{t-1} \sim N\big(a\,m_{t-1},\; a^2 P_{t-1} + q\big).
+\textbf{Predict:}\quad \beta_t \mid \text{data}_{t-1} \sim N\big(a\thinspace m_{t-1},\mkern5mu a^2 P_{t-1} + q\big).
 $$
+
 Then fold in $\lambda_t$ with the Lemma:
+
 $$
-\textbf{Update:}\quad m_t = a\,m_{t-1} + K_t\big(\lambda_t - a\,m_{t-1}\big),
+\textbf{Update:}\quad m_t = a\thinspace m_{t-1} + K_t\big(\lambda_t - a\thinspace m_{t-1}\big),
 \qquad K_t = \frac{a^2P_{t-1} + q}{a^2P_{t-1} + q + r_t}.
 $$
+
 Those two lines are, verbatim, the loop in `pulse.py::_filter_1d`. The
-forecast PULSE actually trades on is the *predicted* mean $a\,m_{t-1}$ —
+forecast PULSE actually trades on is the *predicted* mean $a\thinspace m_{t-1}$ —
 belief about *this* month's efficacy given data through last month. The
-one-step **innovation** $\lambda_t - a\,m_{t-1} \sim N(0, a^2P_{t-1}+q+r_t)$
+one-step **innovation** $\lambda_t - a\thinspace m_{t-1} \sim N(0, a^2P_{t-1}+q+r_t)$
 also hands us a model-selection criterion for free: the hyperparameters
 $(a, q)$ that maximize the summed innovation log-likelihood are the ones
 whose *predictions* explain the observed coefficient series best — an
@@ -88,15 +95,17 @@ The filter explains *why that works and what the weight should be*.
 filter variance converges to a fixed point $P^\* = \tfrac{-q + \sqrt{q^2 + 4qr}}{2}$,
 the gain to a constant $K^\* = \tfrac{P^\* + q}{P^\* + q + r}$, and the state
 estimate becomes exactly
+
 $$
-m_t = (1 - K^\*)\, m_{t-1} + K^\*\,\lambda_t
-\;=\; K^\*\sum_{j\ge0} (1-K^\*)^j\, \lambda_{t-j} :
+m_t = (1 - K^\*)\thinspace m_{t-1} + K^\*\thinspace\lambda_t
+\mkern5mu=\mkern5mu K^\*\sum_{j\ge0} (1-K^\*)^j\thinspace\lambda_{t-j} :
 $$
+
 an exponentially weighted moving average with half-life
 $\ln 2 / \big|\ln(1 - K^\*)\big|$.
 
 **Proof.** At a fixed point the post-update variance reproduces itself
-through one predict–update cycle: $P = \frac{(P + q)\,r}{P + q + r}$.
+through one predict–update cycle: $P = \frac{(P + q)\thinspace r}{P + q + r}$.
 Cross-multiplying: $P^2 + qP - qr = 0$, whose positive root is $P^\*$
 (quadratic formula). Constant $P^\*$ gives constant $K^\*$; substituting
 into the update recursion and unrolling the geometric recursion gives the
@@ -118,7 +127,7 @@ $\mathcal F_t$-measurable quantities.
 returns over $(s, s+1]$, hence $\lambda_s \in \mathcal F_{s+1}$ (chapter 8's
 bookkeeping). At formation date $t$ the observations available are exactly
 $\lambda_1, \dots, \lambda_{t-1}$; the filter state $m_{t-1}$ is a function
-of those alone, and the traded forecast $\sum_k a\,m_{k,t-1}\, z_{k,i,t}$
+of those alone, and the traded forecast $\sum_k a\thinspace m_{k,t-1}\thinspace z_{k,i,t}$
 additionally uses only signals dated $t$. Inside a walk-forward test fold no
 update steps run (states propagate as $a^h m$), so no test-fold return ever
 touches the weights. ∎

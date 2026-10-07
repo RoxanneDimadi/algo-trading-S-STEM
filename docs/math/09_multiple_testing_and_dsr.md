@@ -15,9 +15,11 @@ $N$.
 (any dependence allowed), then $E[\max_i X_i] \le \sqrt{2\ln N}$.
 
 **Proof.** For any $s > 0$, Jensen's inequality ($e^{sx}$ is convex) gives
+
 $$
-e^{\,s\,E[\max X_i]} \;\le\; E\big[e^{\,s \max X_i}\big] \;=\; E\big[\max_i e^{sX_i}\big] \;\le\; \sum_{i=1}^N E[e^{sX_i}] \;=\; N e^{s^2/2},
+e^{\thinspace s\thinspace E[\max X_i]} \mkern5mu\le\mkern5mu E\big[e^{\thinspace s \max X_i}\big] \mkern5mu=\mkern5mu E\big[\max_i e^{sX_i}\big] \mkern5mu\le\mkern5mu\sum_{i=1}^N E[e^{sX_i}] \mkern5mu=\mkern5mu N e^{s^2/2},
 $$
+
 using $\max \le \text{sum}$ for nonnegative terms and the normal
 moment-generating function $E[e^{sX}] = e^{s^2/2}$ (Stated; one Gaussian
 integral). Take logs and divide by $s$:
@@ -35,11 +37,13 @@ accordingly. The DSR does both.
 A backtest Sharpe $\widehat{SR}$ (per-period, e.g. monthly) computed from $T$
 observations is an estimate with error bars. Its approximate variance
 (Stated — Lo 2002 / Bailey & López de Prado 2014, via the delta method):
+
 $$
-\mathrm{Var}(\widehat{SR}) \;\approx\; \frac{1 - \gamma_3\, SR + \frac{\gamma_4 - 1}{4} SR^2}{T - 1},
+\mathrm{Var}(\widehat{SR}) \mkern5mu\approx\mkern5mu\frac{1 - \gamma_3\thinspace SR + \frac{\gamma_4 - 1}{4} SR^2}{T - 1},
 $$
+
 where $\gamma_3$ is skewness and $\gamma_4$ *full* kurtosis (normal = 3).
-The intuitions to keep: more months ⇒ tighter ($1/(T{-}1)$); left-skewed
+The intuitions to keep: more months ⇒ tighter ($1/(T{-}1){}$); left-skewed
 strategies ($\gamma_3 < 0$, e.g. steady gains punctuated by crashes) have
 *noisier* Sharpes than the normal formula suggests; fat tails likewise. This
 is why `annualized_stats` records skew and kurtosis for every series — they
@@ -48,9 +52,11 @@ are inputs here, not decorations.
 ## 9.3 The Probabilistic Sharpe Ratio (PSR)
 
 Standardize the estimate against a benchmark $SR^\*$:
+
 $$
-\mathrm{PSR}(SR^\*) \;=\; \Phi\!\left( \frac{(\widehat{SR} - SR^\*)\,\sqrt{T-1}}{\sqrt{\,1 - \gamma_3 \widehat{SR} + \frac{\gamma_4-1}{4}\widehat{SR}^2\,}} \right)
+\mathrm{PSR}(SR^\*) \mkern5mu=\mkern5mu\Phi\negthinspace\left( \frac{(\widehat{SR} - SR^\*)\thinspace\sqrt{T-1}}{\sqrt{\thinspace 1 - \gamma_3 \widehat{SR} + \frac{\gamma_4-1}{4}\widehat{SR}^2\thinspace}} \right)
 $$
+
 — the probability the *true* Sharpe exceeds $SR^\*$, given the estimate, its
 sample size, and its non-normality. With $SR^\* = 0$ this is a
 moment-corrected one-sided test; everything is per-period (mixing a monthly
@@ -61,17 +67,21 @@ module docstring warns about).
 
 The Deflated Sharpe Ratio makes one substitution: the benchmark is the
 Sharpe that *pure selection luck* would hand the best of your $N$ trials,
+
 $$
-SR^\* \;=\; \sqrt{\mathrm{Var}(\widehat{SR}_n)}\;\Big[(1-\gamma_E)\,\Phi^{-1}\!\big(1 - \tfrac1N\big) + \gamma_E\,\Phi^{-1}\!\big(1 - \tfrac{1}{Ne}\big)\Big],
+SR^\* \mkern5mu=\mkern5mu\sqrt{\mathrm{Var}(\widehat{SR}_n)}\mkern5mu\Big[(1-\gamma_E)\thinspace\Phi^{-1}\negthinspace\big(1 - \tfrac1N\big) + \gamma_E\thinspace\Phi^{-1}\negthinspace\big(1 - \tfrac{1}{Ne}\big)\Big],
 $$
-where $\mathrm{Var}(\widehat{SR}_n)$ is the variance of Sharpe estimates
+
+where $\mathrm{Var}(\widehat{SR}_ n)$ is the variance of Sharpe estimates
 *across the trials you ran* and $\gamma_E \approx 0.5772$ is the
 Euler–Mascheroni constant. This is the extreme-value refinement of §9.1's
 crude bound (Stated — the expected maximum of $N$ Gaussians, Bailey & López
 de Prado 2014): same $\sqrt{\ln N}$ growth, correct constants. Then
+
 $$
 \mathrm{DSR} = \mathrm{PSR}(SR^\*) :
 $$
+
 *the probability the true Sharpe is positive, after charging for the search
 that found it.* Note the two dials: deflation grows with the **number** of
 trials and with their **dispersion** — trying many wildly different things

@@ -13,20 +13,23 @@ simulator turns "learning to trade" into ordinary calculus.**
 Per date $t$: blend signals into a score $s_t = \sum_k \theta_k z_{k,t}$
 (vectors over stocks), demean and $L_1$-normalize into a dollar-neutral aim
 $A_t$ with gross exposure 2, then **partially adjust**:
+
 $$
-w_t = (1-\gamma)\,w_{t-1} + \gamma\,A_t, \qquad \gamma \in (0,1).
+w_t = (1-\gamma)\thinspace w_{t-1} + \gamma\thinspace A_t, \qquad \gamma \in (0,1).
 $$
 
 **Theorem (the policy is an EWMA of aims).** With $w_0 = 0$,
+
 $$
-w_t \;=\; \gamma \sum_{j=0}^{t-1} (1-\gamma)^{\,j} A_{t-j}.
+w_t \mkern5mu=\mkern5mu\gamma \sum_{j=0}^{t-1} (1-\gamma)^{\thinspace j} A_{t-j}.
 $$
 
 **Proof.** Induction. Base: $w_1 = \gamma A_1$. Step: substitute the claim
 for $w_{t-1}$ into the recursion:
+
 $$
-w_t = (1-\gamma)\,\gamma\!\sum_{j=0}^{t-2}(1-\gamma)^j A_{t-1-j} + \gamma A_t
-= \gamma\!\sum_{j=1}^{t-1}(1-\gamma)^{j} A_{t-j} + \gamma A_t. \;\blacksquare
+w_t = (1-\gamma)\thinspace\gamma\negthinspace\sum_{j=0}^{t-2}(1-\gamma)^j A_{t-1-j} + \gamma A_t
+= \gamma\negthinspace\sum_{j=1}^{t-1}(1-\gamma)^{j} A_{t-j} + \gamma A_t. \mkern5mu\blacksquare
 $$
 
 So the agent has exactly two economic dials: *what to aim at* ($\theta$,
@@ -49,14 +52,16 @@ Training maximizes $J = m/s$ where $m$ and $s$ are the mean and (population)
 standard deviation of the net return series $(r_1,\dots,r_T)$. We need
 $\partial J/\partial r_t$ — how the objective responds to each month's P&L.
 
-From $m = \tfrac1T\sum r_t$: $\;\partial m/\partial r_t = 1/T$.
+From $m = \tfrac1T\sum r_t$: $\mkern5mu\partial m/\partial r_t = 1/T$.
 From $s^2 = \tfrac1T\sum (r_t - m)^2$, differentiate:
-$2s\,\tfrac{\partial s}{\partial r_t} = \tfrac{2}{T}(r_t - m)$ (the inner
+$2s\thinspace\tfrac{\partial s}{\partial r_t} = \tfrac{2}{T}(r_t - m)$ (the inner
 $-\partial m/\partial r_t$ terms cancel because $\sum(r_u - m) = 0$), so
 $\partial s/\partial r_t = (r_t - m)/(Ts)$. Quotient rule:
+
 $$
-\boxed{\;\frac{\partial J}{\partial r_t} = \frac{1}{T\,s} \;-\; \frac{m\,(r_t - m)}{T\,s^{3}}\;}
+\boxed{\mkern5mu\frac{\partial J}{\partial r_t} = \frac{1}{T\thinspace s} \mkern5mu-\mkern5mu\frac{m\thinspace(r_t - m)}{T\thinspace s^{3}}\mkern5mu}
 $$
+
 Read it: every month's marginal value has a *baseline* $1/(Ts)$ (more return
 is good) minus a *risk charge* proportional to how far that month already
 sits from the mean — the objective actively dislikes months that add
@@ -72,21 +77,23 @@ backpropagation through time, the code uses **forward-mode accumulation**:
 carry the Jacobian $D_t = \partial w_t/\partial p$ (a small $P\times N$
 matrix, $P = K+1$) alongside the simulation. Differentiating the policy
 recursion directly:
+
 $$
-D_t = (1-\gamma)\,D_{t-1} \;+\; \gamma\,\frac{\partial A_t}{\partial \theta}
-\;+\; (A_t - w_{t-1})\,\frac{\partial \gamma}{\partial g},
+D_t = (1-\gamma)\thinspace D_{t-1} \mkern5mu+\mkern5mu\gamma\thinspace\frac{\partial A_t}{\partial \theta}
+\mkern5mu+\mkern5mu(A_t - w_{t-1})\thinspace\frac{\partial \gamma}{\partial g},
 \qquad \frac{\partial\gamma}{\partial g} = \gamma(1-\gamma)
 $$
+
 (the last factor from $\gamma = \sigma(g)$; note $D_{t-1}$ already contains
 $g$'s influence on *past* weights, so no term is double-counted). The aim's
 own gradient is a quotient-rule exercise on
-$A = 2\tilde s/\!\sum_i\sqrt{\tilde s_i^2+\varepsilon}$, and the smoothed
+$A = 2\tilde s/\negthinspace\sum_i\sqrt{\tilde s_i^2+\varepsilon}$, and the smoothed
 absolute value contributes the derivative
 $\tfrac{d}{dx}\sqrt{x^2+\varepsilon} = x/\sqrt{x^2+\varepsilon}$ — a
 "soft sign" that equals $\pm1$ away from zero and rolls smoothly through
 it, which is the entire reason the cost term $c\sum_i|w_{t,i}-w_{t-1,i}|$
 becomes differentiable. Each month then contributes
-$\partial r_t/\partial p = D_t\, y_t - c\,(D_t - D_{t-1})\,\mathrm{softsign}(\Delta_t)$,
+$\partial r_t/\partial p = D_t\thinspace y_t - c\thinspace(D_t - D_{t-1})\thinspace\mathrm{softsign}(\Delta_t)$,
 and the chain rule assembles the full gradient as
 $\sum_t (\partial J/\partial r_t)(\partial r_t/\partial p)$.
 

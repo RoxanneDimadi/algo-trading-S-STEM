@@ -45,7 +45,7 @@ return to be **10.14%** from four config numbers; the pipeline measures
 - $n$ — number of stocks on one date (the **cross-section**); $T$ — number of dates.
 - Vectors are per-date cross-sections: $p = (p_1,\dots,p_n)$ are the model's
   predictions for the $n$ stocks on one date; $y$ the forward returns.
-- $\langle a,b\rangle = \sum_i a_i b_i$ (dot product); $\|a\| = \sqrt{\langle a,a\rangle}$.
+- $\langle a,b\rangle = \sum_i a_i b_i$ (dot product); $\Vert a\Vert= \sqrt{\langle a,a\rangle}$.
 
 **Honesty labels.** Everything marked **Proof** is complete on the page.
 Results marked **Stated** are quoted with a reference because a full proof
@@ -54,9 +54,11 @@ needs tools beyond this plan's scope — the label tells you which is which.
 **The planted truth (used by every Check box).** The synthetic generator
 (`src/data/synthetic.py`, parameters in `configs/config.yaml`) draws returns
 as
+
 $$
-r_{i,t+1} \;=\; \sum_k \beta_k(t)\, z_{k,i,t} \;+\; \beta_{\text{int}}\, z_{a,i,t} z_{b,i,t} \;+\; b_i\, m_{t+1} \;+\; \varepsilon_{i,t+1},
+r_{i,t+1} \mkern5mu=\mkern5mu\sum_k \beta_k(t)\thinspace z_{k,i,t} \mkern5mu+\mkern5mu\beta_{\text{int}}\thinspace z_{a,i,t} z_{b,i,t} \mkern5mu+\mkern5mu b_i\thinspace m_{t+1} \mkern5mu+\mkern5mu\varepsilon_{i,t+1},
 $$
+
 with Gaussian signals $z$ (standardized each date), market factor $m \sim N(0.006, 0.045^2)$,
 market betas $b_i \sim N(1, 0.3^2)$, idiosyncratic noise $\varepsilon \sim N(0, 0.08^2)$,
 and $\beta_k(t)$ stepping down by ×0.70 after each signal's "sample end" and to

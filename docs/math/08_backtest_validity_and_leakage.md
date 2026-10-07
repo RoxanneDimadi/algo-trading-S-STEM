@@ -7,13 +7,13 @@ demonstrated.
 
 ## 8.1 Information sets: the bookkeeping that everything hangs on
 
-Let $\mathcal{F}_t$ denote everything knowable at the end of month $t$. The
+Let $\mathcal{F}_ t$ denote everything knowable at the end of month $t$. The
 rules of the game, stated once:
 
 1. A signal dated $t$ must be a function of $\mathcal F_t$ only.
 2. The label paired with it, $r_{t\to t+1}$, is realized during $(t, t+1]$ —
    it belongs to $\mathcal F_{t+1}$, *not* $\mathcal F_t$.
-3. Any statistic that pairs a time-$t$ feature with information outside
+3. Any statistic that pairs a feature dated $t$ with information outside
    $\mathcal F_t$-measurable inputs and $(t,t+1]$-realized labels, in a way
    that lets fitting see test-period information, is **leaked**.
 
@@ -28,7 +28,7 @@ $\tau$. Training-label windows and test-fold information are disjoint if and
 only if $t^\* + h < \tau$ — i.e. at least $h$ whole periods must separate
 train from test ("purge $\ge h$").
 
-**Proof.** The union of training-label windows is $(\,\cdot\,,\, t^\* + h]$;
+**Proof.** The union of training-label windows is $(\thinspace\cdot\thinspace,\thinspace t^\* + h]$;
 the test fold's features and labels begin at $\tau$. The two overlap exactly
 when $t^\* + h \ge \tau$. Removing the $h$ dates between them
 ($\tau - h \le t \le \tau - 1$ dropped from training) is precisely the
@@ -47,16 +47,18 @@ a hyperparameter chosen with test information is a leak wearing a suit.
 ## 8.3 Predicting a leak before measuring it
 
 The repo ships a deliberate leak (`demonstrate_lookahead`): a fake feature
-$\ell = a\,y + e$ — a half-strength copy of the *very return it claims to
+$\ell = a\thinspace y + e$ — a half-strength copy of the *very return it claims to
 predict* plus independent noise ($a = 0.5$, $\sigma_e = \sigma_y$). This
 simulates a timestamp error that lets next month's information into today's
 feature. What IC *should* it produce? Compute, don't guess:
+
 $$
-\rho(\ell, y) = \frac{\mathrm{Cov}(ay + e,\, y)}{\sigma_\ell\,\sigma_y}
-= \frac{a\,\sigma_y^2}{\sigma_y\sqrt{a^2\sigma_y^2 + \sigma_e^2}}
-= \frac{a\,\sigma_y}{\sqrt{a^2\sigma_y^2 + \sigma_e^2}}
+\rho(\ell, y) = \frac{\mathrm{Cov}(ay + e,\thinspace y)}{\sigma_\ell\thinspace\sigma_y}
+= \frac{a\thinspace\sigma_y^2}{\sigma_y\sqrt{a^2\sigma_y^2 + \sigma_e^2}}
+= \frac{a\thinspace\sigma_y}{\sqrt{a^2\sigma_y^2 + \sigma_e^2}}
 = \frac{0.5}{\sqrt{1.25}} = 0.447 .
 $$
+
 Converting Pearson to Spearman for near-Gaussian data
 ($\rho_s = \tfrac{6}{\pi}\arcsin(\rho/2)$ — Stated, classical): predicted IC
 $\approx \mathbf{0.431}$.
