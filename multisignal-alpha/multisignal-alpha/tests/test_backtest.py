@@ -350,3 +350,94 @@ def test_backtest_agent_carries_inventory_across_fold_boundaries(world_cfg, cfg)
             "-- inventory was not carried forward from the previous fold's "
             "ending weights"
         )
+
+
+def _unbalanced_world(K=3, T=48, N=7, seed=11):
+    """Random signals/returns where names start late and stop early, the
+    shape of the real OSAP factor panel."""
+    rng = np.random.default_rng(seed)
+    Z = rng.standard_normal((K, T, N))
+    Y = 0.02 * rng.standard_normal((T, N))
+    Y[:10, 0] = np.nan          # starts late
+    Y[30:, 1] = np.nan          # stops early
+    Y[15:25, 2] = np.nan        # gap
+    return Z, Y
+
+
+@pytest.mark.parametrize("multi", [False, True])
+def test_agent_mask_untradable_name_has_no_effect(multi):
+    """A name that is never tradable must leave every output and gradient
+    of the policy unchanged -- masking reduces exactly to the smaller panel."""
+    from src.agent.policy import DiffPolicyAgent, MultiSpeedPolicyAgent
+
+    Z, Y = _unbalanced_world()
+    Zp = np.concatenate([Z, np.random.default_rng(0).standard_normal(
+        (Z.shape[0], Z.shape[1], 1))], axis=2)
+    Yp = np.concatenate([Y, np.full((Y.shape[0], 1), np.nan)], axis=1)
+    cls = MultiSpeedPolicyAgent if multi else DiffPolicyAgent
+    agent = cls(cost_bps_per_side=20.0, impact_bps=30.0)
+    theta = np.array([0.5, -0.3, 0.2])
+    gamma = np.array([0.3, 0.6, 0.9]) if multi else 0.4
+    a = agent._roll(Z, Y, theta, gamma, with_grads=True)
+    b = agent._roll(Zp, Yp, theta, gamma, with_grads=True)
+    for k in ("net", "gross", "traded", "dnet"):
+        np.testing.assert_allclose(a[k], b[k], rtol=1e-10, atol=1e-14)
+    assert b["w_last"][-1] == 0.0
+
+
+def test_agent_mask_closes_positions_and_keeps_all_months():
+    """panel_to_matrices must keep months where some names are missing, and
+    the policy must hold nothing in a name while it is untradable."""
+    from src.agent.policy import DiffPolicyAgent, panel_to_matrices
+
+    Z, Y = _unbalanced_world()
+    K, T, N = Z.shape
+    dates = pd.date_range("2000-01-31", periods=T, freq=month_end_freq())
+    rows = [{"date": dates[t], "ticker": f"f{i}", "fwd_ret": Y[t, i],
+             **{f"s{k}": Z[k, t, i] for k in range(K)}}
+            for t in range(T) for i in range(N) if np.isfinite(Y[t, i])]
+    Z2, Y2, d2, _ = panel_to_matrices(pd.DataFrame(rows),
+                                      [f"s{k}" for k in range(K)])
+    assert len(d2) == T, "months with a missing name were dropped"
+    assert np.isnan(Y2).sum() == np.isnan(Y).sum()
+
+    agent = DiffPolicyAgent(cost_bps_per_side=10.0)
+    out = agent._roll(Z2, Y2, np.array([0.5, -0.3, 0.2]), 0.4)
+    assert np.isfinite(out["net"]).all()
+    # name f1 stops at t=30: by the end it must be flat
+    w_end = agent._roll(Z2[:, :31], Y2[:31], np.array([0.5, -0.3, 0.2]),
+                        0.4)["w_last"]
+    assert w_end[1] == 0.0
+
+
+@pytest.mark.parametrize("multi", [False, True])
+def test_agent_masked_gradients_match_finite_differences(multi):
+    """The exact forward-mode gradients must survive masking: compare
+    d(sum net)/d(param) against central finite differences."""
+    from src.agent.policy import DiffPolicyAgent, MultiSpeedPolicyAgent
+
+    Z, Y = _unbalanced_world()
+    cls = MultiSpeedPolicyAgent if multi else DiffPolicyAgent
+    agent = cls(cost_bps_per_side=20.0, impact_bps=30.0)
+    K = Z.shape[0]
+    theta = np.array([0.5, -0.3, 0.2])
+    g = np.array([-0.5, 0.2, 1.0]) if multi else np.array([-0.3])
+    sig = lambda x: 1.0 / (1.0 + np.exp(-x))
+
+    def total(th, gg):
+        gam = sig(gg) if multi else float(sig(gg[0]))
+        return agent._roll(Z, Y, th, gam)["net"].sum()
+
+    gam0 = sig(g) if multi else float(sig(g[0]))
+    analytic = agent._roll(Z, Y, theta, gam0, with_grads=True)["dnet"].sum(1)
+    h = 1e-6
+    numeric = []
+    for k in range(K):
+        e = np.zeros(K)
+        e[k] = h
+        numeric.append((total(theta + e, g) - total(theta - e, g)) / (2 * h))
+    for j in range(len(g)):
+        e = np.zeros(len(g))
+        e[j] = h
+        numeric.append((total(theta, g + e) - total(theta, g - e)) / (2 * h))
+    np.testing.assert_allclose(analytic, numeric, rtol=1e-4, atol=1e-7)
