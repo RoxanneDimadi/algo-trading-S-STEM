@@ -168,6 +168,7 @@ So: **models produce the map; the agent decides how to drive on that map when ev
 
 | Doc | Start here if you want… |
 |---|---|
+| [`docs/STUDY_GUIDE.md`](docs/STUDY_GUIDE.md) | **One document covering everything**: concepts from zero, every formula and what it means, all four models, the agent, all results, the analysis and the conclusions |
 | [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) | Full setup, every output table, troubleshooting |
 | [`docs/figure_explanation.md`](docs/figure_explanation.md) | What a finished run's numbers actually mean, in plain language |
 | [`docs/math/00_index.md`](docs/math/00_index.md) | Formula-by-formula math proofs |
