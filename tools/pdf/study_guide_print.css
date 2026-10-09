@@ -1,0 +1,124 @@
+:root{
+  --ink:#16191d; --muted:#5a6270; --rule:#d2d7de; --rule-strong:#9aa3b0;
+  --accent:#1d3f6e; --bg-soft:#f5f6f8; --bg-head:#eceff3;
+}
+@page { size: A4; margin: 17mm 16mm 18mm 16mm; }
+
+html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+body{
+  font-family:'Liberation Serif','DejaVu Serif','DejaVu Sans','FreeSerif',serif;
+  font-size:10.3pt; line-height:1.52; color:var(--ink); margin:0;
+  text-align:left; hyphens:none;
+}
+
+/* ---------- title page ---------- */
+.titlepage{ page-break-after:always; padding-top:52mm; text-align:center; }
+.titlepage .eyebrow{
+  font-family:Inter,'Liberation Sans',sans-serif; font-size:9pt; letter-spacing:.22em;
+  text-transform:uppercase; color:var(--muted); margin-bottom:10mm;
+}
+.titlepage h1.doctitle{
+  font-size:30pt; line-height:1.12; margin:0 0 6mm; border:0; padding:0;
+  page-break-before:avoid; color:var(--accent); font-weight:700;
+}
+.titlepage .subtitle{ font-size:13pt; color:var(--ink); margin:0 auto 14mm; max-width:132mm; line-height:1.45; }
+.titlepage .rule{ width:40mm; height:2px; background:var(--rule-strong); margin:0 auto 14mm; }
+.titlepage .meta{
+  font-family:Inter,'Liberation Sans',sans-serif; font-size:9.5pt; color:var(--muted);
+  line-height:1.9;
+}
+.titlepage .meta strong{ color:var(--ink); font-weight:600; }
+
+/* ---------- headings ---------- */
+h1{
+  font-size:19pt; font-weight:700; color:var(--accent);
+  page-break-before:always; break-before:page;
+  margin:0 0 7mm; padding-bottom:3mm; border-bottom:2px solid var(--rule-strong);
+  page-break-after:avoid; break-after:avoid-page; line-height:1.2;
+}
+h1.nobreak{ page-break-before:auto; break-before:auto; }
+h2{
+  font-size:13.5pt; font-weight:700; margin:9mm 0 3mm; line-height:1.25;
+  page-break-after:avoid; break-after:avoid-page; color:#1a2330;
+}
+h3{
+  font-size:11.4pt; font-weight:700; margin:7mm 0 2.5mm; line-height:1.3;
+  page-break-after:avoid; break-after:avoid-page; color:#1a2330;
+}
+h4{ font-size:10.5pt; font-weight:700; margin:5mm 0 2mm; page-break-after:avoid; }
+
+p{ margin:0 0 2.6mm; orphans:3; widows:3; }
+strong{ font-weight:700; }
+em{ font-style:italic; }
+hr{ display:none; }
+
+a{ color:var(--accent); text-decoration:none; }
+
+/* ---------- lists ---------- */
+ul,ol{ margin:0 0 3mm; padding-left:6.5mm; }
+li{ margin-bottom:1.4mm; orphans:2; widows:2; }
+li>p{ margin-bottom:1.4mm; }
+li>ul,li>ol{ margin-top:1.4mm; }
+
+/* ---------- tables ---------- */
+table{
+  border-collapse:collapse; width:100%; margin:3.5mm 0 4.5mm;
+  font-family:Inter,'Liberation Sans',sans-serif; font-size:7.9pt; line-height:1.35;
+}
+thead{ display:table-header-group; }
+tr{ page-break-inside:avoid; break-inside:avoid; }
+th,td{
+  border:.5px solid var(--rule); padding:1.5mm 1.8mm; text-align:left;
+  vertical-align:top; word-break:normal; overflow-wrap:break-word;
+}
+th{ background:var(--bg-head); font-weight:700; }
+tbody tr:nth-child(even){ background:#fafbfc; }
+table code{ font-size:7.2pt; white-space:nowrap; background:none; padding:0; }
+table .katex{ font-size:1em; }
+
+/* ---------- blockquote callouts ---------- */
+blockquote{
+  margin:4mm 0; padding:3mm 4mm 3mm 4.5mm;
+  border-left:3px solid var(--accent); background:var(--bg-soft);
+  page-break-inside:avoid; break-inside:avoid;
+}
+blockquote p:last-child{ margin-bottom:0; }
+
+/* ---------- code ---------- */
+code{
+  font-family:'Liberation Mono','DejaVu Sans Mono',monospace; font-size:8.8pt;
+  background:#f1f3f5; padding:.3mm 1mm; border-radius:2px; word-break:break-word;
+}
+pre{
+  background:var(--bg-soft); border:.5px solid var(--rule); border-radius:3px;
+  padding:3mm; margin:3.5mm 0; font-size:8.4pt; line-height:1.42;
+  white-space:pre-wrap; page-break-inside:avoid; break-inside:avoid;
+}
+pre code{ background:none; padding:0; font-size:inherit; }
+
+/* ---------- self-test answer boxes ---------- */
+details{
+  margin:2mm 0 5mm; padding:2.5mm 3.5mm; border:.5px solid var(--rule);
+  border-left:3px solid #8a94a3; background:#fbfcfd; border-radius:2px;
+  page-break-inside:avoid; break-inside:avoid;
+}
+details>summary{
+  font-family:Inter,'Liberation Sans',sans-serif; font-size:8.4pt; font-weight:700;
+  letter-spacing:.1em; text-transform:uppercase; color:var(--muted);
+  margin-bottom:2mm; list-style:none;
+}
+details>summary::-webkit-details-marker{ display:none; }
+details>p:last-child{ margin-bottom:0; }
+details>p{ margin-bottom:2mm; }
+
+/* ---------- math ---------- */
+.katex{ font-size:1.045em; }
+.katex-display{
+  margin:3.2mm 0 !important; page-break-inside:avoid; break-inside:avoid;
+  overflow-x:visible;
+}
+.katex-display>.katex{ font-size:1.06em; }
+p>.katex-display:only-child{ margin:3.2mm 0 !important; }
+
+/* keep a proof/theorem lead-in with its formula */
+p:has(> .katex-display){ page-break-inside:avoid; }

@@ -3795,113 +3795,151 @@ material.
 ## Tier 1 — concepts
 
 **1. Why is the project "cross-sectional," and what does that buy?**
-<details><summary>Answer</summary>
+<details>
+<summary>Answer</summary>
+
 It ranks names against each other on each date rather than forecasting the
 market. It buys dollar neutrality: a uniform move in all returns cancels
 between the long and short legs (§1.8), so the strategy does not need to
 answer "will the market go up?" — a question nobody can answer.
+
 </details>
 
 **2. A colleague reports a signal with IC 0.35. What is your first move?**
-<details><summary>Answer</summary>
+<details>
+<summary>Answer</summary>
+
 Hunt for the timestamp error. Honest single-signal ICs live at 0.02–0.12; the
 project *derives* a ceiling near 0.04 on its synthetic panel (§6.2) and the
 deliberate leak reads 0.395 (§6.1). Ten times too good is a diagnosis, not a
 discovery.
+
 </details>
 
 **3. Why is the mean IC computed per date and then averaged, rather than
 pooled over all name-months?**
-<details><summary>Answer</summary>
+<details>
+<summary>Answer</summary>
+
 Pooling mixes a between-dates effect (do high-signal months have high-return
 months?) with the within-date effect, which is the only part a market-neutral
 book can harvest. Per-date demeaning deletes each date's market level, so
 market-direction effects contribute exactly zero (§1.7).
+
 </details>
 
 **4. Why does the pipeline evaluate signals *before* fitting any model?**
-<details><summary>Answer</summary>
+<details>
+<summary>Answer</summary>
+
 Because the model's job is *combination*, not rescuing an empty signal. If
 you fit first you cannot tell whether a good combined result came from real
 signal or from a flexible model memorizing noise (§6.4).
+
 </details>
 
 ## Tier 2 — mechanics
 
 **5. A strategy has one-way turnover 1.2 and gross annual return 9%. What is
 its net return at 10 bps per side, and at 50 bps?**
-<details><summary>Answer</summary>
+<details>
+<summary>Answer</summary>
+
 Drag $= \tau\times2\times\text{bps}/10^4\times12$. At 10 bps:
 $1.2\times0.024 = 0.0288$, so net $= 6.1$%. At 50 bps:
 $1.2\times0.12 = 0.144$, so net $= -5.4$% — the strategy does not exist
 (§1.9).
+
 </details>
 
 **6. Why must the purge be at least the label horizon, and what breaks if it
 is zero?**
-<details><summary>Answer</summary>
+<details>
+<summary>Answer</summary>
+
 The label at training date $t$ is realized over $(t, t+h]$. If the test fold
 starts at $t+1$ with $h = 1$, the last training label's realization window is
 the first test period — the model was fitted on information from the test
 window. The purging theorem (§2.3) states the condition $t^\*+h<\tau$ exactly.
 `walkforward.py` raises a `ValueError` on purge 0.
+
 </details>
 
 **7. Why is random-sample validation illegal for IC-Net's early stopping,
 when it is standard practice elsewhere in ML?**
-<details><summary>Answer</summary>
+<details>
+<summary>Answer</summary>
+
 A randomly chosen month's temporal neighbours remain in training and carry
 overlapping information, so the "held-out" score is contaminated. The repo
 uses a chronological tail of the *training* dates (§3.3.6) — the same rule
 purging imposes on everything else.
+
 </details>
 
 **8. The pipeline reports a pure-noise feature at t = 2.12. Is something
 broken?**
-<details><summary>Answer</summary>
+<details>
+<summary>Answer</summary>
+
 No. $t=2$ is a 5% probability statement, not a certificate. The null standard
 error of the mean IC here is ≈0.0026, so a 2.3-s.e. draw happens a couple of
 percent of the time, and this run drew one (§5.7).
+
 </details>
 
 **9. `fmom_12m` has the project's best standalone IC (0.116, t = 10.6) but a
 Fama–MacBeth coefficient of −0.0002 (t = −0.06). Explain.**
-<details><summary>Answer</summary>
+<details>
+<summary>Answer</summary>
+
 It correlates 0.968 with `fmom_12_2`. The two are nearly the same variable, so
 the multivariate regression cannot attribute the shared information and
 loaded the other twin. The joint information is intact; only the attribution
 is unidentified (§7.4).
+
 </details>
 
 ## Tier 3 — the mathematics
 
 **10. State and prove the MSE decomposition, and say which term the long-short
 portfolio actually cares about.**
-<details><summary>Answer</summary>
+<details>
+<summary>Answer</summary>
+
 $\tfrac1n\sum(p_i-y_i)^2 = (\bar p-\bar y)^2 + (s_p-s_y)^2 + 2s_ps_y(1-\rho)$.
 Proof in §3.3.1. The portfolio is dollar-neutral so it is indifferent to the
 level term, and quantile-sorted so indifferent to the scale term. **Only the
 correlation term maps to money** — and MSE additionally weights it by $s_y$,
 so volatile months dominate training for no informational reason.
+
 </details>
 
 **11. Derive the gradient of a per-date correlation with respect to the
 predictions, and state the sanity property that falls out.**
-<details><summary>Answer</summary>
+<details>
+<summary>Answer</summary>
+
 $\nabla_p\rho = \tilde y/(\Vert\tilde p\Vert\Vert\tilde y\Vert) - \rho\thinspace\tilde p/\Vert\tilde p\Vert^2$
 (§3.3.3). Both $\tilde y$ and $\tilde p$ are demeaned, so the gradient has
 zero mean: nudging all predictions up together cannot help. The calculus
 rediscovers translation invariance on its own.
+
 </details>
 
 **12. Prove that no additive function can represent $z_1z_2$.**
-<details><summary>Answer</summary>
+<details>
+<summary>Answer</summary>
+
 Set $z_2=0$: $0 = f(z_1)+g(0)$ for all $z_1$, so $f$ is constant. By symmetry
 $g$ is constant. Then $f+g$ is constant while $z_1z_2$ is not (§3.2.3).
+
 </details>
 
 **13. Derive the Kalman update from Bayes' rule, and interpret the gain.**
-<details><summary>Answer</summary>
+<details>
+<summary>Answer</summary>
+
 Multiply the prior $N(m,P)$ by the likelihood $N(\beta, r)$, work in log
 densities, complete the square: precision adds, giving
 $P_{\text{post}} = (1/P + 1/r)^{-1} = (1-K)P$ and
@@ -3909,65 +3947,86 @@ $m_{\text{post}} = m + K(\lambda-m)$ with $K = P/(P+r)$ (§3.4.3).
 **Posterior = prior + gain × surprise.** The gain is a precision-weighted
 compromise: trust the observation when your prior is vague or the measurement
 is clean. Every learning rate is this formula with the uncertainties hidden.
+
 </details>
 
 **14. Show the steady-state Kalman filter is an EWMA, and say what sets its
 half-life.**
-<details><summary>Answer</summary>
+<details>
+<summary>Answer</summary>
+
 At a fixed point $P = (P+q)r/(P+q+r)$, so $P^2+qP-qr=0$ and
 $P^\* = (-q+\sqrt{q^2+4qr})/2$. Constant $P^\*$ gives constant $K^\*$;
 unrolling the update gives $m_t = K^\*\sum_j(1-K^\*)^j\lambda_{t-j}$, half-life
 $\ln2/|\ln(1-K^\*)|$ (§3.4.5). **The signal-to-noise ratio $q/r$ sets it** —
 noisy observations give long memory, genuinely mobile states give fast
 adaptation.
+
 </details>
 
 **15. Derive the gradient of the Sharpe ratio with respect to one month's
 return, and read off what it says about risk.**
-<details><summary>Answer</summary>
+<details>
+<summary>Answer</summary>
+
 $\partial J/\partial r_t = 1/(Ts) - m(r_t-m)/(Ts^3)$ (§4.4). A baseline reward
 for return, minus a risk charge proportional to how far that month already
 sits from the mean. **Maximizing Sharpe is not maximizing return**, and this
 is the precise statement of the difference.
+
 </details>
 
 **16. Prove the agent's policy is an EWMA of past aims, and name the two
 economic dials.**
-<details><summary>Answer</summary>
+<details>
+<summary>Answer</summary>
+
 Induction on $w_t = (1-\gamma)w_{t-1}+\gamma A_t$ gives
 $w_t = \gamma\sum_{j=0}^{t-1}(1-\gamma)^jA_{t-j}$ (§4.3). The dials are
 $\theta$ (what to aim at) and $\gamma$ (how fast to chase), which are exactly
 the two Gârleanu–Pedersen theory says matter.
+
 </details>
 
 **17. Prove the max-Sharpe blend over factor returns is $\Sigma^{-1}\mu$.**
-<details><summary>Answer</summary>
+<details>
+<summary>Answer</summary>
+
 Substitute $x = \Sigma^{1/2}\theta$, $b = \Sigma^{-1/2}\mu$; then
 $S = b^\top x/\Vert x\Vert \le \Vert b\Vert$ by Cauchy–Schwarz, with equality
 iff $x\propto b$, i.e. $\theta\propto\Sigma^{-1}\mu$ (§4.6.2). Note this is
 the *same* theorem as $|\rho|\le1$ from §1.3.
+
 </details>
 
 **18. Compute the capture ratio at $\gamma = 0.6$, $\rho = 0.9$, and say what
 it means commercially.**
-<details><summary>Answer</summary>
+<details>
+<summary>Answer</summary>
+
 $\kappa = 0.6/(1-0.4\times0.9) = 0.6/0.64 = 0.94$ (§4.7). The agent keeps 94%
 of the alpha while cutting turnover from 0.42 to 0.27 — a 36% cost reduction
 for a 6% alpha sacrifice. That fraction *is* the business case for
 execution-aware trading.
+
 </details>
 
 **19. Prove the best of $N$ worthless strategies is biased upward, and price
 $N = 20$.**
-<details><summary>Answer</summary>
+<details>
+<summary>Answer</summary>
+
 Jensen plus $\max \le \text{sum}$ plus the normal MGF gives
 $e^{sE[\max]} \le Ne^{s^2/2}$; take logs, divide by $s$, minimize at
 $s=\sqrt{2\ln N}$ to get $E[\max] \le \sqrt{2\ln N}$ (§5.4). At $N = 20$ that
 is ≈2.45 — past the significance line, for free.
+
 </details>
 
 **20. Why does Adam move a parameter whose gradient is exactly zero?**
-<details><summary>Answer</summary>
+<details>
+<summary>Answer</summary>
+
 Its step is $\mathrm{lr}\cdot\hat m/(\sqrt{\hat v}+\epsilon)$. Feed it numerical
 noise $\delta$: both $\hat m$ and $\sqrt{\hat v}$ are $O(\delta)$, so the ratio
 is $O(1)$ with random sign and the step is ≈lr *regardless of how small the
@@ -3975,34 +4034,43 @@ noise is*. Scale-freeness turns "zero gradient" into unit-speed diffusion
 (§4.9.2). On this project it silently flipped a book's sign; the fix is
 projecting $\theta$ onto the unit L1 sphere, which quotients out the symmetry
 that created the flat direction.
+
 </details>
 
 ## Tier 4 — judgment
 
 **21. PULSE won on synthetic data and came last on real data. Was the
 synthetic result wrong?**
-<details><summary>Answer</summary>
+<details>
+<summary>Answer</summary>
+
 No. The synthetic generator *is* PULSE's model class — piecewise-constant
 betas plus an interaction is literally "time-varying linear on an interaction
 basis" — and the design doc said so *before* the real run. The two results
 answer different questions: can the method find drifting coefficients
 (yes), and does the real world have enough of that structure to pay for the
 variance of looking (on this panel, no). §8.1.
+
 </details>
 
 **22. Why did the elastic net win on real data? Give four reasons.**
-<details><summary>Answer</summary>
+<details>
+<summary>Answer</summary>
+
 (i) Bias–variance: with $R^2$ ~1%, variance dominates, so biased
 low-variance estimators win — predicted in advance by §3.1.3. (ii) No planted
 interaction to find, and real nonlinearity is buried in noise. (iii) Four of
 six features are two collinear twin-pairs (0.968 and 0.747), which shrinkage
 handles gracefully and flexible models do not. (iv) Turnover: 0.742 versus
 0.927–1.105, so the flexible models also pay more tax. §8.1.2.
+
 </details>
 
 **23. The agent froze its book on real data and lost to always-rebalancing.
 What are the competing explanations, and which experiment settles it?**
-<details><summary>Answer</summary>
+<details>
+<summary>Answer</summary>
+
 (a) It overfits the speed dial: a frozen dollar-neutral book across ~145
 weakly-correlated factor portfolios has very low variance and so a high
 *in-sample* Sharpe, which does not generalize. (b) The policy class is too
@@ -4010,25 +4078,32 @@ poor — one shared $\gamma$ cannot track `fmom_12m` slowly while ignoring
 `fmom_1m`. (c) The expanding window flattens the objective as $T$ grows.
 **The settling experiment is the cost sweep**: if $\gamma \approx 0.0005$ even
 at 0 bps, the collapse is not about costs at all. §8.3.
+
 </details>
 
 **24. A DSR of 1.000 and a DSR of 0.972 are reported in this project. Which
 is the better news?**
-<details><summary>Answer</summary>
+<details>
+<summary>Answer</summary>
+
 0.972. The 1.000 is synthetic: a planted, stable, clean signal with no regime
 shifts saturates the statistic, and nothing in finance is certain to that
 many decimals — read it as a realism warning. The 0.972 is real: 1044 months,
 10 counted trials, a monthly Sharpe of 0.171 against a 0.086 luck hurdle,
 above the 0.95 bar and meaningfully below 1. §6.7, §7.9.
+
 </details>
 
 **25. What is the largest single gap between this project's reported numbers
 and reality?**
-<details><summary>Answer</summary>
+<details>
+<summary>Answer</summary>
+
 The factor panel's "assets" are OSAP long-short research portfolios, each
 itself a book of hundreds of stocks with its own turnover, borrow costs and
 capacity limits. Charging 10 bps per side to rebalance *across* 145 such
 books applies a retail commission to an institutional operation. §8.6, threat 1.
+
 </details>
 
 ---
