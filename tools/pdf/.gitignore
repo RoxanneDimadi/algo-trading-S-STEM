@@ -1,0 +1,4 @@
+node_modules/
+out/
+stage.md
+package-lock.json

@@ -1,0 +1,7 @@
+{
+  "name": "study-guide-pdf",
+  "private": true,
+  "type": "module",
+  "description": "Builds docs/STUDY_GUIDE.pdf from docs/STUDY_GUIDE.md",
+  "dependencies": { "katex": "0.16.11" }
+}
