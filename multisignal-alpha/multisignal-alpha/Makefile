@@ -1,4 +1,4 @@
-.PHONY: demo test lint coverage coverage-html coveralls notebooks clean
+.PHONY: demo test lint coverage coverage-html coveralls clean
 
 # Run the full synthetic-data pipeline end-to-end (placebo-validated demo)
 demo:
@@ -32,10 +32,6 @@ coverage-html:
 # Upload the most recent coverage.xml to Coveralls (requires COVERALLS_REPO_TOKEN)
 coveralls:
 	coveralls --service=github
-
-# Rebuild the four workflow notebooks
-notebooks:
-	python scripts/build_notebooks.py
 
 clean:
 	rm -rf results/tables/* results/figures/* __pycache__ .pytest_cache htmlcov .coverage coverage.xml

@@ -23,3 +23,9 @@ htmlcov/
 data/ledger.db
 data/audit_log.jsonl
 .env
+
+# Design notes / demos kept locally; not part of the runnable model tree
+docs/
+notebooks/
+UPDATES.md
+scripts/build_notebooks.py

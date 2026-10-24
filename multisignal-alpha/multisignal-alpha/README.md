@@ -22,7 +22,7 @@ make demo     # full pipeline on synthetic data with PLANTED signals
 # unix (no make): python -m src.pipeline --config configs/config.yaml
 ```
 
-`make demo` writes tables to `results/tables/`, figures to `results/figures/`, and a digest to `results/summary.md`. The four notebooks in `notebooks/` walk the same pipeline interactively (regenerate them anytime with `make notebooks`).
+`make demo` writes tables to `results/tables/`, figures to `results/figures/`, and a digest to `results/summary.md`.
 
 ## Why the demo data is synthetic, and why that's a feature
 
@@ -41,19 +41,18 @@ exactly by planted beta; the deliberate-leak feature produces an absurd IC
 post-publication haircut; and LightGBM beats the elastic net out-of-sample
 because, per its feature importances, it exploits the planted interaction;
 and IC-Net, a from-scratch NumPy model trained on a per-date cross-sectional
-correlation objective (`docs/04_custom_model_proposal.md`), leads the
-comparison with roughly half LightGBM's turnover; and PULSE, a from-scratch
-Kalman-filtered efficacy model (`docs/05_pulse_model.md`) whose filtered
-states provably track the planted decay staircase, leads the four-model
-table (with the documented caveat that planted time-varying betas are its
-home turf -- the real-data run is the actual test). A differentiable
-trading agent (Garleanu-Pedersen partial adjustment trained end-to-end on
-net Sharpe, `docs/06_trading_agent.md`) closes the loop from forecast to
-position: its learned trading speed falls monotonically with costs, and at
-100 bps it keeps a strategy alive that myopic rebalancing kills. At zero
-cost the agent provably recovers the MSRR closed form (cosine 1.000), and
-composing PULSE's point-in-time forecasts as its aim nearly doubles net
-Sharpe over the static blend (5.35 vs 2.96; scripts/compose_pulse_agent.py).
+correlation objective, leads the comparison with roughly half LightGBM's
+turnover; and PULSE, a from-scratch Kalman-filtered efficacy model whose
+filtered states track the planted decay staircase, leads the four-model
+table (with the caveat that planted time-varying betas are its home turf
+-- the real-data run is the actual test). A differentiable trading agent
+(Garleanu-Pedersen partial adjustment trained end-to-end on net Sharpe)
+closes the loop from forecast to position: its learned trading speed falls
+monotonically with costs, and at 100 bps it keeps a strategy alive that
+myopic rebalancing kills. At zero cost the agent recovers the MSRR closed
+form (cosine 1.000), and composing PULSE's point-in-time forecasts as its
+aim nearly doubles net Sharpe over the static blend (5.35 vs 2.96;
+`scripts/compose_pulse_agent.py`).
 
 > **Caveat that belongs in every conversation about this repo:** synthetic
 > Sharpes are pedagogically inflated (the betas are planted and known). On
@@ -96,9 +95,9 @@ src/
   evaluation/factor_controls.py  # alpha regression, NW errors, R²
   evaluation/deflated_sharpe.py  # Bailey-López de Prado DSR
   models/models.py         # elastic-net benchmark, LightGBM, optional optuna
-  models/icnet.py          # from-scratch NumPy net, per-date IC objective (docs/04)
-  models/pulse.py          # Kalman-filtered time-varying signal efficacy (docs/05)
-  agent/policy.py          # differentiable cost-aware trading policy (docs/06)
+  models/icnet.py          # from-scratch NumPy net, per-date IC objective
+  models/pulse.py          # Kalman-filtered time-varying signal efficacy
+  agent/policy.py          # differentiable cost-aware trading policy
   agent/backtest.py        # walk-forward for the stateful agent (continuous book)
   agent/msrr.py            # closed-form Maximum Sharpe Ratio Regression (the aim)
   backtest/walkforward.py  # purged/embargoed splits with self-checks
@@ -108,9 +107,9 @@ src/
   execution/agent_evaluator.py   # live risk gate: GP sizing + cost hurdle
   execution/webhook_listener.py  # inbound signals (e.g. TradingView) -> bridge
   execution/signal_generator.py  # the agent/models -> bridge, for real data
-notebooks/                 # 01 data+leaks, 02 eval+decay, 03 ML-vs-linear, 04 controls+DSR
 tests/                     # statistical-correctness gate + execution-bridge checks
-docs/                      # research findings + roadmap + backlog + model proposal
+results/                   # synthetic demo outputs
+results_factor/            # real OSAP factor-run outputs
 ```
 
 ## Methodology (the defensible core)
@@ -183,10 +182,10 @@ ways signals reach it:
   *receives* signals from an external source that already names a real
   symbol and, usually, a price (e.g. a TradingView alert —
   `scripts/send_test_webhook.py` sends a fake one for testing).
-- **Model-driven** (`scripts/run_agent_signals.py`, docs/06 §10): the other
-  half — it fits the agent's learned signal blend (`src/agent/policy.py`)
-  on the OSAP panel, scores the latest available cross-section, and feeds
-  the resulting buy/sell signals into the *same* risk gate and bridge, no
+- **Model-driven** (`scripts/run_agent_signals.py`): the other half — it
+  fits the agent's learned signal blend (`src/agent/policy.py`) on the
+  OSAP panel, scores the latest available cross-section, and feeds the
+  resulting buy/sell signals into the *same* risk gate and bridge, no
   server required. This is the piece that lets the models themselves
   trigger trades instead of waiting on an external alert.
 
@@ -216,7 +215,7 @@ Two things `run_agent_signals.py` does **not** paper over:
   symbols.
 - OSAP signals are monthly and published with a real lag. "Live" here means
   "the most recently available complete month," not intraday — the same
-  honest-limits caveat as the rest of the real-data story (docs/06 §6).
+  honest-limits caveat as the rest of the real-data story.
 
 Every decision and order — from either path — lands in the same audit
 trail (`data/ledger.db` + `data/audit_log.jsonl`, or the running server's
@@ -236,8 +235,7 @@ McLean & Pontiff (2016) JF · Bowles, Reed, Ringgenberg & Thornock (2024)
 *Anomaly Time*, JF · Bailey & López de Prado (2014) *The Deflated Sharpe
 Ratio* · López de Prado (2018) *Advances in Financial Machine Learning* ·
 Kelly & Xiu (2023) *Financial Machine Learning* · Jensen, Kelly & Pedersen
-(2023) JF. See `docs/01_research_findings.md` for the annotated shelf,
-including the 2023-2026 frontier (virtue-of-complexity debate, LLM signals).
+(2023) JF.
 
 ## License
 
