@@ -1,7 +1,7 @@
 """Point-in-time panel utilities and leak diagnostics.
 
 The project's non-negotiable rule is point-in-time correctness in BOTH
-directions (see docs/02_project_roadmap.md §0):
+directions:
 
   * forward leakage  -- using information before it was public. The classic
     fake edge. `demonstrate_lookahead` shows exactly what it looks like in

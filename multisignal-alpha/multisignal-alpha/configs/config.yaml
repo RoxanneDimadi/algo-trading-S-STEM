@@ -85,7 +85,7 @@ models:
     max_epochs: 300
     patience: 25
     val_fraction: 0.15     # chronological tail of TRAIN dates, for early stop
-  pulse:                   # Kalman-filtered time-varying efficacy (docs/05)
+  pulse:                   # Kalman-filtered time-varying efficacy
     interactions: true     # filter pairwise-product efficacies too
     a_grid: [0.97, 0.99, 1.0]        # mean-reversion candidates ("decay prior")
     q_scale_grid: [0.002, 0.01, 0.05]  # state-noise scale candidates
@@ -100,7 +100,7 @@ models:
     tune: false            # true -> optuna search inside each train window (slow)
     tune_trials: 25
 
-agent:                     # differentiable cost-aware policy (docs/06)
+agent:                     # differentiable cost-aware policy
   enabled: true
   epochs: 150
   lr: 0.05

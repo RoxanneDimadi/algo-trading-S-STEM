@@ -24,8 +24,9 @@ data/ledger.db
 data/audit_log.jsonl
 .env
 
-# Design notes / demos kept locally; not part of the runnable model tree
+# Design notes / demos / changelogs kept locally; not part of the model repo
 docs/
 notebooks/
 UPDATES.md
+UPDATES*.md
 scripts/build_notebooks.py
