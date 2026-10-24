@@ -33,3 +33,8 @@ envs/
 .coverage.*
 coverage.xml
 htmlcov/
+
+# Teaching / presentation materials (kept locally, not part of the model repo)
+/docs/
+/STUDY_GUIDE.md
+/Research Poster.png

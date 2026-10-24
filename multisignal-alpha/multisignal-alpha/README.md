@@ -78,8 +78,8 @@ cd ../multisignal-alpha/multisignal-alpha
 python -m src.pipeline --config configs/config_factor.yaml
 ```
 
-Outputs land in `results_factor/`. See `../../docs/USER_GUIDE.md` for the complete
-walkthrough and how to read every table.
+Outputs land in `results_factor/`. See the root [`README.md`](../../README.md)
+for setup, how to run, and how to read the result tables.
 
 ## Repository map
 
@@ -112,10 +112,6 @@ notebooks/                 # 01 data+leaks, 02 eval+decay, 03 ML-vs-linear, 04 c
 tests/                     # statistical-correctness gate + execution-bridge checks
 docs/                      # research findings + roadmap + backlog + model proposal
 ```
-
-The user guide and the proof-driven lesson plan live at the repository root,
-in `../../docs/`: `USER_GUIDE.md` and `math/` (every formula derived, with
-predictions checked against `make demo` output).
 
 ## Methodology (the defensible core)
 
@@ -231,18 +227,6 @@ are unmaintained; if you want tear sheets, install Stefan Jansen's
 `-reloaded` forks in a separate environment (parts still prefer `numpy<2`).
 This repo deliberately self-implements its evaluation machinery so every
 statistical choice is visible and testable.
-
-## The mathematics, derived
-
-`../../docs/math/` (repo root `docs/math/`; start at `00_index.md`) is a 13-chapter, proof-driven lesson
-plan assuming no finance background: correlation and the IC, portfolio
-algebra, Newey-West, shrinkage, boosting, the IC-Net objective and its full
-gradient derivation, purging, the deflated Sharpe ratio, the PULSE state
-space, differentiable trading, MSRR and execution, and the symmetry
-and identifiability results. Its signature
-move: because the demo data has planted truth, most derivations end with a
-numerical prediction checked against pipeline output (e.g., momentum's gross
-annual return: predicted 10.14%, measured 10.17%).
 
 ## References
 

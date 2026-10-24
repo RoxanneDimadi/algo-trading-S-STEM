@@ -14,6 +14,5 @@ here are gone and that directory is now the only one:
 | PULSE model | `multisignal-alpha/multisignal-alpha/docs/05_pulse_model.md` |
 | Trading agent | `multisignal-alpha/multisignal-alpha/docs/06_trading_agent.md` |
 
-The user guide and the proof-driven math lesson plan live in `docs/` at the
-repository root. `trading_agent_project_compressed.zip` is the original
-project archive and stays here.
+`trading_agent_project_compressed.zip` is the original project archive and
+stays here.

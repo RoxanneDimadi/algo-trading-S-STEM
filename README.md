@@ -25,7 +25,7 @@ Four predictive models share the same walk-forward inputs: **elastic net** (line
 
 ## Repository description
 
-This monorepo has two conda environments and a docs tree. Download code never mixes with research code.
+This monorepo has two conda environments. Download code never mixes with research code.
 
 ```
 multisignal-alpha/multisignal-alpha/   research agent (models, stats, agent)
@@ -42,8 +42,6 @@ real-data/                             ingest only (downloads and panel build)
   configs/data_config.yaml             what to download and how to build panels
   scripts/run_all.py                   one-shot: OSAP + French + factor panel + sync
   scripts/validate_data.py             readiness report per data mode
-
-docs/                                  user guide + math lesson plan
 ```
 
 The ingest side *pushes* panels and a factor config into the agent tree; the agent never reaches outward for data.
